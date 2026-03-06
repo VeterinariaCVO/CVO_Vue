@@ -11,7 +11,7 @@
 
       <select v-model="form.role_id">
         <option value="">-- Rol --</option>
-        <option value="1">Administrador</option>
+        <option value="1">empleado</option>
         <option value="2">Usuario</option>
       </select><br>
 
@@ -45,13 +45,16 @@ export default {
     })
 
     async function registrarUsuario() {
-      const respuesta = await fetch('/api/users', {
+    console.log(form.value);
+      const respuesta = await fetch('http://127.0.0.1:8000/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(form.value),
       })
 
       const datos = await respuesta.json()
+        console.log(datos)
+       // console.log(await respuesta.json());
       mensaje.value = datos.message
     }
 
