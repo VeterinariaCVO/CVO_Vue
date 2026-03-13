@@ -9,7 +9,8 @@
       <a class="menu-item">Mascota</a>
       <a class="menu-item">Servicios</a>
       <a class="menu-item">Citas</a>
-
+      <a class="menu-item">Inventario</a>
+      <a class="menu-item">Finanzas</a>
     </aside>
 
     <!-- Contenido -->
@@ -17,8 +18,8 @@
       <h2>Registrar Cliente</h2>
 
       <!-- Mensajes -->
-      <p v-if="mensaje" class="msg-exito"> {{ mensaje }}</p>
-      <p v-if="error" class="msg-error"> {{ error }}</p>
+      <p v-if="mensaje" class="msg-exito">✅ {{ mensaje }}</p>
+      <p v-if="error" class="msg-error">⚠️ {{ error }}</p>
 
       <!-- Formulario -->
       <div class="card">
