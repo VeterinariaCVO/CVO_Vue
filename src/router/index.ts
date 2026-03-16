@@ -19,6 +19,21 @@ const router = createRouter({
       name: 'admin-users',
       component: () => import('../views/AdminUsersView.vue'),
     },
+    {
+      path: '/empleado/clientes',
+      name: 'employee-clients',
+      component: () => import('../views/EmployeeClientsView.vue'),
+    },
+    {
+      path: '/empleado/clientes/:id',
+      name: 'client-profile',
+      component: () => import('../views/ClientProfileView.vue'),
+    },
+    {
+      path: '/empleado/mascotas/:id',
+      name: 'pet-detail',
+      component: () => import('../views/PetDetailView.vue'),
+    },
   ],
 })
 
