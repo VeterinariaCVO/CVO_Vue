@@ -1,5 +1,5 @@
 export interface User {
-  id: number //cambios
+  id: number
   name: string
   email: string
   role_id: number

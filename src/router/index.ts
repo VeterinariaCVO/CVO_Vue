@@ -34,6 +34,11 @@ const router = createRouter({
       name: 'pet-detail',
       component: () => import('../views/PetDetailView.vue'),
     },
+    {
+      path: '/admin/employees',
+      name: 'admin-employees',
+      component: () => import('../views/AdminEmployeesView.vue'),
+    },
   ],
 })
 
