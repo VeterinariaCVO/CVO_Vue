@@ -2,11 +2,11 @@ export interface User {
   id: number
   name: string
   email: string
+  role_id: number
+  role?: string | null
   phone?: string | null
   address?: string | null
   active: boolean
-  role_id: number
-  role?: string | null
   gender?: string | null
   birth_date?: string | null
   age?: number | null
