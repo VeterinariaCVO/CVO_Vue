@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import AppointmentForm from './components/AppointmentForm.vue'
+
 </script>
 
 <template>
-  <AppointmentForm />
+  <router-view />
 </template>
+
