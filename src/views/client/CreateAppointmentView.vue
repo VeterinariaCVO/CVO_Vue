@@ -30,10 +30,9 @@ const form = ref<CreateAppointment>({
 })
 
 const services = ['medical', 'daycare', 'surgery', 'vaccination']
-const { data: pets } = useFetch('http://localhost:8000/api/pets').get().json<Pet[]>()
-const { data: time_slots } = useFetch('http://localhost:8000/api/time-slots')
-  .get()
-  .json<{ data: TimeSlot[] }>()
+const { data: petsResponse } = useFetch('http://localhost:8000/api/pets').get().json<{ pets: Pet[] }>()
+const pets = computed(() => petsResponse.value?.pets || [])
+const { data: time_slots } = useFetch('http://localhost:8000/api/time-slots').get().json<{ data: TimeSlot[] }>()
 
 const availableSlots = computed(() => {
   return time_slots.value?.data?.filter((slot) => slot.status === 'available') || []
@@ -41,9 +40,7 @@ const availableSlots = computed(() => {
 
 const { data, error, isFetching, execute } = useFetch('http://localhost:8000/api/appointments', {
   immediate: false,
-})
-  .post(form)
-  .json()
+}).post(form.value).json()
 
 const createAppointment = () => {
   execute()
