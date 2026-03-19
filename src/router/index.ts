@@ -20,7 +20,7 @@ const router = createRouter({
     },
     {
       path: '/empleado/registrar-cliente',
-      name: 'RegistrarCliente',
+      name: 'RegisterCliente',
       component: RegistrarCliente,
     },
   ],
