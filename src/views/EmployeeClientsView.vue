@@ -1,10 +1,9 @@
 <template>
   <div class="page">
-
     <nav class="navbar">
       <div class="navbar-brand">
-        <div class="logo-circle">VO</div>
-        <span class="brand-name">Veterinaria del Oriente</span>
+        <div class="logo">VO</div>
+        <span class="brand">Veterinaria del Oriente</span>
       </div>
       <div class="nav-links">
         <button class="nav-link" @click="$router.push({ name: 'home' })">Panel Principal</button>
@@ -15,10 +14,8 @@
     </nav>
 
     <div class="hero">
-      <div class="hero-content">
-        <h1 class="hero-title">Clientes Registrados</h1>
-        <p class="hero-sub">Busca y gestiona el perfil de cada cliente y sus mascotas.</p>
-      </div>
+      <h1 class="hero-title">Clientes Registrados</h1>
+      <p class="hero-sub">Busca y gestiona el perfil de cada cliente y sus mascotas.</p>
     </div>
 
     <main class="container">
@@ -31,16 +28,12 @@
         <div v-if="loading" class="status-msg">Cargando...</div>
         <div v-else-if="error" class="status-msg error">{{ error }}</div>
 
-        <div v-else class="table-responsive">
+        <div v-else class="overflow-x-auto">
           <table class="table">
             <thead>
               <tr class="thead-blue">
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Telefono</th>
-                <th>Direccion</th>
-                <th>Estado</th>
-                <th>Acciones</th>
+                <th>Nombre</th><th>Email</th><th>Telefono</th>
+                <th>Direccion</th><th>Estado</th><th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -49,15 +42,9 @@
                 <td class="muted">{{ client.email }}</td>
                 <td class="muted">{{ client.phone ?? '-' }}</td>
                 <td class="muted">{{ client.address ?? '-' }}</td>
+                <td><span :class="client.active ? 'badge-active' : 'badge-suspended'">{{ client.active ? 'Activo' : 'Suspendido' }}</span></td>
                 <td>
-                  <span :class="client.active ? 'badge-active' : 'badge-suspended'">
-                    {{ client.active ? 'Activo' : 'Suspendido' }}
-                  </span>
-                </td>
-                <td>
-                  <button
-                    @click="$router.push({ name: 'client-profile', params: { id: client.id } })"
-                    class="btn-info-sm">
+                  <button @click="$router.push({ name: 'client-profile', params: { id: client.id } })" class="btn-info">
                     Ver Perfil
                   </button>
                 </td>
@@ -74,32 +61,22 @@
     <footer class="footer">
       <p>&copy; 2025 Veterinaria del Oriente. Panel de Empleado.</p>
     </footer>
-
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/auth'
-import type { User } from '@/types/user'
+import { useClientStore } from '@/stores/client'
 
-const router    = useRouter()
-const authStore = useAuthStore()
-const API       = 'http://127.0.0.1:8000/api'
+const router      = useRouter()
+const authStore   = useAuthStore()
+const clientStore = useClientStore()
+const { clients, loading, error } = storeToRefs(clientStore)
 
-const clients = ref<User[]>([])
-const loading = ref(true)
-const error   = ref<string | null>(null)
-const search  = ref('')
-
-function getHeaders() {
-  return {
-    'Content-Type':  'application/json',
-    'Authorization': `Bearer ${authStore.token}`,
-    'Accept':        'application/json',
-  }
-}
+const search = ref('')
 
 const filteredClients = computed(() =>
   clients.value.filter(c =>
@@ -108,130 +85,49 @@ const filteredClients = computed(() =>
   )
 )
 
-async function fetchClients() {
-  loading.value = true
-  error.value   = null
-  try {
-    const res  = await fetch(`${API}/empleado/clients`, { headers: getHeaders() })
-    const text = await res.text()
-    let data
-    try { data = JSON.parse(text) } catch { throw new Error(`Error del servidor (${res.status})`) }
-    if (!res.ok) throw new Error(data.message ?? 'Error al cargar clientes')
-    clients.value = data.clients
-  } catch (e: any) {
-    error.value = e.message
-  } finally {
-    loading.value = false
-  }
-}
-
 function logout() {
-  fetch(`${API}/logout`, { method: 'POST', headers: getHeaders() })
   authStore.clear()
   router.push({ name: 'home' })
 }
 
-onMounted(() => fetchClients())
+onMounted(() => clientStore.fetchClients())
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
-* { font-family: 'Poppins', sans-serif; box-sizing: border-box; margin: 0; padding: 0; }
 
-.page { min-height: 100vh; background: #f4f9ff; display: flex; flex-direction: column; }
+.page    { @apply min-h-screen bg-blue-50 flex flex-col; }
 
-.navbar {
-  position: fixed; top: 0; width: 100%; z-index: 1000;
-  background-color: #3f98ff;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  padding: 12px 32px;
-  display: flex; align-items: center; justify-content: space-between;
-}
-.navbar-brand { display: flex; align-items: center; gap: 10px; }
-.logo-circle {
-  width: 45px; height: 45px; background: white; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700; color: #3f98ff; font-size: 13px;
-}
-.brand-name { color: white; font-weight: 700; font-size: 18px; }
-.nav-links { display: flex; align-items: center; gap: 8px; }
-.nav-link {
-  color: white; background: transparent; border: none;
-  font-size: 14px; font-weight: 500; cursor: pointer;
-  padding: 6px 12px; border-radius: 4px;
-  font-family: 'Poppins', sans-serif; transition: color 0.2s;
-}
-.nav-link:hover { color: #ffc107; }
-.btn-logout {
-  background-color: #ffc107; color: #333; border: none;
-  padding: 6px 16px; border-radius: 6px; font-weight: 600;
-  font-size: 13px; cursor: pointer; margin-left: 8px;
-  font-family: 'Poppins', sans-serif;
-}
-.btn-logout:hover { background-color: #e0a800; }
+.navbar  { @apply fixed top-0 w-full z-50 bg-blue-500 shadow-md px-8 py-3 flex items-center justify-between; }
+.navbar-brand { @apply flex items-center gap-2.5; }
+.logo    { @apply w-11 h-11 bg-white rounded-full flex items-center justify-center font-bold text-blue-500 text-sm; }
+.brand   { @apply text-white font-bold text-lg; }
+.nav-links { @apply flex items-center gap-2; }
+.nav-link  { @apply text-white bg-transparent border-none text-sm font-medium cursor-pointer px-3 py-1.5 rounded hover:text-yellow-300; }
+.btn-logout { @apply bg-yellow-400 text-gray-800 border-none px-4 py-1.5 rounded-md font-semibold text-sm cursor-pointer ml-2 hover:bg-yellow-500; }
 
-.hero {
-  width: 100%; height: 250px; margin-top: 69px;
-  background: linear-gradient(rgba(0,123,255,0.7), rgba(0,123,255,0.7)),
-              url('https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=1200') center/cover;
-  display: flex; align-items: center; justify-content: center;
-  text-align: center; color: white;
-  border-radius: 0 0 50% 50% / 0 0 10% 10%;
-  margin-bottom: 40px;
-}
-.hero-title { font-size: 2rem; font-weight: 700; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-.hero-sub { font-size: 14px; font-weight: 300; margin-top: 8px; }
+.hero      { @apply w-full h-64 mt-[69px] flex items-center justify-center text-center text-white mb-10; background: linear-gradient(rgba(0,123,255,0.7), rgba(0,123,255,0.7)), url('https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=1200') center/cover; border-radius: 0 0 50% 50% / 0 0 10% 10%; }
+.hero-title { @apply text-4xl font-bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+.hero-sub   { @apply text-sm font-light mt-2; }
 
-.container { max-width: 1100px; margin: 0 auto; padding: 0 24px 60px; flex: 1; }
+.container   { @apply max-w-5xl mx-auto px-6 pb-16 flex-1; }
+.section-box { @apply bg-blue-100 p-8 rounded-2xl shadow-md mb-8; }
+.section-header { @apply flex items-center justify-between mb-5; }
+.section-title  { @apply text-lg font-bold text-blue-600; }
+.search-input   { @apply border border-blue-200 rounded-md px-3 py-1.5 text-sm outline-none w-56 bg-white focus:border-blue-400; }
 
-.section-box {
-  background: #e6f3ff; padding: 32px; border-radius: 15px;
-  box-shadow: 0 8px 15px rgba(0,0,0,0.1); margin-bottom: 30px;
-}
-.section-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 20px;
-}
-.section-title { font-size: 18px; font-weight: 700; color: #007bff; }
-.search-input {
-  border: 1px solid #b8d4f0; border-radius: 6px;
-  padding: 7px 12px; font-size: 13px; font-family: 'Poppins', sans-serif;
-  outline: none; width: 220px; background: white;
-}
-.search-input:focus { border-color: #3b82f6; }
+.table      { @apply w-full border-collapse text-sm bg-white rounded-lg overflow-hidden; }
+.thead-blue { @apply bg-blue-600 text-white; }
+.thead-blue th { @apply px-4 py-3 font-semibold; }
+.tr         { @apply border-b border-gray-100 hover:bg-blue-50 transition-colors; }
+.tr td      { @apply px-4 py-3 text-gray-700; }
+.muted      { @apply text-gray-400; }
 
-.table-responsive { overflow-x: auto; }
-.table { width: 100%; border-collapse: collapse; font-size: 13px; background: white; border-radius: 8px; overflow: hidden; }
-.thead-blue { background-color: #007bff; color: white; }
-.thead-blue th { padding: 12px 16px; font-weight: 600; }
-.tr { border-bottom: 1px solid #f0f0f0; transition: background 0.15s; }
-.tr:hover { background-color: #f0f7ff; }
-.tr td { padding: 12px 16px; color: #374151; }
-.muted { color: #9ca3af; }
+.badge-active    { @apply bg-green-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full; }
+.badge-suspended { @apply bg-gray-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full; }
+.btn-info        { @apply bg-cyan-500 text-white border-none px-3 py-1 rounded text-xs font-semibold cursor-pointer hover:opacity-90; }
 
-.badge-active {
-  background-color: #28a745; color: white;
-  font-size: 11px; font-weight: 700;
-  padding: 2px 10px; border-radius: 999px;
-}
-.badge-suspended {
-  background-color: #6b7280; color: white;
-  font-size: 11px; font-weight: 700;
-  padding: 2px 10px; border-radius: 999px;
-}
-.btn-info-sm {
-  background-color: #17a2b8; color: white; border: none;
-  padding: 4px 14px; border-radius: 4px; font-size: 12px;
-  font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif;
-}
-.btn-info-sm:hover { opacity: 0.9; }
+.status-msg       { @apply text-center py-10 text-gray-500 text-sm; }
+.status-msg.error { @apply text-red-500; }
 
-.status-msg { text-align: center; padding: 40px; color: #6b7280; font-size: 13px; }
-.status-msg.error { color: #ef4444; }
-
-.footer {
-  background: #018ABE; padding: 32px;
-  color: white; text-align: center; font-size: 14px;
-  margin-top: auto;
-}
+.footer { @apply bg-cyan-600 py-8 text-white text-center text-sm mt-auto; }
 </style>
