@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <template>
   <RouterView />
 </template>
@@ -29,3 +30,12 @@ body {
   padding: 0 !important;
 }
 </style>
+=======
+<script setup>
+import RegisterClient from './views/RegisterClient.vue'
+</script>
+
+<template>
+  <RegisterClient />
+</template>
+>>>>>>> d395073dac90fdd5975e24eeb37520dc0294c157

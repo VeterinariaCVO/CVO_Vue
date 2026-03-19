@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import RegistrarCliente from '../views/RegistrarCliente.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -15,6 +16,7 @@ const router = createRouter({
       component: () => import('../views/AboutView.vue'),
     },
     {
+<<<<<<< HEAD
       path: '/admin/users',
       name: 'admin-users',
       component: () => import('../views/AdminUsersView.vue'),
@@ -38,6 +40,11 @@ const router = createRouter({
       path: '/admin/employees',
       name: 'admin-employees',
       component: () => import('../views/AdminEmployeesView.vue'),
+=======
+      path: '/empleado/registrar-cliente',
+      name: 'RegisterCliente',
+      component: RegistrarCliente,
+>>>>>>> d395073dac90fdd5975e24eeb37520dc0294c157
     },
   ],
 })
