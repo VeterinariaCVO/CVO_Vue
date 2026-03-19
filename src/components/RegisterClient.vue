@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { pato } from '@/services/myFetch.ts'
 
-const form = ref({
+const formulario = ref({
   name: '',
   phone: '',
   email: '',
@@ -10,18 +10,18 @@ const form = ref({
   password: '',
 })
 
-const body = computed(() => ({
-  name: form.value.name,
-  phone: form.value.phone,
-  email: form.value.email,
-  address: form.value.address,
-  password: form.value.password,
+const cliente = computed(() => ({
+  name: formulario.value.name,
+  phone: formulario.value.phone,
+  email: formulario.value.email,
+  address: formulario.value.address,
+  password: formulario.value.password,
 }))
 
 const { data, error, isFetching, execute } = pato('/empleado/clientes', {
   immediate: false,
 })
-  .post(body)
+  .post(cliente)
   .json()
 
 async function registrar() {
@@ -30,7 +30,7 @@ async function registrar() {
 </script>
 <template>
   <div class="layout">
-    <!-- Sidebar -->
+
     <aside class="sidebar">
       <p class="sidebar-title">Menú</p>
       <a class="menu-item active">Cliente</a>
@@ -39,41 +39,41 @@ async function registrar() {
       <a class="menu-item">Citas</a>
     </aside>
 
-    <!-- Contenido -->
+
     <main class="content">
       <h2>Registrar Cliente</h2>
 
-      <!-- Mensajes -->
+
       <p v-if="data" class="msg-exito">{{ data.message }}</p>
       <p v-if="error" class="msg-error">{{ error }}</p>
 
-      <!-- Formulario -->
+
       <div class="card">
         <p class="subtitulo">Añade los datos del cliente</p>
 
         <div class="campo">
           <label>Nombre de usuario</label>
-          <input v-model="form.name" type="text" placeholder="Ej. Juan Pérez" />
+          <input v-model="formulario.name" type="text" placeholder="Ej. Juan Pérez" />
         </div>
 
         <div class="campo">
           <label>Teléfono</label>
-          <input v-model="form.phone" type="tel" placeholder="10 dígitos" />
+          <input v-model="formulario.phone" type="tel" placeholder="10 dígitos" />
         </div>
 
         <div class="campo">
           <label>Email</label>
-          <input v-model="form.email" type="email" placeholder="correo@ejemplo.com" />
+          <input v-model="formulario.email" type="email" placeholder="correo@ejemplo.com" />
         </div>
 
         <div class="campo">
           <label>Domicilio</label>
-          <input v-model="form.address" type="text" placeholder="Calle, número, colonia" />
+          <input v-model="formulario.address" type="text" placeholder="Calle, número, colonia" />
         </div>
 
         <div class="campo">
           <label>Contraseña temporal</label>
-          <input v-model="form.password" type="password" placeholder="Mínimo 8 caracteres" />
+          <input v-model="formulario.password" type="password" placeholder="Mínimo 8 caracteres" />
         </div>
 
         <button @click="registrar" :disabled="isFetching">
