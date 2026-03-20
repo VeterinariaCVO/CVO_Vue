@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { pato } from '@/composables/myFetch'
 import { useRouter } from 'vue-router'
-import { User } from '@/types/user.ts'
+import type { User } from '@/types/user'
 
 export const useAuthStore = defineStore('auth', () => {
   // ── STATE ─────────────────────────────────────────────
