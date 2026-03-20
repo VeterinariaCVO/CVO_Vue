@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+<<<<<<< HEAD
+import { pato } from '@/services/ApiUseFetch.ts'
+=======
 import { pato } from '@/composables/myFetch'
+>>>>>>> 12-9-registrareditarborrar-empleadoadministrador-mateo
 
 const formulario = ref({
   name: '',
