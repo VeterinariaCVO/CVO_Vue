@@ -1,7 +1,7 @@
 // stores/auth.ts
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { pato } from '@/services/myFetch'
+import { pato } from '@/composables/myFetch'
 import { useRouter } from 'vue-router'
 import { User } from '@/types/user.ts'
 
