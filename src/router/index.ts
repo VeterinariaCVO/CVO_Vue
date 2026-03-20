@@ -1,7 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import RegistrarCliente from '../views/RegisterClient.vue'
+<<<<<<< HEAD
 import { useAuthStore } from '@/stores/authStore.ts'
+=======
+import { useAuthStore } from '@/stores/authStore'
+>>>>>>> 12-9-registrareditarborrar-empleadoadministrador-mateo
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
