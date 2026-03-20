@@ -1,7 +1,7 @@
 <script setup lang="ts">
-inmport{ref, computed} from "vue";
-
-
+defineProps<{
+  msg: string,
+}>()
 </script>
 
 <template>
