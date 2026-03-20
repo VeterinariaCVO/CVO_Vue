@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { pato } from '@/services/myFetch.ts'
+import { pato } from '@/services/ApiUseFetch.ts'
 
 const formulario = ref({
   name: '',

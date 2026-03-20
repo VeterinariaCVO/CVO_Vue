@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { pato } from '@/services/myFetch'
+import { pato } from '@/services/ApiUseFetch.ts'
 
 
 //parte de joan

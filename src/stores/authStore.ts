@@ -1,9 +1,9 @@
 // stores/auth.ts
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { pato } from '@/services/myFetch'
+import { ApiUseFetch } from '@/services/ApiUseFetch.ts'
 import { useRouter } from 'vue-router'
-import { User } from '@/types/user.ts'
+import { type User } from '@/types/user.ts'
 
 export const useAuthStore = defineStore('auth', () => {
   // ── STATE ─────────────────────────────────────────────
@@ -35,7 +35,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(email: string, password: string) {
     // Mandamos el email y password al backend
-    const { data, error } = await pato('/login').post({ email, password }).json()
+    const { data, error } = await ApiUseFetch('/login').post({ email, password }).json()
 
 
     // Si el backend respondió con error, lanzamos un aviso
@@ -60,7 +60,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       // Le avisamos al backend que cierre la sesión
-      await pato('/logout').post().json()
+      await ApiUseFetch('/logout').post().json()
     } finally {
       // Pase lo que pase, borramos todo localmente
       token.value = null

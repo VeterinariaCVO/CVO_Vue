@@ -1,10 +1,10 @@
-import {createFetch} from '@vueuse/core'
+import { createFetch } from '@vueuse/core'
 import { useAuthStore } from '@/stores/authStore.ts'
 
-const urlbasica: string = 'http://127.0.0.1:8000/api/';
+const urlBase: string = 'http://127.0.0.1:8000/api/';
 
-export const pato = createFetch({
-  baseUrl: urlbasica,
+export const ApiUseFetch = createFetch({
+  baseUrl: urlBase,
 
   options: {
     immediate: false,
@@ -40,4 +40,5 @@ export const pato = createFetch({
       Accept: 'application/json',
     },
   },
+
 })
