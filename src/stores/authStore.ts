@@ -1,9 +1,15 @@
 // stores/auth.ts
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+<<<<<<< HEAD
 import { ApiUseFetch } from '@/services/ApiUseFetch.ts'
 import { useRouter } from 'vue-router'
 import { type User } from '@/types/user.ts'
+=======
+import { pato } from '@/composables/myFetch'
+import { useRouter } from 'vue-router'
+import type { User } from '@/types/user'
+>>>>>>> 12-9-registrareditarborrar-empleadoadministrador-mateo
 
 export const useAuthStore = defineStore('auth', () => {
   // ── STATE ─────────────────────────────────────────────
