@@ -1,8 +1,7 @@
 import {createFetch} from '@vueuse/core'
+import { useAuthStore } from '@/stores/authStore.ts'
 
 const urlbasica: string = 'http://127.0.0.1:8000/api/';
-
-
 
 export const pato = createFetch({
   baseUrl: urlbasica,
@@ -12,7 +11,6 @@ export const pato = createFetch({
     updateDataOnError: true,
 
     async beforeFetch({ options }) {
-      // Inyecta el token automáticamente en cada petición
       const authStore = useAuthStore()
       if (authStore.token) {
         options.headers = {
@@ -28,7 +26,6 @@ export const pato = createFetch({
     },
 
     onFetchError(ctx) {
-      // Si el token expiró, cierra sesión automáticamente
       if (ctx.response?.status === 401) {
         const authStore = useAuthStore()
         authStore.logout()
