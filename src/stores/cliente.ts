@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { pato } from '@/composables/ApiUseFetch.ts'
+import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
 
 
 //parte de joan
@@ -32,7 +32,7 @@ export const useClienteStore = defineStore('cliente', () => {
     loading.value = true // activamos el "cargando..."
     error.value = null // limpiamos errores anteriores
 
-    const { data, error: fetchError } = await pato('/empleado/clients').get().json()
+    const { data, error: fetchError } = await ApiUseFetch('/empleado/clients').get().json()
 
     if (fetchError.value) {
       // Si hubo error, guardamos el mensaje
@@ -50,7 +50,7 @@ export const useClienteStore = defineStore('cliente', () => {
   async function fetchCliente(id: number) {
     loading.value = true
 
-    const { data, error: fetchError } = await pato(`/empleado/clients/${id}`).get().json()
+    const { data, error: fetchError } = await ApiUseFetch(`/empleado/clients/${id}`).get().json()
 
     if (!fetchError.value) {
       clienteActual.value = data.value?.client ?? null
@@ -71,7 +71,7 @@ export const useClienteStore = defineStore('cliente', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: fetchError } = await pato('/register')
+    const { data, error: fetchError } = await ApiUseFetch('/register')
       .post(payload) // enviamos los datos del formulario
       .json()
 
