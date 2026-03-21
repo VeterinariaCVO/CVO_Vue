@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import RegistrarCliente from '../views/RegisterClient.vue'
 import { useAuthStore } from '@/stores/authStore'
 
 const router = createRouter({
@@ -10,11 +9,6 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
-    },
-    {
-      path: '/empleado/registrar-cliente',
-      name: 'RegisterCliente',
-      component: RegistrarCliente,
     },
   ],
 })
