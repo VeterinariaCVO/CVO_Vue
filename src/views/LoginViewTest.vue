@@ -10,11 +10,9 @@ const email = ref('')
 const password = ref('')
 const errorMsg = ref('')
 
-
 async function handleLogin() {
   try {
     await auth.login(email.value, password.value)
-
 
     const roleId = auth.user?.role_id
     if (roleId === 1) router.push('/admin/usuarios')

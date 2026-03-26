@@ -16,7 +16,9 @@ export const useAuthStore = defineStore('auth', () => {
   const roleName = computed(() => user.value?.role ?? '')
 
   async function login(email: string, password: string) {
-    const { data, error } = await ApiUseFetch('/login').post({ email, password }).json()
+
+    const { data, error, execute } = ApiUseFetch('/login').post({ email, password }).json()
+    await execute()
 
     if (error.value) {
       throw new Error(error.value?.message || 'Credenciales incorrectas')
@@ -33,7 +35,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout() {
     try {
-      await ApiUseFetch('/logout').post().json()
+
+      const { execute } = ApiUseFetch('/logout').post().json()
+      await execute()
     } finally {
       token.value = null
       user.value = null

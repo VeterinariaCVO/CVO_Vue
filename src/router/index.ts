@@ -1,8 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-
 import { useAuthStore } from '@/stores/authStore'
-
-// Views
 import HomeView from '@/views/HomeView.vue'
 import RegistrarCliente from '@/views/RegisterClient.vue'
 import LoginViewTest from '@/views/LoginViewTest.vue'
@@ -19,6 +16,7 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+
       path: '/login',
       name: 'Login',
       component: LoginViewTest,
@@ -39,12 +37,11 @@ const router = createRouter({
     {
       path: '/client/create-cita',
       name: 'CreateCita',
-      component: CreateAppointmentsView, //
+      component: CreateAppointmentsView,
       meta: { requiresAuth: true, role: 3 },
     },
   ],
 })
-
 
 router.beforeEach((to) => {
   const auth = useAuthStore()

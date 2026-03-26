@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { RouterLink } from 'vue-router'
 import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
 
 const formulario = ref({
@@ -19,7 +18,6 @@ const cliente = computed(() => ({
   password: formulario.value.password,
 }))
 
-// ✅ Corregido: /empleado/clientes → /register (usa el endpoint real del backend)
 const { data, error, isFetching, execute } = ApiUseFetch('/register', {
   immediate: false,
 })
@@ -35,18 +33,10 @@ async function registrar() {
   <div class="layout">
     <aside class="sidebar">
       <p class="sidebar-title">Menú</p>
-
-      <!-- ✅ RouterLink en lugar de <a> -->
-      <RouterLink to="/empleado/registrar-cliente" class="menu-item" active-class="active">
-        Cliente
-      </RouterLink>
-      <RouterLink to="/empleado/mascotas" class="menu-item" active-class="active">
-        Mascota
-      </RouterLink>
-      <RouterLink to="/empleado/servicios" class="menu-item" active-class="active">
-        Servicios
-      </RouterLink>
-      <RouterLink to="/empleado/citas" class="menu-item" active-class="active"> Citas </RouterLink>
+      <a class="menu-item active">Cliente</a>
+      <a class="menu-item">Mascota</a>
+      <a class="menu-item">Servicios</a>
+      <a class="menu-item">Citas</a>
     </aside>
 
     <main class="content">
@@ -62,21 +52,25 @@ async function registrar() {
           <label>Nombre de usuario</label>
           <input v-model="formulario.name" type="text" placeholder="Ej. Juan Pérez" />
         </div>
+
         <div class="campo">
           <label>Teléfono</label>
           <input v-model="formulario.phone" type="tel" placeholder="10 dígitos" />
         </div>
+
         <div class="campo">
           <label>Email</label>
           <input v-model="formulario.email" type="email" placeholder="correo@ejemplo.com" />
         </div>
+
         <div class="campo">
           <label>Domicilio</label>
           <input v-model="formulario.address" type="text" placeholder="Calle, número, colonia" />
         </div>
+
         <div class="campo">
           <label>Contraseña temporal</label>
-          <input v-model="formulario.password" type="password" placeholder="Mínimo 8 caracteres" />
+          <input v-model="formulario.password" type="password" placeholder="Mínimo 4 caracteres" />
         </div>
 
         <button @click="registrar" :disabled="isFetching">
@@ -95,7 +89,6 @@ async function registrar() {
   background: #f4f4f4;
 }
 
-/* Sidebar */
 .sidebar {
   width: 140px;
   background: #fff;
@@ -122,7 +115,6 @@ async function registrar() {
   font-weight: bold;
 }
 
-/* Contenido */
 .content {
   flex: 1;
   padding: 28px 32px;
@@ -131,7 +123,6 @@ async function registrar() {
   margin-bottom: 16px;
 }
 
-/* Mensajes */
 .msg-exito {
   color: green;
   margin-bottom: 12px;
@@ -141,7 +132,6 @@ async function registrar() {
   margin-bottom: 12px;
 }
 
-/* Card */
 .card {
   background: #fff;
   border: 1px solid #ddd;
@@ -154,7 +144,6 @@ async function registrar() {
   font-weight: 500;
 }
 
-/* Campos */
 .campo {
   margin-bottom: 14px;
 }
@@ -178,7 +167,6 @@ async function registrar() {
   border-color: #4fc3d8;
 }
 
-/* Botón */
 button {
   width: 100%;
   padding: 11px;
