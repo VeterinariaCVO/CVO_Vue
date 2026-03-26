@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { pato } from '@/services/myFetch.ts'
+import { RouterLink } from 'vue-router'
+import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
 
 const formulario = ref({
   name: '',
@@ -18,7 +19,8 @@ const cliente = computed(() => ({
   password: formulario.value.password,
 }))
 
-const { data, error, isFetching, execute } = pato('/empleado/clientes', {
+// ✅ Corregido: /empleado/clientes → /register (usa el endpoint real del backend)
+const { data, error, isFetching, execute } = ApiUseFetch('/register', {
   immediate: false,
 })
   .post(cliente)
@@ -28,25 +30,30 @@ async function registrar() {
   await execute()
 }
 </script>
+
 <template>
   <div class="layout">
-
     <aside class="sidebar">
       <p class="sidebar-title">Menú</p>
-      <a class="menu-item active">Cliente</a>
-      <a class="menu-item">Mascota</a>
-      <a class="menu-item">Servicios</a>
-      <a class="menu-item">Citas</a>
-    </aside>
 
+      <!-- ✅ RouterLink en lugar de <a> -->
+      <RouterLink to="/empleado/registrar-cliente" class="menu-item" active-class="active">
+        Cliente
+      </RouterLink>
+      <RouterLink to="/empleado/mascotas" class="menu-item" active-class="active">
+        Mascota
+      </RouterLink>
+      <RouterLink to="/empleado/servicios" class="menu-item" active-class="active">
+        Servicios
+      </RouterLink>
+      <RouterLink to="/empleado/citas" class="menu-item" active-class="active"> Citas </RouterLink>
+    </aside>
 
     <main class="content">
       <h2>Registrar Cliente</h2>
 
-
       <p v-if="data" class="msg-exito">{{ data.message }}</p>
       <p v-if="error" class="msg-error">{{ error }}</p>
-
 
       <div class="card">
         <p class="subtitulo">Añade los datos del cliente</p>
@@ -55,22 +62,18 @@ async function registrar() {
           <label>Nombre de usuario</label>
           <input v-model="formulario.name" type="text" placeholder="Ej. Juan Pérez" />
         </div>
-
         <div class="campo">
           <label>Teléfono</label>
           <input v-model="formulario.phone" type="tel" placeholder="10 dígitos" />
         </div>
-
         <div class="campo">
           <label>Email</label>
           <input v-model="formulario.email" type="email" placeholder="correo@ejemplo.com" />
         </div>
-
         <div class="campo">
           <label>Domicilio</label>
           <input v-model="formulario.address" type="text" placeholder="Calle, número, colonia" />
         </div>
-
         <div class="campo">
           <label>Contraseña temporal</label>
           <input v-model="formulario.password" type="password" placeholder="Mínimo 8 caracteres" />
