@@ -1,7 +1,9 @@
 import { createFetch } from '@vueuse/core'
 import { useAuthStore } from '@/stores/authStore.ts'
 
-const urlBase: string = 'http://127.0.0.1:8000/api/';
+const urlBase: string = import.meta.env.VITE_API_URL
+
+let isLoggingOut = false
 
 export const ApiUseFetch = createFetch({
   baseUrl: urlBase,
@@ -12,24 +14,27 @@ export const ApiUseFetch = createFetch({
 
     async beforeFetch({ options }) {
       const authStore = useAuthStore()
+
       if (authStore.token) {
         options.headers = {
           ...options.headers,
           Authorization: `Bearer ${authStore.token}`,
         }
       }
+
       return { options }
     },
 
-    afterFetch(ctx) {
-      return ctx
-    },
+    async onFetchError(ctx) {
+      if (ctx.response?.status === 401 && !isLoggingOut) {
+        isLoggingOut = true
 
-    onFetchError(ctx) {
-      if (ctx.response?.status === 401) {
         const authStore = useAuthStore()
-        authStore.logout()
+        await authStore.logout()
+
+        isLoggingOut = false
       }
+
       return ctx
     },
   },
@@ -40,5 +45,4 @@ export const ApiUseFetch = createFetch({
       Accept: 'application/json',
     },
   },
-
 })
