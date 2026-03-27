@@ -1,9 +1,9 @@
-// stores/auth.ts
+// stores/authStore.ts
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
-import { useRouter } from 'vue-router'
 import { type User } from '@/types/user.ts'
+import router from '@/router'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('token'))
@@ -16,7 +16,9 @@ export const useAuthStore = defineStore('auth', () => {
   const roleName = computed(() => user.value?.role ?? '')
 
   async function login(email: string, password: string) {
-    const { data, error } = await ApiUseFetch('/login').post({ email, password }).json()
+
+    const { data, error, execute } = ApiUseFetch('/login').post({ email, password }).json()
+    await execute()
 
     if (error.value) {
       throw new Error(error.value?.message || 'Credenciales incorrectas')
@@ -32,10 +34,10 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
-    const router = useRouter()
-
     try {
-      await ApiUseFetch('/logout').post().json()
+
+      const { execute } = ApiUseFetch('/logout').post().json()
+      await execute()
     } finally {
       token.value = null
       user.value = null
@@ -43,6 +45,13 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.removeItem('user')
       router.push('/login')
     }
+  }
+
+  function setUser(userData: User, tokenValue: string) {
+    user.value = userData
+    token.value = tokenValue
+    localStorage.setItem('token', tokenValue)
+    localStorage.setItem('user', JSON.stringify(userData))
   }
 
   return {
@@ -55,5 +64,6 @@ export const useAuthStore = defineStore('auth', () => {
     roleName,
     login,
     logout,
+    setUser,
   }
 })
