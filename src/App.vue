@@ -11,9 +11,9 @@ const auth = useAuthStore()
       Registrar Cliente
     </RouterLink>
 
-
     <RouterLink to="/client/citas" v-if="auth.isCliente">Mis Citas</RouterLink>
     <RouterLink to="/cliente/perfil" v-if="auth.isCliente">Mi Perfil</RouterLink>
+    <RouterLink to="/empleado/consultas" v-if="auth.isEmpleado">Servicios</RouterLink>
 
     <RouterLink v-if="!auth.isAuthenticated" to="/login">Login</RouterLink>
     <button v-if="auth.isAuthenticated" @click="auth.logout()">Logout</button>

@@ -45,6 +45,12 @@ const router = createRouter({
       component: () => import('../views/client/PerfilView.vue'),
       meta: { requiresAuth: true, role: 3 },
     },
+    {
+      path: '/empleado/consultas',
+      name: 'EmpleadoConsultas',
+      component: () => import('../views/empleado/ConsultaView.vue'),
+      meta: { requiresAuth: true, role: 2 },
+    },
   ],
 })
 
