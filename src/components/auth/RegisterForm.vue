@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { type RegisterCredentials } from '@/types/auth'
-import { ApiUseFetch } from '@/composables/ApiUseFetch'
+import { useFetch } from '@vueuse/core'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -19,11 +19,10 @@ const message = ref('')
 const isError = ref(false)
 const isLoading = ref(false)
 
-async function register() {
+function register() {
   message.value = ''
   isError.value = false
 
-  // 🔥 validación básica
   if (form.value.password !== form.value.password_confirmation) {
     isError.value = true
     message.value = 'Las contraseñas no coinciden'
@@ -32,30 +31,38 @@ async function register() {
 
   isLoading.value = true
 
-  try {
-    const { data, error } = await ApiUseFetch('/register')
-      .post(form.value)
-      .json<{ message: string }>()
-
-    if (error.value) {
-      throw new Error(error.value?.message || 'Error al registrar')
+  // Aquí disparamos la petición directa, sin intermediarios
+  const { data, onFetchResponse, onFetchError } = useFetch(
+    import.meta.env.VITE_API_URL + '/register',
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'ngrok-skip-browser-warning': 'true', // Súper importante si usas ngrok
+      },
     }
+  ).post(form.value).json()
 
-    message.value = data.value?.message || 'Usuario registrado correctamente'
+  // Si Laravel responde con éxito (Código 200 o 201)
+  onFetchResponse(() => {
+    isLoading.value = false
     isError.value = false
+    message.value = data.value?.message ?? 'Usuario registrado correctamente'
 
     setTimeout(() => {
       router.push('/login')
     }, 1500)
-  } catch (err: any) {
-    isError.value = true
-    message.value = err.message || 'Error al registrar. Intenta de nuevo.'
-  } finally {
+  })
+
+  // Si Laravel manda un error o la petición choca
+  onFetchError((error) => {
     isLoading.value = false
-  }
+    isError.value = true
+    message.value = 'Error al registrar. Verifica los datos e intenta de nuevo.'
+    console.error('El chisme del error:', error) // Esto te dirá en consola qué falló exactamente
+  })
 }
 </script>
-
 <template>
   <div
     class="fixed inset-0 flex items-center justify-center"

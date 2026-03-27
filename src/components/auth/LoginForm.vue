@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { type Credentials } from '@/types/auth.ts'
-import { useAuthStore } from '@/stores/authStore.ts'
+import { type Credentials } from '@/types/auth'
+import { useFetch } from '@vueuse/core'
+import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
 
-const auth = useAuthStore()
+const authStore = useAuthStore()
 const router = useRouter()
 
 const form = ref<Credentials>({
@@ -15,35 +16,42 @@ const form = ref<Credentials>({
 const message = ref('')
 const isLoading = ref(false)
 
-async function login() {
+function login() {
   message.value = ''
   isLoading.value = true
 
-  try {
-    await auth.login(form.value.email, form.value.password)
+  // IMPORTANTE: Verifica que VITE_API_URL en tu .env termine en /api
+  const { data, onFetchResponse, onFetchError } = useFetch(
+    import.meta.env.VITE_API_URL + '/login',
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
+    },
+  )
+    .post(form.value)
+    .json()
 
-    // 🔥 redirección por rol
-    switch (auth.user?.role_id) {
-      case 1:
-        router.push('/admin')
-        break
-      case 2:
-        router.push('/recepcion')
-        break
-      case 3:
-        router.push('/cliente')
-        break
-      case 4:
-        router.push('/veterinario')
-        break
-      default:
-        router.push('/')
-    }
-  } catch (error: any) {
-    message.value = error.message || 'Correo o contraseña incorrectos'
-  } finally {
+ onFetchResponse(() => {
     isLoading.value = false
-  }
+
+
+    const loginData = data.value?.data || data.value
+
+    if (loginData?.token) {
+      authStore.token = loginData.token
+      authStore.user = loginData.user
+
+      router.push('/dashboard')
+    }
+  })
+
+  onFetchError(() => {
+    isLoading.value = false
+    message.value = 'Correo o contraseña incorrectos'
+  })
 }
 </script>
 
