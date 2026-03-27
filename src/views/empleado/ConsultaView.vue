@@ -88,3 +88,22 @@ async function guardar() {
     return
   }
 
+  mensajeExito.value = 'Consulta guardada correctamente'
+  paso.value = 1
+  clienteSeleccionado.value = null
+  mascotaSeleccionada.value = null
+  servicioSeleccionado.value = null
+  formulario.value = {
+    inicio_enfermedad: '',
+    habitat: '',
+    dx_presuntivo: '',
+    dx_diferencial: '',
+    observaciones: '',
+    fallecio: false,
+    sospecha_muerte: '',
+  }
+  tratamientos.value = [{ nombre_comercial: '', dosis_ml: '', via_admin: '', num_dias: '' }]
+}
+</script>
+
+
