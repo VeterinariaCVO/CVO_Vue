@@ -106,4 +106,126 @@ async function guardar() {
 }
 </script>
 
+<template>
+  <div class="layout">
+    <aside class="sidebar">
+      <p class="sidebar-title">Menú</p>
+      <RouterLink to="/empleado/registrar-cliente" class="menu-item">Cliente</RouterLink>
+      <RouterLink to="/empleado/mascotas" class="menu-item">Mascota</RouterLink>
+      <RouterLink to="/empleado/consultas" class="menu-item active">Servicios</RouterLink>
+      <RouterLink to="/empleado/citas" class="menu-item">Citas</RouterLink>
+    </aside>
+
+    <main class="content">
+      <h2>Registro de Consulta</h2>
+
+      <p v-if="mensajeExito" class="msg-exito">{{ mensajeExito }}</p>
+      <p v-if="mensajeError" class="msg-error">{{ mensajeError }}</p>
+
+
+      <div v-if="paso === 1" class="card">
+        <p class="subtitulo">Selecciona el servicio, dueño y mascota</p>
+
+        <div class="campo">
+          <label>Tipo de servicio</label>
+          <select v-model="servicioSeleccionado">
+            <option value="" disabled>Selecciona un servicio</option>
+            <option v-for="s in servicios" :key="s.id" :value="s.id">{{ s.description }}</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label>Dueño</label>
+          <select v-model="clienteSeleccionado" @change="cargarMascotas">
+            <option value="" disabled>Selecciona un dueño</option>
+            <option v-for="c in clientes" :key="c.id" :value="c.id">{{ c.name }}</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label>Mascota</label>
+          <select v-model="mascotaSeleccionada" :disabled="!clienteSeleccionado">
+            <option value="" disabled>Selecciona una mascota</option>
+            <option v-for="m in mascotas" :key="m.id" :value="m.id">{{ m.name }}</option>
+          </select>
+        </div>
+
+        <button @click="irAlFormulario">Continuar</button>
+      </div>
+
+
+      <div v-if="paso === 2" class="card">
+        <button class="btn-gris" @click="paso = 1">← Volver</button>
+        <p class="subtitulo">Datos de la consulta</p>
+
+        <div class="grid-2">
+          <div class="campo">
+            <label>Inicio de enfermedad</label>
+            <input
+              v-model="formulario.inicio_enfermedad"
+              type="text"
+              placeholder="Ej. hace 3 días"
+            />
+          </div>
+          <div class="campo">
+            <label>Hábitat</label>
+            <input v-model="formulario.habitat" type="text" placeholder="Casa, rancho..." />
+          </div>
+          <div class="campo">
+            <label>Dx Presuntivo</label>
+            <textarea v-model="formulario.dx_presuntivo" rows="2"></textarea>
+          </div>
+          <div class="campo">
+            <label>Dx Diferencial</label>
+            <textarea v-model="formulario.dx_diferencial" rows="2"></textarea>
+          </div>
+          <div class="campo">
+            <label>Observaciones</label>
+            <textarea v-model="formulario.observaciones" rows="2"></textarea>
+          </div>
+        </div>
+
+        <h3>Tratamiento (TX)</h3>
+        <table class="tabla-tx">
+          <thead>
+            <tr>
+              <th>Nombre comercial</th>
+              <th>Dosis/ML</th>
+              <th>Vía admin</th>
+              <th>No. días</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(tx, i) in tratamientos" :key="i">
+              <td><input v-model="tx.nombre_comercial" type="text" /></td>
+              <td><input v-model="tx.dosis_ml" type="text" /></td>
+              <td><input v-model="tx.via_admin" type="text" /></td>
+              <td><input v-model="tx.num_dias" type="text" /></td>
+              <td>
+                <button class="btn-rojo" @click="quitarFila(i)" v-if="tratamientos.length > 1">
+                  x
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <button class="btn-gris" @click="agregarFila">+ Agregar fila</button>
+
+        <div class="campo-check">
+          <input v-model="formulario.fallecio" type="checkbox" id="fallecio" />
+          <label for="fallecio">El paciente falleció</label>
+        </div>
+        <div class="campo" v-if="formulario.fallecio">
+          <label>Sospecha de causa de muerte</label>
+          <input v-model="formulario.sospecha_muerte" type="text" />
+        </div>
+
+        <button @click="guardar" :disabled="cargando">
+          {{ cargando ? 'Guardando...' : 'Guardar consulta' }}
+        </button>
+      </div>
+    </main>
+  </div>
+</template>
 
