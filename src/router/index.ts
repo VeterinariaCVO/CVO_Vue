@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory, type Router } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore.ts'
+import { useAuthStore } from "@/stores/authStore";
 
 
-import HomeView from '@/components/auth/WelcomeView.vue'
 import LoginView from '@/components/auth/LoginForm.vue'
 import RegisterView from '@/components/auth/RegisterForm.vue'
+import WelcomeView from '@/components/auth/WelcomeView.vue';
 
 const router: Router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -12,7 +12,7 @@ const router: Router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView,
+      component: WelcomeView,
     },
     {
       path: '/login',
@@ -60,7 +60,7 @@ function redirigirPorRol(roleId?: number) {
   if (roleId === 4) return { path: '/veterinario' }
   if (roleId === 3) return { path: '/cliente' }
 
-  return { name: 'login' }
-}
 
+  return { path: '/' }
+}
 export default router

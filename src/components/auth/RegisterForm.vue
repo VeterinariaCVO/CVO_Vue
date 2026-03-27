@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { type RegisterCredentials } from '@/types/types'
+import { type RegisterCredentials } from '@/types/auth'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 import { useRouter } from 'vue-router'
 

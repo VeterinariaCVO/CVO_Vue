@@ -1,5 +1,5 @@
 import { createFetch } from '@vueuse/core'
-import { useAuthStore } from '@/stores/authStore.ts'
+import { useAuthStore } from "@/stores/authStore";
 
 const urlBase: string = import.meta.env.VITE_API_URL
 
