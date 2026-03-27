@@ -37,4 +37,54 @@ onMounted(async () => {
   servicios.value = ds.value?.data ?? []
 })
 
+async function cargarMascotas() {
+  if (!clienteSeleccionado.value) return
+  mascotaSeleccionada.value = null
+  const { data, execute } = ApiUseFetch(`/empleado/clients/${clienteSeleccionado.value}`, {
+    immediate: false,
+  })
+    .get()
+    .json()
+  await execute()
+  mascotas.value = data.value?.pets ?? []
+}
+
+function irAlFormulario() {
+  if (!mascotaSeleccionada.value || !servicioSeleccionado.value) {
+    mensajeError.value = 'Selecciona servicio, dueño y mascota'
+    return
+  }
+  mensajeError.value = ''
+  paso.value = 2
+}
+
+function agregarFila() {
+  tratamientos.value.push({ nombre_comercial: '', dosis_ml: '', via_admin: '', num_dias: '' })
+}
+
+function quitarFila(i: number) {
+  tratamientos.value.splice(i, 1)
+}
+
+async function guardar() {
+  cargando.value = true
+  mensajeExito.value = ''
+  mensajeError.value = ''
+
+  const { error, execute } = ApiUseFetch('/empleado/consultas', { immediate: false })
+    .post({
+      pet_id: mascotaSeleccionada.value,
+      service_id: servicioSeleccionado.value,
+      ...formulario.value,
+      treatments: tratamientos.value,
+    })
+    .json()
+
+  await execute()
+  cargando.value = false
+
+  if (error.value) {
+    mensajeError.value = 'Error al guardar'
+    return
+  }
 
