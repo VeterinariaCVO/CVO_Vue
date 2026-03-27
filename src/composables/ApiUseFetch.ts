@@ -7,7 +7,6 @@ export const ApiUseFetch = createFetch({
   baseUrl: urlBase,
 
   options: {
-    immediate: false,
     updateDataOnError: true,
 
     async beforeFetch({ options }) {

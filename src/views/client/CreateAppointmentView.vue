@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useFetch } from '@vueuse/core'
+import { useRouter } from 'vue-router'
+import { ApiUseFetch } from '@/composables/ApiUseFetch'
 
 interface CreateAppointment {
   pet_id: number
@@ -22,6 +23,8 @@ interface TimeSlot {
   status: string
 }
 
+const router = useRouter()
+
 const form = ref<CreateAppointment>({
   pet_id: 0,
   time_slot_id: 0,
@@ -30,20 +33,33 @@ const form = ref<CreateAppointment>({
 })
 
 const services = ['medical', 'daycare', 'surgery', 'vaccination']
-const { data: petsResponse } = useFetch('http://localhost:8000/api/pets').get().json<{ pets: Pet[] }>()
+const { data: petsResponse } = ApiUseFetch('/mis-mascotas').get().json<{ pets: Pet[] }>()
 const pets = computed(() => petsResponse.value?.pets || [])
-const { data: time_slots } = useFetch('http://localhost:8000/api/time-slots').get().json<{ data: TimeSlot[] }>()
+const { data: time_slots } = ApiUseFetch('/time-slots').get().json<{ data: TimeSlot[] }>()
 
 const availableSlots = computed(() => {
   return time_slots.value?.data?.filter((slot) => slot.status === 'available') || []
 })
 
-const { data, error, isFetching, execute } = useFetch('http://localhost:8000/api/appointments', {
-  immediate: false,
-}).post(form.value).json()
+const { data, error, isFetching, execute } = ApiUseFetch('/appointments',
+  { immediate: false, }).post(() => form.value).json()
 
-const createAppointment = () => {
-  execute()
+const createAppointment = async () => {
+  if (!form.value.pet_id || !form.value.time_slot_id || !form.value.service) {
+    alert('Completa todos los campos')
+    return
+  }
+
+  await execute()
+
+  form.value = {
+    pet_id: 0,
+    time_slot_id: 0,
+    service: '',
+    notes: '',
+  }
+
+  router.push('/client/citas')
 }
 </script>
 

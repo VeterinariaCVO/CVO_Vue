@@ -1,12 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 
-// Views
 import HomeView from '@/views/HomeView.vue'
-import RegistrarCliente from '@/views/RegisterClient.vue'
 import LoginViewTest from '@/views/LoginViewTest.vue'
-import ClientAppointmentsView from '../views/client/ClientAppointmentsView.vue'
-import CreateAppointmentsView from '../views/client/CreateAppointmentView.vue'
+import ClientAppointmentsView from '@/views/client/ClientAppointmentsView.vue'
+import CreateAppointmentsView from '@/views/client/CreateAppointmentView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -18,12 +16,6 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/empleado/registrar-cliente',
-      name: 'RegisterCliente',
-      component: RegistrarCliente,
-      meta: { requiresAuth: true, role: 2 },
-    },
-    {
       path: '/login',
       name: 'login',
       component: LoginViewTest,
@@ -31,17 +23,26 @@ const router = createRouter({
     },
     {
       path: '/client/citas',
+      name: 'clientCitas',
       component: ClientAppointmentsView,
+      meta: { requiresAuth: true, role: 3 },
     },
     {
       path: '/client/create-cita',
+      name: 'createCita',
       component: CreateAppointmentsView,
+      meta: { requiresAuth: true, role: 3 },
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/',
     },
   ],
 })
 
 router.beforeEach((to) => {
   const auth = useAuthStore()
+
   if (to.meta.guest && auth.isAuthenticated) {
     return redirigirPorRol(auth.user?.role_id)
   }
@@ -50,6 +51,7 @@ router.beforeEach((to) => {
     if (!auth.isAuthenticated) {
       return { name: 'login' }
     }
+
     if (to.meta.role && auth.user?.role_id !== to.meta.role) {
       return redirigirPorRol(auth.user?.role_id)
     }
@@ -59,7 +61,7 @@ router.beforeEach((to) => {
 function redirigirPorRol(roleId?: number) {
   if (roleId === 1) return { path: '/admin/usuarios' }
   if (roleId === 2) return { path: '/empleado/registrar-cliente' }
-  if (roleId === 3) return { path: '/cliente/mis-mascotas' }
+  if (roleId === 3) return { path: '/client/citas' }
   return { name: 'login' }
 }
 

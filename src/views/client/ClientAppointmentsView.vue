@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useFetch } from '@vueuse/core'
+import { ApiUseFetch } from '@/composables/ApiUseFetch'
 
 interface Appointment {
   id: number
@@ -34,15 +34,15 @@ interface TimeSlot {
   status: string
 }
 
-
 const filtroEstado = ref('')
-const { data, error, isFetching, execute } = useFetch(() =>
-    `http://localhost:8000/api/appointments${filtroEstado.value ? `?status=${filtroEstado.value}` : ''}`,)
-  .get().json<ApiResponse>()
 
-const { data: time_slots } = useFetch('http://localhost:8000/api/time-slots')
+const { data, error, isFetching, execute } = ApiUseFetch(
+  () => `/appointments${filtroEstado.value ? `?status=${filtroEstado.value}` : ''}`,
+)
   .get()
-  .json<{ data: TimeSlot[] }>()
+  .json<ApiResponse>()
+
+const { data: time_slots } = ApiUseFetch('/time-slots').get().json<{ data: TimeSlot[] }>()
 
 const horariosDisponibles = computed(() => {
   return time_slots.value?.data || []
@@ -59,17 +59,16 @@ const bodyReagendar = ref({
   notes: '',
 })
 
-
-const { execute: ejecutarReagendar } = useFetch(
-  () => `http://localhost:8000/api/appointments/${citaSeleccionada.value?.id}`,
-  { immediate: false },
-).put(bodyReagendar).json()
+const { execute: ejecutarReagendar } = ApiUseFetch(
+  () => `/appointments/${citaSeleccionada.value?.id}`,
+)
+  .put(() => bodyReagendar.value)
+  .json()
 
 const idCancelar = ref(0)
-const { execute: ejecutarCancelar } = useFetch(
-  () => `http://localhost:8000/api/appointments/${idCancelar.value}`,
-  { immediate: false },
-).delete().json()
+const { execute: ejecutarCancelar } = ApiUseFetch(() => `/appointments/${idCancelar.value}`)
+  .delete()
+  .json()
 
 const abrirModal = (cita: Appointment) => {
   citaSeleccionada.value = cita
@@ -79,20 +78,25 @@ const abrirModal = (cita: Appointment) => {
 
 const reAgendar = async () => {
   if (!citaSeleccionada.value || !nuevoTimeSlotId.value) return
+
   bodyReagendar.value.pet_id = citaSeleccionada.value.pet.id
   bodyReagendar.value.time_slot_id = nuevoTimeSlotId.value
   bodyReagendar.value.service = citaSeleccionada.value.service
   bodyReagendar.value.notes = ''
+
   await ejecutarReagendar()
+
   mostrarModal.value = false
   execute()
 }
 
-const cancelarCita = (id: number) => {
+const cancelarCita = async (id: number) => {
   const confirmar = confirm('¿Estás seguro de cancelar la cita?')
   if (!confirmar) return
+
   idCancelar.value = id
-  ejecutarCancelar()
+  await ejecutarCancelar()
+
   execute()
 }
 </script>

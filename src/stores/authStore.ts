@@ -16,19 +16,33 @@ export const useAuthStore = defineStore('auth', () => {
   const roleName = computed(() => user.value?.role ?? '')
 
   async function login(email: string, password: string) {
-    const { data, error } = await ApiUseFetch('/login').post({ email, password }).json()
+    const { data, error, execute } = ApiUseFetch('/login',
+      { immediate: false, }).post({ email, password }).json()
+
+    await execute()
+
+    console.log('DATA:', data.value)
+    console.log('ERROR:', error.value)
 
     if (error.value) {
       throw new Error(error.value?.message || 'Credenciales incorrectas')
     }
 
-    token.value = data.value.data.token
-    user.value = data.value.data.user
+    if (!data.value || !data.value.data) {
+      throw new Error('Respuesta invalida del servidor')
+    }
 
-    localStorage.setItem('token', token.value!)
-    localStorage.setItem('user', JSON.stringify(user.value))
+    const response = data.value.data
 
-    return data.value.data
+    token.value = response.token
+    user.value = response.user
+
+    localStorage.setItem('token', response.token)
+    localStorage.setItem('user', JSON.stringify(response.user))
+
+    console.log('TOKEN GUARDADO:', response.token)
+
+    return response
   }
 
   async function logout() {
