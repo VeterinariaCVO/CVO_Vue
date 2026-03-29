@@ -11,9 +11,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomeView,
-      meta: { requiresAuth: true },
+      redirect: '/login',
     },
     {
       path: '/login',
@@ -45,6 +43,12 @@ const router = createRouter({
       component: () => import('../views/client/PerfilView.vue'),
       meta: { requiresAuth: true, role: 3 },
     },
+    {
+      path: '/client/mascotas',
+      name: 'ClientMascotas',
+      component: () => import('../views/ClientsView.vue'),
+      meta: { requiresAuth: true, role: 3 },
+    },
   ],
 })
 
@@ -68,7 +72,7 @@ router.beforeEach((to) => {
 function redirigirPorRol(roleId?: number) {
   if (roleId === 1) return { path: '/admin/usuarios' }
   if (roleId === 2) return { path: '/empleado/registrar-cliente' }
-  if (roleId === 3) return { path: '/client/citas' }
+  if (roleId === 3) return { path: '/client/mascotas' }
   return { name: 'Login' }
 }
 

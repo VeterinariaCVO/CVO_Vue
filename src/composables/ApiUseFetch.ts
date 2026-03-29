@@ -1,7 +1,7 @@
 import { createFetch } from '@vueuse/core'
 import { useAuthStore } from '@/stores/authStore.ts'
 
-const urlBase: string = 'http://127.0.0.1:8000/api/';
+const urlBase: string = 'http://127.0.0.1:8000/api/'
 
 export const ApiUseFetch = createFetch({
   baseUrl: urlBase,
@@ -26,7 +26,10 @@ export const ApiUseFetch = createFetch({
     },
 
     onFetchError(ctx) {
-      if (ctx.response?.status === 401) {
+      const url = ctx.response?.url ?? ''
+      const esEndpointDeAuth = url.includes('/login') || url.includes('/logout')
+
+      if (ctx.response?.status === 401 && !esEndpointDeAuth) {
         const authStore = useAuthStore()
         authStore.logout()
       }
@@ -40,5 +43,4 @@ export const ApiUseFetch = createFetch({
       Accept: 'application/json',
     },
   },
-
 })
