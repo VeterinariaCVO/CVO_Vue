@@ -1,10 +1,14 @@
 import { createRouter, createWebHistory, type Router } from 'vue-router'
 import { useAuthStore } from "@/stores/authStore";
 
-
+import HomeView from '@/views/HomeView.vue'
 import LoginView from '@/components/auth/LoginForm.vue'
 import RegisterView from '@/components/auth/RegisterForm.vue'
 import WelcomeView from '@/components/auth/WelcomeView.vue';
+import RegistrarCliente from '@/views/RegisterClient.vue'
+import LoginViewTest from '@/views/LoginViewTest.vue'
+import ClientAppointmentsView from '../views/client/ClientAppointmentsView.vue'
+import CreateAppointmentsView from '../views/client/CreateAppointmentView.vue'
 
 const router: Router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -12,7 +16,8 @@ const router: Router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: WelcomeView,
+      component: HomeView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/login',
@@ -27,6 +32,36 @@ const router: Router = createRouter({
       meta: { guest: true },
     },
 
+    {
+      path: '/empleado/registrar-cliente',
+      name: 'RegisterCliente',
+      component: RegistrarCliente,
+      meta: { requiresAuth: true, role: 2 },
+    },
+    {
+      path: '/client/citas',
+      name: 'ClientCitas',
+      component: ClientAppointmentsView,
+      meta: { requiresAuth: true, role: 3 },
+    },
+    {
+      path: '/client/create-cita',
+      name: 'CreateCita',
+      component: CreateAppointmentsView,
+      meta: { requiresAuth: true, role: 3 },
+    },
+    {
+      path: '/cliente/perfil',
+      name: 'ClientePerfil',
+      component: () => import('../views/client/PerfilView.vue'),
+      meta: { requiresAuth: true, role: 3 },
+    },
+    {
+      path: '/empleado/consultas',
+      name: 'EmpleadoConsultas',
+      component: () => import('../views/empleado/ConsultaView.vue'),
+      meta: { requiresAuth: true, role: 2 },
+    },
   ],
 })
 
@@ -63,4 +98,5 @@ function redirigirPorRol(roleId?: number) {
 
   return { path: '/' }
 }
+
 export default router
