@@ -17,7 +17,7 @@ async function handleLogin() {
     const roleId = auth.user?.role_id
     if (roleId === 1) router.push('/admin/usuarios')
     else if (roleId === 2) router.push('/empleado/registrar-cliente')
-    else if (roleId === 3) router.push('/client/citas')
+    else if (roleId === 3) router.push('/client/mascotas')
     else router.push('/')
   } catch (err: any) {
     errorMsg.value = err?.message || 'Error al iniciar sesión'
