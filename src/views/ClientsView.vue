@@ -22,6 +22,10 @@ async function obtenerMascotas() {
   mascotas.value = data.value.data
   cargando.value = false
 }
+onMounted(() => {
+  obtenerMascotas()
+  cargarHistorial()
+})
 const datosPerfil = computed(() => {
   const m = mascotaSeleccionada.value
 
@@ -34,6 +38,17 @@ const datosPerfil = computed(() => {
     { label: 'Peso', valor: m.weight ? m.weight + ' kg' : '—' },
   ]
 })
+const historial = ref<any[]>([])
+
+async function cargarHistorial() {
+  const { data, execute } = ApiUseFetch('medical-records').get().json()
+  await execute()
+  historial.value = data.value?.data ?? []
+}
+
+const historialMascota = computed(() =>
+  historial.value.filter((r: any) => r.pet?.id === mascotaSeleccionada.value.id),
+)
 function verPerfil(mascota: Pet) {
   mascotaSeleccionada.value = mascota
   mostrarPerfil.value = true
@@ -189,6 +204,25 @@ onMounted(obtenerMascotas)
       >
         Cerrar
       </button>
+      <!-- Historial clínico de la mascota -->
+      <div class="mt-5 pt-4 border-t border-slate-100">
+        <h3 class="text-sm font-bold text-slate-800 mb-3">📋 Historial Clínico</h3>
+        <p v-if="historialMascota.length === 0" class="text-xs text-slate-400 text-center">
+          Sin registros médicos.
+        </p>
+        <div v-else class="flex flex-col gap-2 max-h-48 overflow-y-auto">
+          <div
+            v-for="registro in historialMascota"
+            :key="registro.id"
+            class="bg-slate-50 rounded-lg p-3"
+          >
+            <p class="text-sm font-semibold text-slate-800">
+              {{ registro.diagnosis ?? 'Sin diagnóstico' }}
+            </p>
+            <p class="text-xs text-slate-400 mt-1">{{ registro.created_at ?? '—' }}</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

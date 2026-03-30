@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory, type Router } from 'vue-router'
-import { useAuthStore } from "@/stores/authStore";
+import { useAuthStore } from '@/stores/authStore'
 
 import HomeView from '@/views/HomeView.vue'
 import Agenda from '@/views/Agenda.vue'
@@ -7,11 +7,8 @@ import LoginView from '@/components/auth/LoginForm.vue'
 import RegisterView from '@/components/auth/RegisterForm.vue'
 import WelcomeView from '@/components/auth/WelcomeView.vue'
 import RegistrarCliente from '@/views/RegisterClient.vue'
-import ClientAppointmentsView from '../views/client/AppointmentsView.vue'
-import CreateAppointmentsView from '../views/client/CreateAppointmentView.vue'
 import VetMascotas from '@/components/employee/VetMascotas.vue'
 import VetExpediente from '@/components/employee/VetExpediente.vue'
-
 import AppointmentsView from '@/views/client/AppointmentsView.vue'
 import CreateAppointmentView from '@/views/client/CreateAppointmentView.vue'
 import AAppointmentsView from '@/views/admin/AAppointmentsView.vue'
@@ -67,7 +64,6 @@ const router: Router = createRouter({
       component: Agenda,
       meta: { requiresAuth: true, role: 4 },
     },
-
     {
       path: '/veterinario/mascotas',
       name: 'VetMascotas',
@@ -80,7 +76,6 @@ const router: Router = createRouter({
       component: VetExpediente,
       meta: { requiresAuth: true, role: 4 },
     },
-
     {
       path: '/empleado/registrar-cliente',
       name: 'RegisterCliente',
@@ -105,41 +100,38 @@ const router: Router = createRouter({
       component: () => import('../views/ClientsView.vue'),
       meta: { requiresAuth: true, role: 3 },
     },
+    {
+      path: '/client/dashboard',
+      name: 'ClientDashboard',
+      component: () => import('../views/client/DashboardClientView.vue'),
+      meta: { requiresAuth: true, role: 3 },
+    },
   ],
 })
 
-
-
 router.beforeEach((to) => {
   const auth = useAuthStore()
-
 
   if (to.meta.guest && auth.isAuthenticated) {
     return redirigirPorRol(auth.user?.role_id)
   }
 
-
   if (to.meta.requiresAuth) {
     if (!auth.isAuthenticated) {
       return { name: 'login' }
     }
-
     if (to.meta.role && auth.user?.role_id !== to.meta.role) {
       return redirigirPorRol(auth.user?.role_id)
     }
   }
 })
 
-
-
 function redirigirPorRol(roleId?: number) {
   if (roleId === 1) return { path: '/admin/citas' }
   if (roleId === 2) return { path: '/recepcion' }
   if (roleId === 4) return { path: '/veterinario/agenda' }
-  if (roleId === 3) return { path: '/cliente/mascotas' }
-
-
-
+  if (roleId === 3) return { path: '/client/dashboard' }
   return { path: '/' }
 }
+
 export default router
