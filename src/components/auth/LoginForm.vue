@@ -20,7 +20,6 @@ function login() {
   message.value = ''
   isLoading.value = true
 
-  // IMPORTANTE: Verifica que VITE_API_URL en tu .env termine en /api
   const { data, onFetchResponse, onFetchError } = useFetch(
     import.meta.env.VITE_API_URL + '/login',
     {
@@ -34,27 +33,22 @@ function login() {
     .post(form.value)
     .json()
 
- onFetchResponse(() => {
+  onFetchResponse(() => {
     isLoading.value = false
-
 
     const loginData = data.value?.data || data.value
 
     if (loginData?.token) {
       authStore.token = loginData.token
       authStore.user = loginData.user
+      localStorage.setItem('token', loginData.token) // ← agrega esto
+      localStorage.setItem('user', JSON.stringify(loginData.user)) // ← agrega esto
 
       router.push('/dashboard')
     }
   })
-
-  onFetchError(() => {
-    isLoading.value = false
-    message.value = 'Correo o contraseña incorrectos'
-  })
 }
 </script>
-
 
 <template>
   <div
@@ -64,7 +58,6 @@ function login() {
       font-family: 'Poppins', sans-serif;
     "
   >
-    <!-- Navbar -->
     <nav
       class="fixed top-0 left-0 right-0 z-50 py-4 shadow-md text-center"
       style="background-color: #3f98ff"
@@ -72,7 +65,6 @@ function login() {
       <h3 class="text-white font-semibold text-xl tracking-wide">Veterinaria del Oriente</h3>
     </nav>
 
-    <!-- Card -->
     <div
       class="bg-white rounded-3xl p-10 w-full max-w-md"
       style="
