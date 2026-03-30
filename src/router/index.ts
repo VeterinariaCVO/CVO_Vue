@@ -88,18 +88,6 @@ const router: Router = createRouter({
       meta: { requiresAuth: true, role: 2 },
     },
     {
-      path: '/client/citas',
-      name: 'ClientCitas',
-      component: ClientAppointmentsView,
-      meta: { requiresAuth: true, role: 3 },
-    },
-    {
-      path: '/client/create-cita',
-      name: 'CreateCita',
-      component: CreateAppointmentsView,
-      meta: { requiresAuth: true, role: 3 },
-    },
-    {
       path: '/cliente/perfil',
       name: 'ClientePerfil',
       component: () => import('../views/client/PerfilView.vue'),

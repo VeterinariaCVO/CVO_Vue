@@ -13,40 +13,90 @@ async function cerrarSesion() {
 
 <template>
   <nav class="bg-blue-500 px-6 py-3 flex items-center justify-between shadow-sm">
-    <div class="flex items-center gap-4">
-      <RouterLink to="/" class="text-white text-sm font-medium hover:text-blue-100 transition"
-        >Home</RouterLink
-      >
 
+    <!-- IZQUIERDA -->
+    <div class="flex items-center gap-4">
+
+      <RouterLink
+        to="/"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
+      >
+        Home
+      </RouterLink>
+
+      <!-- CLIENTE -->
       <RouterLink
         to="/client/citas"
         v-if="auth.isCliente"
         class="text-white text-sm font-medium hover:text-blue-100 transition"
-        >Mis Citas</RouterLink
       >
+        Mis Citas
+      </RouterLink>
+
       <RouterLink
-        to="/client/perfil"
+        to="/client/mascotas"
         v-if="auth.isCliente"
         class="text-white text-sm font-medium hover:text-blue-100 transition"
-        >Mi Perfil</RouterLink
       >
+        Mis Mascotas
+      </RouterLink>
 
+      <RouterLink
+        to="/cliente/perfil"
+        v-if="auth.isCliente"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
+      >
+        Mi Perfil
+      </RouterLink>
+
+      <!-- ADMIN -->
       <RouterLink
         to="/admin/citas"
         v-if="auth.isAdmin"
         class="text-white text-sm font-medium hover:text-blue-100 transition"
-        >Citas</RouterLink
       >
+        Citas
+      </RouterLink>
 
+      <!-- EMPLEADO -->
       <RouterLink
         to="/empleado/registrar-cliente"
+        v-if="auth.isEmpleado"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
+      >
+        Registrar Cliente
+      </RouterLink>
+
+      <RouterLink
+        to="/empleado/consultas"
+        v-if="auth.isEmpleado"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
+      >
+        Consultas
+      </RouterLink>
+
+      <!-- VETERINARIO -->
+      <RouterLink
+        to="/veterinario/agenda"
         v-if="auth.isVeterinario"
         class="text-white text-sm font-medium hover:text-blue-100 transition"
-        >Registrar Cliente</RouterLink
       >
+        Mi Agenda
+      </RouterLink>
+
+      <RouterLink
+        to="/veterinario/mascotas"
+        v-if="auth.isVeterinario"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
+      >
+        Mascotas
+      </RouterLink>
+
     </div>
 
+    <!-- DERECHA -->
     <div class="flex items-center gap-4">
+
       <span v-if="auth.user" class="text-blue-100 text-sm">
         {{ auth.user.name }} · {{ auth.roleName }}
       </span>
@@ -55,8 +105,9 @@ async function cerrarSesion() {
         v-if="!auth.isAuthenticated"
         to="/login"
         class="text-white text-sm font-medium hover:text-blue-100 transition"
-        >Login</RouterLink
       >
+        Login
+      </RouterLink>
 
       <button
         v-if="auth.isAuthenticated"
@@ -66,21 +117,11 @@ async function cerrarSesion() {
         Cerrar sesión
       </button>
 
-      <span class="text-white font-semibold text-sm hidden sm:block">Veterinaria del Oriente</span>
+      <span class="text-white font-semibold text-sm hidden sm:block">
+        Veterinaria del Oriente
+      </span>
+
     </div>
-    <!-- Veterinario -->
-    <RouterLink to="/veterinario/citas" v-if="auth.isVeterinario">Mi Agenda</RouterLink>
-    <RouterLink to="/veterinario/mascotas" v-if="auth.isVeterinario">Mascotas</RouterLink>
-    //<router-link to="/veterinario/agenda" v-if="auth.isVeterinario">Agenda</router-link>
-
-
-    <!-- Admin -->
-    <RouterLink to="/admin/servicios" v-if="auth.isAdmin">Servicios</RouterLink>
-
-    <!-- Común -->
-    <RouterLink v-if="!auth.isAuthenticated" to="/login">Login</RouterLink>
-    <button v-if="auth.isAuthenticated" @click="auth.logout()">Logout</button>
-    <span v-if="auth.user">| {{ auth.user.name }} ({{ auth.roleName }})</span>
   </nav>
 
   <RouterView />
