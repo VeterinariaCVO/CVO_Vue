@@ -1,59 +1,3 @@
-<template>
-  <div class="overlay">
-    <div class="modal">
-      <h2 class="modal-titulo">Editar Mascota</h2>
-      <p v-if="cargando" class="cargando">Cargando...</p>
-      <template v-else>
-        <div class="form">
-          <div class="campo">
-            <label class="label">Nombre *</label>
-            <input v-model="form.name" placeholder="Nombre" class="input" />
-          </div>
-          <div class="campo">
-            <label class="label">Especie *</label>
-            <input v-model="form.species" placeholder="Especie" class="input" />
-          </div>
-          <div class="campo">
-            <label class="label">Sexo *</label>
-            <select v-model="form.sex" class="input">
-              <option value="male">♂ Macho</option>
-              <option value="female">♀ Hembra</option>
-            </select>
-          </div>
-          <div class="campo">
-            <label class="label">Raza</label>
-            <input v-model="form.breed" placeholder="Raza" class="input" />
-          </div>
-          <div class="campo">
-            <label class="label">Color</label>
-            <input v-model="form.color" placeholder="Color" class="input" />
-          </div>
-          <div class="campo">
-            <label class="label">Marcas especiales</label>
-            <input v-model="form.special_marks" placeholder="Marcas especiales" class="input" />
-          </div>
-          <div class="campo">
-            <label class="label">Edad (años)</label>
-            <input v-model.number="form.age" type="number" min="0" class="input" />
-          </div>
-          <div class="campo">
-            <label class="label">Peso (kg)</label>
-            <input v-model.number="form.weight" type="number" min="0" step="0.1" class="input" />
-          </div>
-          <div class="check-fila">
-            <input type="checkbox" v-model="form.active" id="chk-active" class="check" />
-            <label for="chk-active" class="check-label">Mascota activa</label>
-          </div>
-        </div>
-        <div class="botones">
-          <button @click="$emit('cerrar')" class="btn-cancelar">Cancelar</button>
-          <button @click="guardar" class="btn-actualizar">Actualizar</button>
-        </div>
-      </template>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
@@ -66,147 +10,136 @@ const emit = defineEmits<{
   guardado: []
 }>()
 
-const cargando = ref<boolean>(true)
+const cargando = ref(true)
 const form = ref<Pet>({} as Pet)
 
-async function cargarMascota(): Promise<void> {
-  try {
-    const { data, execute } = ApiUseFetch(`mis-mascotas/${props.id}`).get().json()
-    await execute()
-    form.value = data.value.data as Pet
-  } catch (err) {
-    console.error('Error al cargar mascota:', err)
-  } finally {
-    cargando.value = false
-  }
+async function cargarMascota() {
+  const { data, execute } = ApiUseFetch(`mis-mascotas/${props.id}`).get().json()
+  await execute()
+  form.value = data.value.data
+  cargando.value = false
 }
 
-async function guardar(): Promise<void> {
-  try {
-    const { execute } = ApiUseFetch(`mis-mascotas/${props.id}`).put(form.value).json()
-    await execute()
-  } catch (err) {
-    console.error('Error al editar:', err)
-  } finally {
-    // Siempre cierra — el padre recargará la lista al cerrar
-    emit('cerrar')
-  }
+async function guardar() {
+  const { execute } = ApiUseFetch(`mis-mascotas/${props.id}`).put(form.value).json()
+  await execute()
+  emit('cerrar')
 }
-
 onMounted(cargarMascota)
 </script>
+<template>
+  <div class="fixed inset-0 bg-black/45 flex items-center justify-center z-[9999]">
+    <div
+      class="bg-white rounded-2xl p-7 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-[0_8px_40px_rgba(0,0,0,0.18)]"
+    >
+      <h2 class="text-lg font-bold text-[#1e3a5f] mt-0 mb-5">Editar Mascota</h2>
 
-<style scoped>
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-.modal {
-  background: white;
-  border-radius: 20px;
-  padding: 28px;
-  width: 100%;
-  max-width: 420px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
-}
-.modal-titulo {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #1e3a5f;
-  margin: 0 0 20px;
-}
-.cargando {
-  text-align: center;
-  color: #94a3b8;
-  padding: 24px 0;
-}
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.campo {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #64748b;
-}
-.input {
-  width: 100%;
-  border: 1px solid #dce6f0;
-  border-radius: 8px;
-  padding: 9px 12px;
-  font-size: 0.875rem;
-  color: #1e3a5f;
-  outline: none;
-  background: #f8fafc;
-  box-sizing: border-box;
-  transition: border-color 0.15s;
-}
-.input:focus {
-  border-color: #1d6bbf;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(29, 107, 191, 0.1);
-}
-.check-fila {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-top: 4px;
-}
-.check {
-  width: 16px;
-  height: 16px;
-  accent-color: #1d6bbf;
-}
-.check-label {
-  font-size: 0.875rem;
-  color: #374151;
-}
-.botones {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
-.btn-cancelar {
-  flex: 1;
-  background: #e8f0fa;
-  color: #1d6bbf;
-  font-weight: 600;
-  font-size: 0.875rem;
-  padding: 10px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.btn-cancelar:hover {
-  background: #dbeafe;
-}
-.btn-actualizar {
-  flex: 1;
-  background: #1d6bbf;
-  color: white;
-  font-weight: 600;
-  font-size: 0.875rem;
-  padding: 10px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.btn-actualizar:hover {
-  background: #155fa8;
-}
-</style>
+      <p v-if="cargando" class="text-center text-slate-400 py-6">Cargando...</p>
+
+      <template v-else>
+        <div class="flex flex-col gap-3">
+          <!-- Nombre -->
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-slate-500">Nombre *</label>
+            <input
+              v-model="form.name"
+              placeholder="Nombre"
+              class="w-full border border-[#dce6f0] rounded-lg px-3 py-2 text-sm text-[#1e3a5f] bg-slate-50 outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#1d6bbf] focus:bg-white focus:shadow-[0_0_0_3px_rgba(29,107,191,0.1)] box-border"
+            />
+          </div>
+
+          <!-- Especie -->
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-slate-500">Especie *</label>
+            <input
+              v-model="form.species"
+              placeholder="Especie"
+              class="w-full border border-[#dce6f0] rounded-lg px-3 py-2 text-sm text-[#1e3a5f] bg-slate-50 outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#1d6bbf] focus:bg-white focus:shadow-[0_0_0_3px_rgba(29,107,191,0.1)] box-border"
+            />
+          </div>
+
+          <!-- Sexo -->
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-slate-500">Sexo *</label>
+            <select
+              v-model="form.sex"
+              class="w-full border border-[#dce6f0] rounded-lg px-3 py-2 text-sm text-[#1e3a5f] bg-slate-50 outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#1d6bbf] focus:bg-white focus:shadow-[0_0_0_3px_rgba(29,107,191,0.1)] box-border"
+            >
+              <option value="male">♂ Macho</option>
+              <option value="female">♀ Hembra</option>
+            </select>
+          </div>
+
+          <!-- Raza -->
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-slate-500">Raza</label>
+            <input
+              v-model="form.breed"
+              placeholder="Raza"
+              class="w-full border border-[#dce6f0] rounded-lg px-3 py-2 text-sm text-[#1e3a5f] bg-slate-50 outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#1d6bbf] focus:bg-white focus:shadow-[0_0_0_3px_rgba(29,107,191,0.1)] box-border"
+            />
+          </div>
+
+          <!-- Color -->
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-slate-500">Color</label>
+            <input
+              v-model="form.color"
+              placeholder="Color"
+              class="w-full border border-[#dce6f0] rounded-lg px-3 py-2 text-sm text-[#1e3a5f] bg-slate-50 outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#1d6bbf] focus:bg-white focus:shadow-[0_0_0_3px_rgba(29,107,191,0.1)] box-border"
+            />
+          </div>
+
+          <!-- Marcas especiales -->
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-slate-500">Marcas especiales</label>
+            <input
+              v-model="form.special_marks"
+              placeholder="Marcas especiales"
+              class="w-full border border-[#dce6f0] rounded-lg px-3 py-2 text-sm text-[#1e3a5f] bg-slate-50 outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#1d6bbf] focus:bg-white focus:shadow-[0_0_0_3px_rgba(29,107,191,0.1)] box-border"
+            />
+          </div>
+
+          <!-- Edad -->
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-slate-500">Edad (años)</label>
+            <input
+              v-model.number="form.age"
+              type="number"
+              min="0"
+              class="w-full border border-[#dce6f0] rounded-lg px-3 py-2 text-sm text-[#1e3a5f] bg-slate-50 outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#1d6bbf] focus:bg-white focus:shadow-[0_0_0_3px_rgba(29,107,191,0.1)] box-border"
+            />
+          </div>
+
+          <!-- Peso -->
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-slate-500">Peso (kg)</label>
+            <input
+              v-model.number="form.weight"
+              type="number"
+              min="0"
+              step="0.1"
+              class="w-full border border-[#dce6f0] rounded-lg px-3 py-2 text-sm text-[#1e3a5f] bg-slate-50 outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#1d6bbf] focus:bg-white focus:shadow-[0_0_0_3px_rgba(29,107,191,0.1)] box-border"
+            />
+          </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="flex gap-2.5 mt-5">
+          <button
+            @click="$emit('cerrar')"
+            class="flex-1 bg-[#e8f0fa] hover:bg-blue-100 text-[#1d6bbf] font-semibold text-sm py-2.5 border-none rounded-xl cursor-pointer transition-colors duration-200"
+          >
+            Cancelar
+          </button>
+          <button
+            @click="guardar"
+            class="flex-1 bg-[#1d6bbf] hover:bg-[#155fa8] text-white font-semibold text-sm py-2.5 border-none rounded-xl cursor-pointer transition-colors duration-200"
+          >
+            Actualizar
+          </button>
+        </div>
+      </template>
+    </div>
+  </div>
+</template>
