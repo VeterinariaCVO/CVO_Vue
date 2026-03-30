@@ -1,28 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
+import type { Pet } from '@/types/pet.ts
 
-interface Pet {
-  id: number
-  name: string
-  species: string
-  breed: string | null
-  color: string | null
-  special_marks: string | null
-  weight: string | null
-  sex: 'male' | 'female'
-  age: number | null
-  photo_url: string | null
-  owner_id: number
-  owner: {
-    id: number
-    name: string
-    email: string
-    phone: string
-  }
-  active: boolean
-  created_at: string
-}
+
 
 const pets = ref<Pet[]>([])
 const isLoading = ref(true)
@@ -94,7 +75,7 @@ function speciesIcon(species: string) {
     return '🐰'
   }
 
-  return '🐾' // ninguna condición se cumplió
+  return '🐾'
 }
 
 defineOptions({ name: 'VetMascotas' })

@@ -45,7 +45,6 @@ function loadRecord() {
 
     if (!d) return
 
-    // Precargamos el formulario con los datos actuales
     form.value.weight = d.weight ?? ''
     form.value.temperature = d.temperature ?? ''
     form.value.symptoms = d.symptoms ?? ''
@@ -79,7 +78,6 @@ function loadRecord() {
 
 onMounted(() => loadRecord())
 
-// ─── GUARDAR ───────────────────────────────────────────────────────────────────
 
 function saveRecord() {
   if (!form.value.diagnosis.trim()) {
@@ -121,7 +119,7 @@ function saveRecord() {
   execute()
 }
 
-// ─── HELPERS ───────────────────────────────────────────────────────────────────
+
 
 function showMsg(text: string, error: boolean) {
   message.value = text
@@ -136,7 +134,7 @@ defineOptions({ name: 'VetExpediente' })
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-6">
-    <!-- ENCABEZADO -->
+
     <div class="flex items-center gap-3 mb-6">
       <button
         @click="router.back()"
@@ -150,7 +148,7 @@ defineOptions({ name: 'VetExpediente' })
       </div>
     </div>
 
-    <!-- TOAST -->
+
     <div
       v-if="message"
       class="mb-4 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2"
@@ -163,7 +161,7 @@ defineOptions({ name: 'VetExpediente' })
       <span>{{ isError ? '⚠' : '✓' }}</span> {{ message }}
     </div>
 
-    <!-- LOADING -->
+
     <div v-if="isLoading" class="flex justify-center py-20">
       <div
         class="w-10 h-10 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin"
@@ -171,7 +169,7 @@ defineOptions({ name: 'VetExpediente' })
     </div>
 
     <div v-else class="max-w-2xl mx-auto">
-      <!-- INFO DE SOLO LECTURA -->
+
       <div class="grid grid-cols-3 gap-3 mb-6">
         <div class="bg-white rounded-xl p-4 text-center border border-blue-100 shadow-sm">
           <p class="text-xs text-slate-400 mb-1">Mascota</p>
@@ -188,9 +186,9 @@ defineOptions({ name: 'VetExpediente' })
         </div>
       </div>
 
-      <!-- FORMULARIO -->
+
       <div class="bg-white rounded-2xl border border-blue-100 shadow-sm p-6 space-y-4">
-        <!-- Peso y temperatura -->
+
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-semibold text-slate-600 mb-1.5">Peso (kg)</label>
@@ -216,7 +214,7 @@ defineOptions({ name: 'VetExpediente' })
           </div>
         </div>
 
-        <!-- Síntomas -->
+
         <div>
           <label class="block text-sm font-semibold text-slate-600 mb-1.5">Síntomas</label>
           <textarea
@@ -227,7 +225,7 @@ defineOptions({ name: 'VetExpediente' })
           />
         </div>
 
-        <!-- Diagnóstico -->
+
         <div>
           <label class="block text-sm font-semibold text-slate-600 mb-1.5">
             Diagnóstico <span class="text-red-400">*</span>
@@ -240,7 +238,7 @@ defineOptions({ name: 'VetExpediente' })
           />
         </div>
 
-        <!-- Tratamiento -->
+
         <div>
           <label class="block text-sm font-semibold text-slate-600 mb-1.5">Tratamiento</label>
           <textarea
@@ -251,7 +249,7 @@ defineOptions({ name: 'VetExpediente' })
           />
         </div>
 
-        <!-- Prescripciones y próxima visita -->
+
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-semibold text-slate-600 mb-1.5">Prescripciones</label>
@@ -272,7 +270,7 @@ defineOptions({ name: 'VetExpediente' })
           </div>
         </div>
 
-        <!-- Observaciones -->
+        <
         <div>
           <label class="block text-sm font-semibold text-slate-600 mb-1.5">Observaciones</label>
           <textarea
@@ -283,13 +281,13 @@ defineOptions({ name: 'VetExpediente' })
           />
         </div>
 
-        <!-- Botones -->
+
         <div class="flex gap-3 pt-2">
           <button
             @click="router.back()"
             class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-500 font-semibold text-sm hover:bg-slate-50 transition-colors"
           >
-            Cancelar
+
           </button>
           <button
             @click="saveRecord"
