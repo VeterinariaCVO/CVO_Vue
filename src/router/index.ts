@@ -2,13 +2,15 @@ import { createRouter, createWebHistory, type Router } from 'vue-router'
 import { useAuthStore } from "@/stores/authStore";
 
 import HomeView from '@/views/HomeView.vue'
+import Agenda from '@/views/Agenda.vue'
 import LoginView from '@/components/auth/LoginForm.vue'
 import RegisterView from '@/components/auth/RegisterForm.vue'
-import WelcomeView from '@/components/auth/WelcomeView.vue';
+import WelcomeView from '@/components/auth/WelcomeView.vue'
 import RegistrarCliente from '@/views/RegisterClient.vue'
-import LoginViewTest from '@/views/LoginViewTest.vue'
 import ClientAppointmentsView from '../views/client/ClientAppointmentsView.vue'
 import CreateAppointmentsView from '../views/client/CreateAppointmentView.vue'
+import VetMascotas from '@/components/employee/VetMascotas.vue'
+import VetExpediente from '@/components/employee/VetExpediente.vue'
 
 const router: Router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -30,6 +32,25 @@ const router: Router = createRouter({
       name: 'register',
       component: RegisterView,
       meta: { guest: true },
+    },
+    {
+      path: '/veterinario/agenda',
+      name: 'VetAgenda',
+      component: Agenda,
+      meta: { requiresAuth: true, role: 4 },
+    },
+
+    {
+      path: '/veterinario/mascotas',
+      name: 'VetMascotas',
+      component: VetMascotas,
+      meta: { requiresAuth: true, role: 4 },
+    },
+    {
+      path: '/veterinario/expediente/:id',
+      name: 'VetExpediente',
+      component: VetExpediente,
+      meta: { requiresAuth: true, role: 4 },
     },
 
     {
@@ -92,7 +113,7 @@ router.beforeEach((to) => {
 function redirigirPorRol(roleId?: number) {
   if (roleId === 1) return { path: '/admin' }
   if (roleId === 2) return { path: '/recepcion' }
-  if (roleId === 4) return { path: '/veterinario' }
+  if (roleId === 4) return { path: '/veterinario/agenda' }
   if (roleId === 3) return { path: '/cliente' }
 
 

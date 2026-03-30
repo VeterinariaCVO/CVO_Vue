@@ -1,129 +1,129 @@
-  <script setup lang="ts">
-  import { ref, onMounted } from 'vue'
-  import { useAuthStore } from '@/stores/authStore'
-  import { useRouter } from 'vue-router'
-  import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/authStore'
+import { useRouter } from 'vue-router'
+import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
 
-  const auth = useAuthStore()
-  const router = useRouter()
+const auth = useAuthStore()
+const router = useRouter()
 
-  const formulario = ref({
-    name: '',
-    phone: '',
-    address: '',
-    password: '',
-  })
+const formulario = ref({
+  name: '',
+  phone: '',
+  address: '',
+  password: '',
+})
 
-  const cargando = ref(false)
-  const mensajeExito = ref('')
-  const mensajeError = ref('')
-  const mostrarConfirmar = ref(false)
+const cargando = ref(false)
+const mensajeExito = ref('')
+const mensajeError = ref('')
+const mostrarConfirmar = ref(false)
 
-  onMounted(() => {
-    formulario.value.name = auth.user?.name || ''
-    formulario.value.phone = auth.user?.phone || ''
-    formulario.value.address = auth.user?.address || ''
-  })
+onMounted(() => {
+  formulario.value.name = auth.user?.name || ''
+  formulario.value.phone = auth.user?.phone || ''
+  formulario.value.address = auth.user?.address || ''
+})
 
-  async function actualizar() {
-    mensajeExito.value = ''
-    mensajeError.value = ''
-    cargando.value = true
+async function actualizar() {
+  mensajeExito.value = ''
+  mensajeError.value = ''
+  cargando.value = true
 
-    const datos: any = {
-      name: formulario.value.name,
-      phone: formulario.value.phone,
-      address: formulario.value.address,
-    }
-
-    if (formulario.value.password) {
-      datos.password = formulario.value.password
-    }
-
-    const { data, error, execute } = ApiUseFetch('/cliente/perfil').put(datos).json()
-    await execute()
-
-    cargando.value = false
-
-    if (error.value) {
-      mensajeError.value = data.value?.message || 'Error al actualizar'
-      return
-    }
-
-    mensajeExito.value = 'Perfil actualizado correctamente'
-    formulario.value.password = ''
-    auth.setUser(data.value.user, auth.token!)
+  const datos: any = {
+    name: formulario.value.name,
+    phone: formulario.value.phone,
+    address: formulario.value.address,
   }
 
-  async function eliminarCuenta() {
-    cargando.value = true
-    mostrarConfirmar.value = false
-
-    const { error, execute } = ApiUseFetch('/cliente/perfil').delete().json()
-    await execute()
-
-    cargando.value = false
-
-    if (error.value) {
-      mensajeError.value = 'Error al eliminar la cuenta'
-      return
-    }
-
-    auth.logout()
+  if (formulario.value.password) {
+    datos.password = formulario.value.password
   }
-  </script>
 
-  <template>
-    <div class="contenedor">
-      <h2>Mi Perfil</h2>
+  const { data, error, execute } = ApiUseFetch('/cliente/perfil').put(datos).json()
+  await execute()
 
-      <p v-if="mensajeExito" class="exito">{{ mensajeExito }}</p>
-      <p v-if="mensajeError" class="error">{{ mensajeError }}</p>
+  cargando.value = false
 
-      <div class="campo">
-        <label>Nombre</label>
-        <input v-model="formulario.name" type="text" placeholder="Tu nombre" />
-      </div>
+  if (error.value) {
+    mensajeError.value = data.value?.message || 'Error al actualizar'
+    return
+  }
 
-      <div class="campo">
-        <label>Teléfono</label>
-        <input v-model="formulario.phone" type="tel" placeholder="10 dígitos" />
-      </div>
+  mensajeExito.value = 'Perfil actualizado correctamente'
+  formulario.value.password = ''
+  auth.user = data.value.user
+}
 
-      <div class="campo">
-        <label>Domicilio</label>
-        <input v-model="formulario.address" type="text" placeholder="Tu domicilio" />
-      </div>
+async function eliminarCuenta() {
+  cargando.value = true
+  mostrarConfirmar.value = false
 
-      <div class="campo">
-        <label>
-          Nueva contraseña
-          <span class="opcional">(dejar vacío para no cambiar)</span>
-        </label>
-        <input v-model="formulario.password" type="password" placeholder="Nueva contraseña" />
-      </div>
+  const { error, execute } = ApiUseFetch('/cliente/perfil').delete().json()
+  await execute()
 
-      <button @click="actualizar" :disabled="cargando" class="btn-guardar">
-        {{ cargando ? 'Guardando...' : 'Guardar cambios' }}
-      </button>
+  cargando.value = false
 
-      <hr />
+  if (error.value) {
+    mensajeError.value = 'Error al eliminar la cuenta'
+    return
+  }
 
-      <button v-if="!mostrarConfirmar" @click="mostrarConfirmar = true" class="btn-eliminar">
-        Eliminar mi cuenta
-      </button>
+  auth.logout()
+}
+</script>
 
-      <div v-if="mostrarConfirmar" class="confirmar">
-        <p>¿Estás seguro? Esta acción no se puede deshacer.</p>
-        <div class="botones-confirmar">
-          <button @click="eliminarCuenta" :disabled="cargando" class="btn-eliminar">
-            Sí, eliminar
-          </button>
-          <button @click="mostrarConfirmar = false" class="btn-cancelar">Cancelar</button>
-        </div>
+<template>
+  <div class="contenedor">
+    <h2>Mi Perfil</h2>
+
+    <p v-if="mensajeExito" class="exito">{{ mensajeExito }}</p>
+    <p v-if="mensajeError" class="error">{{ mensajeError }}</p>
+
+    <div class="campo">
+      <label>Nombre</label>
+      <input v-model="formulario.name" type="text" placeholder="Tu nombre" />
+    </div>
+
+    <div class="campo">
+      <label>Teléfono</label>
+      <input v-model="formulario.phone" type="tel" placeholder="10 dígitos" />
+    </div>
+
+    <div class="campo">
+      <label>Domicilio</label>
+      <input v-model="formulario.address" type="text" placeholder="Tu domicilio" />
+    </div>
+
+    <div class="campo">
+      <label>
+        Nueva contraseña
+        <span class="opcional">(dejar vacío para no cambiar)</span>
+      </label>
+      <input v-model="formulario.password" type="password" placeholder="Nueva contraseña" />
+    </div>
+
+    <button @click="actualizar" :disabled="cargando" class="btn-guardar">
+      {{ cargando ? 'Guardando...' : 'Guardar cambios' }}
+    </button>
+
+    <hr />
+
+    <button v-if="!mostrarConfirmar" @click="mostrarConfirmar = true" class="btn-eliminar">
+      Eliminar mi cuenta
+    </button>
+
+    <div v-if="mostrarConfirmar" class="confirmar">
+      <p>¿Estás seguro? Esta acción no se puede deshacer.</p>
+      <div class="botones-confirmar">
+        <button @click="eliminarCuenta" :disabled="cargando" class="btn-eliminar">
+          Sí, eliminar
+        </button>
+        <button @click="mostrarConfirmar = false" class="btn-cancelar">Cancelar</button>
       </div>
     </div>
-  </template>
+  </div>
+</template>
 
 <style scoped>
 .contenedor {
