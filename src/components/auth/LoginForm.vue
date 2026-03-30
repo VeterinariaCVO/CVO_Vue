@@ -16,59 +16,49 @@ const form = ref<Credentials>({
 const message = ref('')
 const isLoading = ref(false)
 
-function login() {
+async function login() {
   message.value = ''
   isLoading.value = true
 
-  const { data, onFetchResponse } = useFetch(import.meta.env.VITE_API_URL + '/login', {
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      'ngrok-skip-browser-warning': 'true',
-    },
-  })
-    .post(form.value)
-    .json()
+  try {
+    const { data, error } = await useFetch(
+      `${import.meta.env.VITE_API_URL}/login`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: JSON.stringify(form.value),
+      }
+    ).json()
 
-  onFetchResponse(() => {
     isLoading.value = false
+
+    if (error.value) {
+      message.value = 'Error al conectar con el servidor'
+      return
+    }
 
     const loginData = data.value?.data || data.value
 
     if (loginData?.token) {
       authStore.token = loginData.token
       authStore.user = loginData.user
+
       localStorage.setItem('token', loginData.token)
       localStorage.setItem('user', JSON.stringify(loginData.user))
 
-      const roleId = loginData.user?.role_id
-      if (roleId === 1) router.push('/admin')
-      else if (roleId === 2) router.push('/recepcion')
-      else if (roleId === 3) router.push('/client/mascotas')
-      else if (roleId === 4) router.push('/veterinario')
-      else router.push('/')
+      router.push('/dashboard')
     } else {
-      message.value = 'Correo o contraseña incorrectos'
+      message.value = 'Credenciales incorrectas'
     }
-  })
-
-  onFetchResponse(() => {
+  } catch (err) {
     isLoading.value = false
-
-    const loginData = data.value?.data || data.value
-
-    if (loginData?.token) {
-      authStore.token = loginData.token
-      authStore.user = loginData.user
-
-      const roleId = loginData.user?.role_id
-      if (roleId === 1) router.push('/admin')
-      else if (roleId === 2) router.push('/recepcion')
-      else if (roleId === 3) router.push('/client/mascotas')
-      else if (roleId === 4) router.push('/veterinario')
-      else router.push('/')
-    }
-  })
+    message.value = 'Ocurrió un error inesperado'
+    console.error(err)
+  }
 }
 </script>
 
@@ -80,15 +70,15 @@ function login() {
       font-family: 'Poppins', sans-serif;
     "
   >
-    <!-- Navbar -->
     <nav
       class="fixed top-0 left-0 right-0 z-50 py-4 shadow-md text-center"
       style="background-color: #3f98ff"
     >
-      <h3 class="text-white font-semibold text-xl tracking-wide">Veterinaria del Oriente</h3>
+      <h3 class="text-white font-semibold text-xl tracking-wide">
+        Veterinaria del Oriente
+      </h3>
     </nav>
 
-    <!-- Card -->
     <div
       class="bg-white rounded-3xl p-10 w-full max-w-md"
       style="
@@ -106,8 +96,12 @@ function login() {
           alt="Logo"
           style="box-shadow: 0 4px 12px rgba(63, 152, 255, 0.2)"
         />
-        <h4 class="text-2xl font-bold mb-1" style="color: #1a6fd4">Acceso al Sistema</h4>
-        <p class="text-sm" style="color: #8a9bb0">Ingresa tus credenciales para continuar</p>
+        <h4 class="text-2xl font-bold mb-1" style="color: #1a6fd4">
+          Acceso al Sistema
+        </h4>
+        <p class="text-sm" style="color: #8a9bb0">
+          Ingresa tus credenciales para continuar
+        </p>
       </div>
 
       <!-- Error -->
@@ -121,9 +115,9 @@ function login() {
 
       <form @submit.prevent="login" class="space-y-5">
         <div>
-          <label class="block text-sm font-semibold mb-2" style="color: #4a5568"
-            >Correo electrónico</label
-          >
+          <label class="block text-sm font-semibold mb-2" style="color: #4a5568">
+            Correo electrónico
+          </label>
           <input
             v-model="form.email"
             type="email"
@@ -137,7 +131,9 @@ function login() {
         </div>
 
         <div>
-          <label class="block text-sm font-semibold mb-2" style="color: #4a5568">Contraseña</label>
+          <label class="block text-sm font-semibold mb-2" style="color: #4a5568">
+            Contraseña
+          </label>
           <input
             v-model="form.password"
             type="password"

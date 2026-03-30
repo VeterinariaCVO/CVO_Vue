@@ -65,14 +65,15 @@ export const useAuthStore = defineStore('auth', () => {
 
 
   async function logout() {
-  try {
-    await ApiUseFetch('/logout').post().json()
-  } catch (error) {
-    console.warn('Error al hacer logout:', error)
-  } finally {
-    clearAuth()
-    router.push('/login')
-  }
+    try {
+      const { execute } = ApiUseFetch('/logout').post().json()
+      await execute()
+    } catch (error) {
+      console.warn('Error al hacer logout:', error)
+    } finally {
+      clearAuth()
+      router.push('/login')
+    }
 }
 
   return {

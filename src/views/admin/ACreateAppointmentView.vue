@@ -5,25 +5,30 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
+const clientes = ref<any[]>([])
 const mascotas = ref<any[]>([])
 const servicios = ref<any[]>([])
 const slots = ref<any[]>([])
 
-const fechaSeleccionada = ref('')
+const clienteId = ref<number | null>(null)
 const mascotaId = ref<number | null>(null)
 const servicioId = ref<number | null>(null)
 const slotId = ref<number | null>(null)
+const fechaSeleccionada = ref('')
 const notas = ref('')
 
+const cargandoMascotas = ref(false)
 const cargandoSlots = ref(false)
 const enviando = ref(false)
 const errorMsg = ref('')
 const exitoso = ref(false)
 
-async function cargarMascotas() {
-  const { data, execute } = ApiUseFetch('/mis-mascotas').get().json()
+async function cargarClientes() {
+  const { data, execute } = ApiUseFetch('/admin/users').get().json()
   await execute()
-  mascotas.value = data.value?.data ?? []
+  // filtrar solo clientes (role_id 3)
+  const todos = data.value?.data ?? []
+  clientes.value = todos.filter((u: any) => u.role_id === 3)
 }
 
 async function cargarServicios() {
@@ -32,9 +37,20 @@ async function cargarServicios() {
   servicios.value = data.value?.data ?? []
 }
 
+async function cargarMascotas() {
+  if (!clienteId.value) return
+  cargandoMascotas.value = true
+  mascotas.value = []
+  mascotaId.value = null
+
+  const { data, execute } = ApiUseFetch('/pets?owner_id=' + clienteId.value).get().json()
+  await execute()
+  mascotas.value = data.value?.data ?? []
+  cargandoMascotas.value = false
+}
+
 async function cargarSlots() {
   if (!fechaSeleccionada.value) return
-
   cargandoSlots.value = true
   slots.value = []
   slotId.value = null
@@ -43,29 +59,25 @@ async function cargarSlots() {
   await wdExecute()
 
   const workingDays = wdData.value?.data ?? []
-
   if (workingDays.length === 0) {
     cargandoSlots.value = false
     return
   }
 
   const workingDayId = workingDays[0].id
-
   const { data, execute } = ApiUseFetch('/time-slots?working_day_id=' + workingDayId + '&status=available').get().json()
   await execute()
-
   slots.value = data.value?.data ?? []
   cargandoSlots.value = false
 }
 
-watch(fechaSeleccionada, function () {
-  cargarSlots()
-})
+watch(clienteId, () => cargarMascotas())
+watch(fechaSeleccionada, () => cargarSlots())
 
 async function agendar() {
   errorMsg.value = ''
 
-  if (!mascotaId.value || !servicioId.value || !slotId.value || !fechaSeleccionada.value) {
+  if (!clienteId.value || !mascotaId.value || !servicioId.value || !slotId.value) {
     errorMsg.value = 'Por favor completa todos los campos.'
     return
   }
@@ -83,18 +95,16 @@ async function agendar() {
   enviando.value = false
 
   if (fetchError.value || !data.value?.success) {
-    errorMsg.value = data.value?.message ?? 'Error al agendar la cita'
+    errorMsg.value = data.value?.message ?? 'Error al agendar la cita.'
     return
   }
 
   exitoso.value = true
-  setTimeout(() => {
-    router.push('/client/citas')
-  }, 1500)
+  setTimeout(() => router.push('/admin/citas'), 1500)
 }
 
-onMounted(function () {
-  cargarMascotas()
+onMounted(() => {
+  cargarClientes()
   cargarServicios()
 })
 </script>
@@ -103,26 +113,32 @@ onMounted(function () {
   <div class="min-h-screen bg-gray-50 py-8 px-4">
     <div class="max-w-lg mx-auto">
 
-      <!-- Header -->
       <div class="mb-6 flex items-center gap-3">
-        <button @click="router.push('/client/citas')" class="text-blue-400 hover:text-blue-600 transition text-sm">
-          ← Volver
-        </button>
+        <button @click="router.push('/admin/citas')" class="text-blue-400 hover:text-blue-600 transition text-sm">← Volver</button>
         <h2 class="text-xl font-bold text-blue-800">Agendar Cita</h2>
       </div>
 
-      <!-- Éxito -->
       <div v-if="exitoso" class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-5 py-4 text-sm text-center">
         ¡Cita agendada correctamente! Redirigiendo...
       </div>
 
       <div v-if="!exitoso" class="bg-white rounded-xl border border-gray-100 p-6 grid gap-5">
 
+        <!-- Cliente -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+          <select v-model="clienteId" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
+            <option :value="null" disabled>Selecciona un cliente</option>
+            <option v-for="c in clientes" :key="c.id" :value="c.id">{{ c.name }}</option>
+          </select>
+        </div>
+
         <!-- Mascota -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Mascota</label>
-          <select v-model="mascotaId" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
-            <option :value="null" disabled>Selecciona una mascota</option>
+          <div v-if="cargandoMascotas" class="text-sm text-gray-400">Cargando mascotas...</div>
+          <select v-else v-model="mascotaId" :disabled="!clienteId" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50">
+            <option :value="null" disabled>{{ clienteId ? 'Selecciona una mascota' : 'Primero elige un cliente' }}</option>
             <option v-for="m in mascotas" :key="m.id" :value="m.id">{{ m.name }}</option>
           </select>
         </div>
@@ -150,13 +166,8 @@ onMounted(function () {
         <!-- Slots -->
         <div v-if="fechaSeleccionada">
           <label class="block text-sm font-medium text-gray-700 mb-2">Horario disponible</label>
-
           <div v-if="cargandoSlots" class="text-sm text-gray-400">Cargando horarios...</div>
-
-          <div v-else-if="slots.length === 0" class="text-sm text-gray-400">
-            No hay horarios disponibles para esta fecha.
-          </div>
-
+          <div v-else-if="slots.length === 0" class="text-sm text-gray-400">No hay horarios disponibles para esta fecha.</div>
           <div v-else class="grid grid-cols-3 gap-2">
             <button
               v-for="slot in slots"
@@ -164,21 +175,14 @@ onMounted(function () {
               @click="slotId = slot.id"
               :class="slotId === slot.id ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'"
               class="border rounded-lg py-2 text-sm font-medium transition"
-            >
-              {{ slot.start_time.slice(0, 5) }}
-            </button>
+            >{{ slot.start_time.slice(0, 5) }}</button>
           </div>
         </div>
 
         <!-- Notas -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
-          <textarea
-            v-model="notas"
-            rows="3"
-            placeholder="Ej: Mi perro tiene alergia al polvo..."
-            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"
-          ></textarea>
+          <textarea v-model="notas" rows="3" placeholder="Observaciones..." class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"></textarea>
         </div>
 
         <!-- Error -->
@@ -191,9 +195,7 @@ onMounted(function () {
           @click="agendar"
           :disabled="enviando"
           class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2.5 rounded-lg text-sm transition disabled:opacity-60"
-        >
-          {{ enviando ? 'Agendando...' : 'Confirmar cita' }}
-        </button>
+        >{{ enviando ? 'Agendando...' : 'Confirmar cita' }}</button>
 
       </div>
     </div>
