@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
-import type { Pet } from '@/types/pet.ts
 
+import type { PetVet } from '@/types/pet.ts'
 
-
-const pets = ref<Pet[]>([])
+const pets = ref<PetVet[]>([])
 const isLoading = ref(true)
 const message = ref('')
 const isError = ref(false)
 const search = ref('')
-const selected = ref<Pet | null>(null)
+const selected = ref<PetVet | null>(null)
 
 function loadPets() {
   isLoading.value = true
@@ -63,16 +62,16 @@ function speciesIcon(species: string) {
   const s = species.toLowerCase()
 
   if (s.includes('perro') || s.includes('dog')) {
-    return '🐶'
+    return '🐾'
   }
   if (s.includes('gato') || s.includes('cat')) {
-    return '🐱'
+    return '🐾'
   }
   if (s.includes('ave') || s.includes('bird')) {
-    return '🦜'
+    return '🐾'
   }
   if (s.includes('conejo') || s.includes('rabbit')) {
-    return '🐰'
+    return '🐾'
   }
 
   return '🐾'
