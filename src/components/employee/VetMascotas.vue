@@ -31,7 +31,6 @@ const isError = ref(false)
 const search = ref('')
 const selected = ref<Pet | null>(null)
 
-// ─── CARGAR MASCOTAS ───────────────────────────────────────────────────────────
 
 function loadPets() {
   isLoading.value = true
@@ -53,7 +52,6 @@ function loadPets() {
 
 loadPets()
 
-// ─── BUSCADOR ──────────────────────────────────────────────────────────────────
 
 const filtered = computed(() => {
   if (!search.value.trim()) return pets.value
@@ -66,7 +64,6 @@ const filtered = computed(() => {
   )
 })
 
-// ─── HELPERS ───────────────────────────────────────────────────────────────────
 
 function showMsg(text: string, error: boolean) {
   message.value = text
