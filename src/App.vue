@@ -21,7 +21,7 @@ const auth = useAuthStore()
     <!-- Veterinario -->
     <RouterLink to="/veterinario/citas" v-if="auth.isVeterinario">Mi Agenda</RouterLink>
     <RouterLink to="/veterinario/mascotas" v-if="auth.isVeterinario">Mascotas</RouterLink>
-    <router-link to="/veterinario/agenda" v-if="auth.isVeterinario">Agenda</router-link>
+    //<router-link to="/veterinario/agenda" v-if="auth.isVeterinario">Agenda</router-link>
 
 
     <!-- Admin -->
