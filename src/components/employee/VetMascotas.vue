@@ -31,7 +31,6 @@ const isError = ref(false)
 const search = ref('')
 const selected = ref<Pet | null>(null)
 
-
 function loadPets() {
   isLoading.value = true
 
@@ -52,7 +51,6 @@ function loadPets() {
 
 loadPets()
 
-
 const filtered = computed(() => {
   if (!search.value.trim()) return pets.value
   const q = search.value.toLowerCase()
@@ -64,7 +62,6 @@ const filtered = computed(() => {
   )
 })
 
-
 function showMsg(text: string, error: boolean) {
   message.value = text
   isError.value = error
@@ -74,16 +71,30 @@ function showMsg(text: string, error: boolean) {
 }
 
 function sexLabel(sex: string) {
-  return sex === 'male' ? '♂ Macho' : '♀ Hembra'
+  if (sex === 'male') {
+    return '♂ Macho'
+  } else {
+    return '♀ Hembra'
+  }
 }
 
 function speciesIcon(species: string) {
   const s = species.toLowerCase()
-  if (s.includes('perro') || s.includes('dog')) return '🐶'
-  if (s.includes('gato') || s.includes('cat')) return '🐱'
-  if (s.includes('ave') || s.includes('bird')) return '🦜'
-  if (s.includes('conejo') || s.includes('rabbit')) return '🐰'
-  return '🐾'
+
+  if (s.includes('perro') || s.includes('dog')) {
+    return '🐶'
+  }
+  if (s.includes('gato') || s.includes('cat')) {
+    return '🐱'
+  }
+  if (s.includes('ave') || s.includes('bird')) {
+    return '🦜'
+  }
+  if (s.includes('conejo') || s.includes('rabbit')) {
+    return '🐰'
+  }
+
+  return '🐾' // ninguna condición se cumplió
 }
 
 defineOptions({ name: 'VetMascotas' })
@@ -91,12 +102,10 @@ defineOptions({ name: 'VetMascotas' })
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-6">
-
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-blue-700">Mascotas</h1>
       <p class="text-sm text-slate-400 mt-0.5">Consulta el registro de pacientes</p>
     </div>
-
 
     <div
       v-if="message"
@@ -110,7 +119,6 @@ defineOptions({ name: 'VetMascotas' })
       <span>{{ isError ? '⚠' : '✓' }}</span> {{ message }}
     </div>
 
-
     <div class="relative mb-6 max-w-md">
       <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
       <input
@@ -120,7 +128,6 @@ defineOptions({ name: 'VetMascotas' })
         class="w-full pl-10 pr-4 py-3 rounded-2xl border border-blue-100 bg-white shadow-sm text-sm text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
       />
     </div>
-
 
     <div v-if="isLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
       <div
@@ -138,7 +145,6 @@ defineOptions({ name: 'VetMascotas' })
       </div>
     </div>
 
-
     <div v-else>
       <div v-if="filtered.length === 0" class="text-center py-20 text-slate-400">
         <p class="text-5xl mb-4">🐾</p>
@@ -153,7 +159,6 @@ defineOptions({ name: 'VetMascotas' })
           @click="selected = pet"
           class="bg-white rounded-2xl p-5 shadow-sm border border-blue-100 hover:shadow-md hover:-translate-y-1 hover:border-blue-300 transition-all duration-200 cursor-pointer group"
         >
-
           <div class="flex items-start gap-4 mb-4">
             <div
               class="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center text-3xl flex-shrink-0 group-hover:bg-blue-100 transition-colors overflow-hidden"
@@ -181,7 +186,6 @@ defineOptions({ name: 'VetMascotas' })
             </div>
           </div>
 
-
           <div
             class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs text-slate-400"
           >
@@ -192,14 +196,12 @@ defineOptions({ name: 'VetMascotas' })
         </div>
       </div>
 
-
       <p v-if="filtered.length > 0" class="text-center text-sm text-slate-400 mt-8">
         {{ filtered.length }} mascota{{ filtered.length !== 1 ? 's' : '' }} encontrada{{
           filtered.length !== 1 ? 's' : ''
         }}
       </p>
     </div>
-
 
     <Teleport to="body">
       <div
@@ -215,7 +217,6 @@ defineOptions({ name: 'VetMascotas' })
           >
             ✕
           </button>
-
 
           <div
             class="w-20 h-20 rounded-2xl bg-blue-50 flex items-center justify-center text-4xl mx-auto mb-5 overflow-hidden"
@@ -233,7 +234,6 @@ defineOptions({ name: 'VetMascotas' })
           <p class="text-slate-400 text-sm text-center mb-6">
             {{ selected.species }}{{ selected.breed ? ' · ' + selected.breed : '' }}
           </p>
-
 
           <div class="grid grid-cols-2 gap-3 mb-5">
             <div class="bg-blue-50 rounded-xl p-3 text-center">
@@ -256,14 +256,12 @@ defineOptions({ name: 'VetMascotas' })
             </div>
           </div>
 
-
           <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
             <p class="text-xs text-slate-400 font-semibold mb-2">DUEÑO</p>
             <p class="font-bold text-slate-700">{{ selected.owner?.name }}</p>
             <p class="text-sm text-slate-400">{{ selected.owner?.email }}</p>
             <p class="text-sm text-slate-400">{{ selected.owner?.phone }}</p>
           </div>
-
 
           <div
             v-if="selected.special_marks"
