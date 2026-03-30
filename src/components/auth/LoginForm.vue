@@ -20,23 +20,40 @@ function login() {
   message.value = ''
   isLoading.value = true
 
-  // IMPORTANTE: Verifica que VITE_API_URL en tu .env termine en /api
-  const { data, onFetchResponse, onFetchError } = useFetch(
-    import.meta.env.VITE_API_URL + '/login',
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-      },
+  const { data, onFetchResponse } = useFetch(import.meta.env.VITE_API_URL + '/login', {
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      'ngrok-skip-browser-warning': 'true',
     },
-  )
+  })
     .post(form.value)
     .json()
 
- onFetchResponse(() => {
+  onFetchResponse(() => {
     isLoading.value = false
 
+    const loginData = data.value?.data || data.value
+
+    if (loginData?.token) {
+      authStore.token = loginData.token
+      authStore.user = loginData.user
+      localStorage.setItem('token', loginData.token)
+      localStorage.setItem('user', JSON.stringify(loginData.user))
+
+      const roleId = loginData.user?.role_id
+      if (roleId === 1) router.push('/admin')
+      else if (roleId === 2) router.push('/recepcion')
+      else if (roleId === 3) router.push('/client/mascotas')
+      else if (roleId === 4) router.push('/veterinario')
+      else router.push('/')
+    } else {
+      message.value = 'Correo o contraseña incorrectos'
+    }
+  })
+
+  onFetchResponse(() => {
+    isLoading.value = false
 
     const loginData = data.value?.data || data.value
 
@@ -44,17 +61,16 @@ function login() {
       authStore.token = loginData.token
       authStore.user = loginData.user
 
-      router.push('/dashboard')
+      const roleId = loginData.user?.role_id
+      if (roleId === 1) router.push('/admin')
+      else if (roleId === 2) router.push('/recepcion')
+      else if (roleId === 3) router.push('/client/mascotas')
+      else if (roleId === 4) router.push('/veterinario')
+      else router.push('/')
     }
-  })
-
-  onFetchError(() => {
-    isLoading.value = false
-    message.value = 'Correo o contraseña incorrectos'
   })
 }
 </script>
-
 
 <template>
   <div

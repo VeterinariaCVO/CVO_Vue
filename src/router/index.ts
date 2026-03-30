@@ -83,6 +83,12 @@ const router: Router = createRouter({
       component: () => import('../views/empleado/ConsultaView.vue'),
       meta: { requiresAuth: true, role: 2 },
     },
+    {
+      path: '/client/mascotas',
+      name: 'ClientMascotas',
+      component: () => import('../views/ClientsView.vue'),
+      meta: { requiresAuth: true, role: 3 },
+    },
   ],
 })
 
@@ -114,7 +120,8 @@ function redirigirPorRol(roleId?: number) {
   if (roleId === 1) return { path: '/admin' }
   if (roleId === 2) return { path: '/recepcion' }
   if (roleId === 4) return { path: '/veterinario/agenda' }
-  if (roleId === 3) return { path: '/cliente' }
+  if (roleId === 3) return { path: '/cliente/mascotas' }
+
 
 
   return { path: '/' }
