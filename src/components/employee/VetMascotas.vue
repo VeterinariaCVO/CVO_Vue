@@ -52,9 +52,9 @@ function showMsg(text: string, error: boolean) {
 
 function sexLabel(sex: string) {
   if (sex === 'male') {
-    return '♂ Macho'
+    return ' Macho'
   } else {
-    return '♀ Hembra'
+    return ' Hembra'
   }
 }
 
