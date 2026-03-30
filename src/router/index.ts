@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory, type Router } from 'vue-router'
-import { useAuthStore } from "@/stores/authStore";
+import { useAuthStore } from '@/stores/authStore'
 
 import HomeView from '@/views/HomeView.vue'
 import LoginView from '@/components/auth/LoginForm.vue'
 import RegisterView from '@/components/auth/RegisterForm.vue'
-import WelcomeView from '@/components/auth/WelcomeView.vue';
+import WelcomeView from '@/components/auth/WelcomeView.vue'
 import RegistrarCliente from '@/views/RegisterClient.vue'
 import LoginViewTest from '@/views/LoginViewTest.vue'
 import ClientAppointmentsView from '../views/client/ClientAppointmentsView.vue'
@@ -31,7 +31,6 @@ const router: Router = createRouter({
       component: RegisterView,
       meta: { guest: true },
     },
-
     {
       path: '/empleado/registrar-cliente',
       name: 'RegisterCliente',
@@ -62,19 +61,21 @@ const router: Router = createRouter({
       component: () => import('../views/empleado/ConsultaView.vue'),
       meta: { requiresAuth: true, role: 2 },
     },
+    {
+      path: '/client/mascotas',
+      name: 'ClientMascotas',
+      component: () => import('../views/ClientsView.vue'),
+      meta: { requiresAuth: true, role: 3 },
+    },
   ],
 })
-
-
 
 router.beforeEach((to) => {
   const auth = useAuthStore()
 
-
   if (to.meta.guest && auth.isAuthenticated) {
     return redirigirPorRol(auth.user?.role_id)
   }
-
 
   if (to.meta.requiresAuth) {
     if (!auth.isAuthenticated) {
@@ -87,15 +88,11 @@ router.beforeEach((to) => {
   }
 })
 
-
-
 function redirigirPorRol(roleId?: number) {
   if (roleId === 1) return { path: '/admin' }
   if (roleId === 2) return { path: '/recepcion' }
   if (roleId === 4) return { path: '/veterinario' }
-  if (roleId === 3) return { path: '/cliente' }
-
-
+  if (roleId === 3) return { path: '/client/mascotas' }
   return { path: '/' }
 }
 
