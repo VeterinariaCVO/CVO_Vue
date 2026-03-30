@@ -94,14 +94,12 @@ const router: Router = createRouter({
       component: () => import('../views/empleado/ConsultaView.vue'),
       meta: { requiresAuth: true, role: 2 },
     },
-    // ─── Mascotas del cliente ─────────────────────────────────────────────────
     {
       path: '/client/mascotas',
       name: 'ClientMascotas',
       component: () => import('../views/ClientsView.vue'),
       meta: { requiresAuth: true, role: 3 },
     },
-    // ─── Dashboard del cliente ────────────────────────────────────────────────
     {
       path: '/client/dashboard',
       name: 'ClientDashboard',

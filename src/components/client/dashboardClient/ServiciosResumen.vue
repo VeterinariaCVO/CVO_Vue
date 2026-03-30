@@ -1,11 +1,21 @@
 <template>
-  <p v-if="cargando" class="estado">Cargando...</p>
-  <p v-else-if="servicios.length === 0" class="estado">No hay servicios disponibles.</p>
-  <div v-else class="lista">
-    <div v-for="servicio in servicios" :key="servicio.id" class="item">
-      <p class="nombre">{{ servicio.name }}</p>
-      <p class="descripcion">{{ servicio.description ?? '—' }}</p>
-      <span class="precio">${{ servicio.price }}</span>
+  <p v-if="cargando" class="text-slate-400 text-center py-4">Cargando...</p>
+  <p v-else-if="servicios.length === 0" class="text-slate-400 text-center py-4">
+    No hay servicios disponibles.
+  </p>
+  <div
+    v-else
+    class="grid gap-3"
+    style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr))"
+  >
+    <div
+      v-for="servicio in servicios"
+      :key="servicio.id"
+      class="bg-slate-50 rounded-xl p-3.5 border border-[#dce6f0]"
+    >
+      <p class="font-semibold text-[#1e3a5f] text-sm m-0 mb-1">{{ servicio.name }}</p>
+      <p class="text-xs text-slate-500 m-0 mb-2">{{ servicio.description ?? '—' }}</p>
+      <span class="text-sm font-bold text-[#1d6bbf]">${{ servicio.price }}</span>
     </div>
   </div>
 </template>
@@ -26,38 +36,3 @@ async function cargar() {
 
 onMounted(cargar)
 </script>
-
-<style scoped>
-.estado {
-  color: #94a3b8;
-  text-align: center;
-  padding: 16px 0;
-}
-.lista {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
-}
-.item {
-  background: #f8fafc;
-  border-radius: 10px;
-  padding: 14px;
-  border: 1px solid #dce6f0;
-}
-.nombre {
-  font-weight: 600;
-  color: #1e3a5f;
-  font-size: 0.9rem;
-  margin: 0 0 4px;
-}
-.descripcion {
-  font-size: 0.78rem;
-  color: #64748b;
-  margin: 0 0 8px;
-}
-.precio {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #1d6bbf;
-}
-</style>

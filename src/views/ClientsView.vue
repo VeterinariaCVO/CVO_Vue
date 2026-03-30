@@ -38,7 +38,6 @@ const datosPerfil = computed(() => {
     { label: 'Peso', valor: m.weight ? m.weight + ' kg' : '—' },
   ]
 })
-// ── Historial clínico ────────────────────────────────────────────────────────
 const historial = ref<any[]>([])
 
 async function cargarHistorial() {
@@ -47,7 +46,6 @@ async function cargarHistorial() {
   historial.value = data.value?.data ?? []
 }
 
-// Filtra el historial de la mascota seleccionada
 const historialMascota = computed(() =>
   historial.value.filter((r: any) => r.pet?.id === mascotaSeleccionada.value.id),
 )

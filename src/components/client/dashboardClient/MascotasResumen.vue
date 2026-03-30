@@ -1,12 +1,22 @@
 <template>
-  <p v-if="cargando" class="estado">Cargando...</p>
-  <p v-else-if="mascotas.length === 0" class="estado">No tienes mascotas registradas.</p>
-  <div v-else class="lista">
-    <div v-for="mascota in mascotas" :key="mascota.id" class="item">
-      <div class="foto-placeholder">🐾</div>
+  <p v-if="cargando" class="text-slate-400 text-center py-4">Cargando...</p>
+  <p v-else-if="mascotas.length === 0" class="text-slate-400 text-center py-4">
+    No tienes mascotas registradas.
+  </p>
+  <div v-else class="flex flex-col gap-2.5 max-h-[300px] overflow-y-auto pr-1">
+    <div
+      v-for="mascota in mascotas"
+      :key="mascota.id"
+      class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl"
+    >
+      <div
+        class="w-9 h-9 rounded-full bg-[#e8f0fa] flex items-center justify-center text-base flex-shrink-0"
+      >
+        🐾
+      </div>
       <div>
-        <p class="nombre">{{ mascota.name }}</p>
-        <p class="especie">{{ mascota.species }}</p>
+        <p class="font-semibold text-[#1e3a5f] text-sm m-0">{{ mascota.name }}</p>
+        <p class="text-xs text-slate-500 mt-0.5 m-0">{{ mascota.species }}</p>
       </div>
     </div>
   </div>
@@ -28,49 +38,3 @@ async function cargar() {
 
 onMounted(cargar)
 </script>
-
-<style scoped>
-.estado {
-  color: #94a3b8;
-  text-align: center;
-  padding: 16px 0;
-}
-.lista {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: 300px; /* ← altura máxima */
-  overflow-y: auto; /* ← barra de scroll */
-  padding-right: 4px;
-}
-.item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px;
-  background: #f8fafc;
-  border-radius: 10px;
-}
-.foto-placeholder {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #e8f0fa;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  flex-shrink: 0;
-}
-.nombre {
-  font-weight: 600;
-  color: #1e3a5f;
-  font-size: 0.9rem;
-  margin: 0;
-}
-.especie {
-  font-size: 0.78rem;
-  color: #64748b;
-  margin: 2px 0 0;
-}
-</style>

@@ -21,18 +21,15 @@ async function login() {
   isLoading.value = true
 
   try {
-    const { data, error } = await useFetch(
-      `${import.meta.env.VITE_API_URL}/login`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-        body: JSON.stringify(form.value),
-      }
-    ).json()
+    const { data, error } = await useFetch(`${import.meta.env.VITE_API_URL}/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: JSON.stringify(form.value),
+    }).json()
 
     isLoading.value = false
 
@@ -50,7 +47,12 @@ async function login() {
       localStorage.setItem('token', loginData.token)
       localStorage.setItem('user', JSON.stringify(loginData.user))
 
-      router.push('/dashboard')
+      const roleId = loginData.user?.role_id
+      if (roleId === 1) router.push('/admin/citas')
+      else if (roleId === 2) router.push('/recepcion')
+      else if (roleId === 3) router.push('/client/dashboard')
+      else if (roleId === 4) router.push('/veterinario/agenda')
+      else router.push('/')
     } else {
       message.value = 'Credenciales incorrectas'
     }
@@ -74,9 +76,7 @@ async function login() {
       class="fixed top-0 left-0 right-0 z-50 py-4 shadow-md text-center"
       style="background-color: #3f98ff"
     >
-      <h3 class="text-white font-semibold text-xl tracking-wide">
-        Veterinaria del Oriente
-      </h3>
+      <h3 class="text-white font-semibold text-xl tracking-wide">Veterinaria del Oriente</h3>
     </nav>
 
     <div
@@ -96,12 +96,8 @@ async function login() {
           alt="Logo"
           style="box-shadow: 0 4px 12px rgba(63, 152, 255, 0.2)"
         />
-        <h4 class="text-2xl font-bold mb-1" style="color: #1a6fd4">
-          Acceso al Sistema
-        </h4>
-        <p class="text-sm" style="color: #8a9bb0">
-          Ingresa tus credenciales para continuar
-        </p>
+        <h4 class="text-2xl font-bold mb-1" style="color: #1a6fd4">Acceso al Sistema</h4>
+        <p class="text-sm" style="color: #8a9bb0">Ingresa tus credenciales para continuar</p>
       </div>
 
       <!-- Error -->

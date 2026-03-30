@@ -1,8 +1,19 @@
 <template>
-  <div class="card" :class="`card-${color}`">
-    <p class="card-titulo">{{ titulo }}</p>
-    <p class="card-valor">{{ valor }}</p>
-    <button v-if="boton" @click="$emit('accion')" class="btn-accion">
+  <div
+    class="rounded-2xl p-5 flex flex-col gap-2 min-h-[120px]"
+    :class="{
+      'bg-blue-100 text-blue-700': color === 'azul',
+      'bg-yellow-100 text-yellow-800': color === 'amarillo',
+      'bg-emerald-100 text-emerald-800': color === 'verde',
+    }"
+  >
+    <p class="text-xs font-semibold m-0 opacity-80">{{ titulo }}</p>
+    <p class="text-[1.8rem] font-bold m-0">{{ valor }}</p>
+    <button
+      v-if="boton"
+      @click="$emit('accion')"
+      class="mt-auto bg-white/50 hover:bg-white/80 border-none rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer transition-colors"
+    >
       {{ boton }}
     </button>
   </div>
@@ -18,37 +29,3 @@ defineProps<{
 
 defineEmits<{ accion: [] }>()
 </script>
-
-<style scoped>
-.card {
-  border-radius: 14px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 120px;
-}
-.card-titulo {
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin: 0;
-  opacity: 0.8;
-}
-.card-valor {
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin: 0;
-}
-.card-azul {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-.card-amarillo {
-  background: #fef9c3;
-  color: #854d0e;
-}
-.card-verde {
-  background: #d1fae5;
-  color: #065f46;
-}
-</style>
