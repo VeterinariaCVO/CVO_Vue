@@ -52,7 +52,7 @@ async function actualizar() {
 
   mensajeExito.value = 'Perfil actualizado correctamente'
   formulario.value.password = ''
-  auth.setUser(data.value.user, auth.token!)
+  auth.user = data.value.user
 }
 
 async function eliminarCuenta() {

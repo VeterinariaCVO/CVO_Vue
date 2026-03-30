@@ -68,6 +68,19 @@ async function cerrarSesion() {
 
       <span class="text-white font-semibold text-sm hidden sm:block">Veterinaria del Oriente</span>
     </div>
+    <!-- Veterinario -->
+    <RouterLink to="/veterinario/citas" v-if="auth.isVeterinario">Mi Agenda</RouterLink>
+    <RouterLink to="/veterinario/mascotas" v-if="auth.isVeterinario">Mascotas</RouterLink>
+    //<router-link to="/veterinario/agenda" v-if="auth.isVeterinario">Agenda</router-link>
+
+
+    <!-- Admin -->
+    <RouterLink to="/admin/servicios" v-if="auth.isAdmin">Servicios</RouterLink>
+
+    <!-- Común -->
+    <RouterLink v-if="!auth.isAuthenticated" to="/login">Login</RouterLink>
+    <button v-if="auth.isAuthenticated" @click="auth.logout()">Logout</button>
+    <span v-if="auth.user">| {{ auth.user.name }} ({{ auth.roleName }})</span>
   </nav>
 
   <RouterView />
