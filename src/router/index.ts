@@ -9,6 +9,7 @@ import RegistrarCliente from '@/views/RegisterClient.vue'
 import LoginViewTest from '@/views/LoginViewTest.vue'
 import ClientAppointmentsView from '../views/client/ClientAppointmentsView.vue'
 import CreateAppointmentsView from '../views/client/CreateAppointmentView.vue'
+import DashboardClientView from '../views/client/DashboardClientView.vue'
 
 const router: Router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -67,6 +68,12 @@ const router: Router = createRouter({
       component: () => import('../views/ClientsView.vue'),
       meta: { requiresAuth: true, role: 3 },
     },
+    {
+      path: '/client/dashboard',
+      name: 'ClientDashboard',
+      component: () => import('../views/client/DashboardClientView.vue'),
+      meta: { requiresAuth: true, role: 3 },
+    },
   ],
 })
 
@@ -92,7 +99,7 @@ function redirigirPorRol(roleId?: number) {
   if (roleId === 1) return { path: '/admin' }
   if (roleId === 2) return { path: '/recepcion' }
   if (roleId === 4) return { path: '/veterinario' }
-  if (roleId === 3) return { path: '/client/mascotas' }
+  if (roleId === 3) return { path: '/client/dashboard' }
   return { path: '/' }
 }
 
