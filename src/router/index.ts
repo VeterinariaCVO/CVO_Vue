@@ -7,10 +7,15 @@ import LoginView from '@/components/auth/LoginForm.vue'
 import RegisterView from '@/components/auth/RegisterForm.vue'
 import WelcomeView from '@/components/auth/WelcomeView.vue'
 import RegistrarCliente from '@/views/RegisterClient.vue'
-import ClientAppointmentsView from '../views/client/ClientAppointmentsView.vue'
+import ClientAppointmentsView from '../views/client/AppointmentsView.vue'
 import CreateAppointmentsView from '../views/client/CreateAppointmentView.vue'
 import VetMascotas from '@/components/employee/VetMascotas.vue'
 import VetExpediente from '@/components/employee/VetExpediente.vue'
+
+import AppointmentsView from '@/views/client/AppointmentsView.vue'
+import CreateAppointmentView from '@/views/client/CreateAppointmentView.vue'
+import AAppointmentsView from '@/views/admin/AAppointmentsView.vue'
+import ACreateAppointmentView from '@/views/admin/ACreateAppointmentView.vue'
 
 const router: Router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -18,8 +23,7 @@ const router: Router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView,
-      meta: { requiresAuth: true },
+      component: WelcomeView,
     },
     {
       path: '/login',
@@ -32,6 +36,30 @@ const router: Router = createRouter({
       name: 'register',
       component: RegisterView,
       meta: { guest: true },
+    },
+    {
+      path: '/client/citas',
+      name: 'client.citas',
+      component: AppointmentsView,
+      meta: { requiresAuth: true, role: 3 },
+    },
+    {
+      path: '/client/agendar',
+      name: 'client.agendar.cita',
+      component: CreateAppointmentView,
+      meta: { requiresAuth: true, role: 3 },
+    },
+    {
+      path: '/admin/citas',
+      name: 'admin.citas',
+      component: AAppointmentsView,
+      meta: { requiresAuth: true, role: 1 },
+    },
+    {
+      path: '/admin/agendar',
+      name: 'admin.agendar.cita',
+      component: ACreateAppointmentView,
+      meta: { requiresAuth: true, role: 1 },
     },
     {
       path: '/veterinario/agenda',
@@ -58,18 +86,6 @@ const router: Router = createRouter({
       name: 'RegisterCliente',
       component: RegistrarCliente,
       meta: { requiresAuth: true, role: 2 },
-    },
-    {
-      path: '/client/citas',
-      name: 'ClientCitas',
-      component: ClientAppointmentsView,
-      meta: { requiresAuth: true, role: 3 },
-    },
-    {
-      path: '/client/create-cita',
-      name: 'CreateCita',
-      component: CreateAppointmentsView,
-      meta: { requiresAuth: true, role: 3 },
     },
     {
       path: '/cliente/perfil',
@@ -117,7 +133,7 @@ router.beforeEach((to) => {
 
 
 function redirigirPorRol(roleId?: number) {
-  if (roleId === 1) return { path: '/admin' }
+  if (roleId === 1) return { path: '/admin/citas' }
   if (roleId === 2) return { path: '/recepcion' }
   if (roleId === 4) return { path: '/veterinario/agenda' }
   if (roleId === 3) return { path: '/cliente/mascotas' }
@@ -126,5 +142,4 @@ function redirigirPorRol(roleId?: number) {
 
   return { path: '/' }
 }
-
 export default router
