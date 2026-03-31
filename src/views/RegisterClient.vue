@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { pato } from '@/services/myFetch.ts'
+import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
 
 const formulario = ref({
   name: '',
@@ -18,7 +18,7 @@ const cliente = computed(() => ({
   password: formulario.value.password,
 }))
 
-const { data, error, isFetching, execute } = pato('/empleado/clientes', {
+const { data, error, isFetching, execute } = ApiUseFetch('/register', {
   immediate: false,
 })
   .post(cliente)
@@ -28,9 +28,9 @@ async function registrar() {
   await execute()
 }
 </script>
+
 <template>
   <div class="layout">
-
     <aside class="sidebar">
       <p class="sidebar-title">Menú</p>
       <a class="menu-item active">Cliente</a>
@@ -39,14 +39,11 @@ async function registrar() {
       <a class="menu-item">Citas</a>
     </aside>
 
-
     <main class="content">
       <h2>Registrar Cliente</h2>
 
-
       <p v-if="data" class="msg-exito">{{ data.message }}</p>
       <p v-if="error" class="msg-error">{{ error }}</p>
-
 
       <div class="card">
         <p class="subtitulo">Añade los datos del cliente</p>
@@ -73,7 +70,7 @@ async function registrar() {
 
         <div class="campo">
           <label>Contraseña temporal</label>
-          <input v-model="formulario.password" type="password" placeholder="Mínimo 8 caracteres" />
+          <input v-model="formulario.password" type="password" placeholder="Mínimo 4 caracteres" />
         </div>
 
         <button @click="registrar" :disabled="isFetching">
@@ -92,7 +89,6 @@ async function registrar() {
   background: #f4f4f4;
 }
 
-/* Sidebar */
 .sidebar {
   width: 140px;
   background: #fff;
@@ -119,7 +115,6 @@ async function registrar() {
   font-weight: bold;
 }
 
-/* Contenido */
 .content {
   flex: 1;
   padding: 28px 32px;
@@ -128,7 +123,6 @@ async function registrar() {
   margin-bottom: 16px;
 }
 
-/* Mensajes */
 .msg-exito {
   color: green;
   margin-bottom: 12px;
@@ -138,7 +132,6 @@ async function registrar() {
   margin-bottom: 12px;
 }
 
-/* Card */
 .card {
   background: #fff;
   border: 1px solid #ddd;
@@ -151,7 +144,6 @@ async function registrar() {
   font-weight: 500;
 }
 
-/* Campos */
 .campo {
   margin-bottom: 14px;
 }
@@ -175,7 +167,6 @@ async function registrar() {
   border-color: #4fc3d8;
 }
 
-/* Botón */
 button {
   width: 100%;
   padding: 11px;

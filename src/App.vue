@@ -1,85 +1,128 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import { useAuthStore } from '@/stores/authStore'
+import { useRouter } from 'vue-router'
+
+const auth = useAuthStore()
+const router = useRouter()
+
+async function cerrarSesion() {
+  await auth.logout()
+  router.push('/login')
+}
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+  <nav class="bg-blue-500 px-6 py-3 flex items-center justify-between shadow-sm">
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
+    <!-- IZQUIERDA -->
+    <div class="flex items-center gap-4">
 
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
+      <RouterLink
+        to="/"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
+      >
+        Home
+      </RouterLink>
+
+      <!-- CLIENTE -->
+      <RouterLink
+        to="/client/citas"
+        v-if="auth.isCliente"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
+      >
+        Mis Citas
+      </RouterLink>
+
+      <RouterLink
+        to="/client/mascotas"
+        v-if="auth.isCliente"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
+      >
+        Mis Mascotas
+      </RouterLink>
+
+      <RouterLink
+        to="/cliente/perfil"
+        v-if="auth.isCliente"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
+      >
+        Mi Perfil
+      </RouterLink>
+
+      <!-- ADMIN -->
+      <RouterLink
+        to="/admin/citas"
+        v-if="auth.isAdmin"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
+      >
+        Citas
+      </RouterLink>
+
+      <!-- EMPLEADO -->
+      <RouterLink
+        to="/empleado/registrar-cliente"
+        v-if="auth.isEmpleado"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
+      >
+        Registrar Cliente
+      </RouterLink>
+
+      <RouterLink
+        to="/empleado/consultas"
+        v-if="auth.isEmpleado"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
+      >
+        Consultas
+      </RouterLink>
+
+      <!-- VETERINARIO -->
+      <RouterLink
+        to="/veterinario/agenda"
+        v-if="auth.isVeterinario"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
+      >
+        Mi Agenda
+      </RouterLink>
+
+      <RouterLink
+        to="/veterinario/mascotas"
+        v-if="auth.isVeterinario"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
+      >
+        Mascotas
+      </RouterLink>
+
     </div>
-  </header>
+
+    <!-- DERECHA -->
+    <div class="flex items-center gap-4">
+
+      <span v-if="auth.user" class="text-blue-100 text-sm">
+        {{ auth.user.name }} · {{ auth.roleName }}
+      </span>
+
+      <RouterLink
+        v-if="!auth.isAuthenticated"
+        to="/login"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
+      >
+        Login
+      </RouterLink>
+
+      <button
+        v-if="auth.isAuthenticated"
+        @click="cerrarSesion"
+        class="text-sm px-3 py-1.5 rounded-lg bg-white text-blue-500 font-medium hover:bg-blue-50 transition"
+      >
+        Cerrar sesión
+      </button>
+
+      <span class="text-white font-semibold text-sm hidden sm:block">
+        Veterinaria del Oriente
+      </span>
+
+    </div>
+  </nav>
 
   <RouterView />
 </template>
-
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
-}
-</style>

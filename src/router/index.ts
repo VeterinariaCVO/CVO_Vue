@@ -1,90 +1,156 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import RegistrarCliente from '../views/RegisterClient.vue'
+import { createRouter, createWebHistory, type Router } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
 
-const router = createRouter({
+import HomeView from '@/views/HomeView.vue'
+import Agenda from '@/views/Agenda.vue'
+import LoginView from '@/components/auth/LoginForm.vue'
+import RegisterView from '@/components/auth/RegisterForm.vue'
+import WelcomeView from '@/components/auth/WelcomeView.vue'
+import RegistrarCliente from '@/views/RegisterClient.vue'
+import VetMascotas from '@/components/employee/VetMascotas.vue'
+import VetExpediente from '@/components/employee/VetExpediente.vue'
+import AppointmentsView from '@/views/client/AppointmentsView.vue'
+import CreateAppointmentView from '@/views/client/CreateAppointmentView.vue'
+import AAppointmentsView from '@/views/admin/AAppointmentsView.vue'
+import ACreateAppointmentView from '@/views/admin/ACreateAppointmentView.vue'
+
+const router: Router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
       name: 'home',
-      component: HomeView,
+      component: WelcomeView,
     },
     {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue'),
+      path: '/login',
+      name: 'login',
+      component: LoginView,
+      meta: { guest: true },
     },
     {
-      path: '/admin/users',
-      name: 'admin-users',
-      component: () => import('../views/AdminUsersView.vue'),
+      path: '/register',
+      name: 'register',
+      component: RegisterView,
+      meta: { guest: true },
     },
     {
-      path: '/empleado/clientes',
-      name: 'employee-clients',
-      component: () => import('../views/EmployeeClientsView.vue'),
+      path: '/client/citas',
+      name: 'client.citas',
+      component: AppointmentsView,
+      meta: { requiresAuth: true, role: 3 },
     },
     {
-      path: '/empleado/clientes/:id',
-      name: 'client-profile',
-      component: () => import('../views/ClientProfileView.vue'),
+      path: '/client/agendar',
+      name: 'client.agendar.cita',
+      component: CreateAppointmentView,
+      meta: { requiresAuth: true, role: 3 },
     },
     {
-      path: '/empleado/mascotas/:id',
-      name: 'pet-detail',
-      component: () => import('../views/PetDetailView.vue'),
+      path: '/admin/citas',
+      name: 'admin.citas',
+      component: AAppointmentsView,
+      meta: { requiresAuth: true, role: 1 },
     },
     {
-      path: '/admin/employees',
-      name: 'admin-employees',
-      component: () => import('../views/AdminEmployeesView.vue'),
+      path: '/admin/agendar',
+      name: 'admin.agendar.cita',
+      component: ACreateAppointmentView,
+      meta: { requiresAuth: true, role: 1 },
+    },
+    {
+      path: '/veterinario/agenda',
+      name: 'VetAgenda',
+      component: Agenda,
+      meta: { requiresAuth: true, role: 4 },
+    },
+    {
+      path: '/veterinario/mascotas',
+      name: 'VetMascotas',
+      component: VetMascotas,
+      meta: { requiresAuth: true, role: 4 },
+    },
+    {
+      path: '/veterinario/expediente/:id',
+      name: 'VetExpediente',
+      component: VetExpediente,
+      meta: { requiresAuth: true, role: 4 },
     },
     {
       path: '/empleado/registrar-cliente',
       name: 'RegisterCliente',
       component: RegistrarCliente,
+      meta: { requiresAuth: true, role: 2 },
     },
+    {
+      path: '/cliente/perfil',
+      name: 'ClientePerfil',
+      component: () => import('../views/client/PerfilView.vue'),
+      meta: { requiresAuth: true, role: 3 },
+    },
+    {
+      path: '/empleado/consultas',
+      name: 'EmpleadoConsultas',
+      component: () => import('../views/empleado/ConsultaView.vue'),
+      meta: { requiresAuth: true, role: 2 },
+    },
+    {
+      path: '/client/mascotas',
+      name: 'ClientMascotas',
+      component: () => import('../views/ClientsView.vue'),
+      meta: { requiresAuth: true, role: 3 },
+    },
+    {
+      path: '/client/dashboard',
+      name: 'ClientDashboard',
+      component: () => import('../views/client/DashboardClientView.vue'),
+      meta: { requiresAuth: true, role: 3 },
+    },
+    {
+    path: '/admin/clientes',
+    name: 'admin.clientes',
+    component: () => import('../views/admin/GestionClientesView.vue'),
+    meta: { requiresAuth: true, role: 1 },
+    },
+    {
+      path: '/admin/empleados',
+      name: 'admin.empleados',
+      component: () => import('../views/admin/GestionEmpleadosView.vue'),
+      meta: { requiresAuth: true, role: 1 },
+    },
+    {
+    path: '/admin/mascotas',
+    name: 'admin.mascotas',
+    component: () => import('../views/admin/GestionMascotasView.vue'),
+    meta: { requiresAuth: true, role: 1 },
+    },
+
   ],
 })
 
-// ── GUARDIA GLOBAL ────────────────────────────────────────
-// Esta función se ejecuta ANTES de entrar a cualquier ruta
-router.beforeEach((to) => {
+router.beforeEach((to: any) => {
   const auth = useAuthStore()
 
-  // Caso 1: La ruta es solo para invitados (como /login)
-  // Si ya estás logueado, te mandamos a tu pantalla según tu rol
   if (to.meta.guest && auth.isAuthenticated) {
     return redirigirPorRol(auth.user?.role_id)
   }
 
-  // Caso 2: La ruta necesita que estés logueado
   if (to.meta.requiresAuth) {
-
-    // Si no estás logueado, te mandamos al login
     if (!auth.isAuthenticated) {
-      return { name: 'Login' }
+      return { name: 'login' }
     }
-
-    // Si estás logueado pero no tienes el rol correcto,
-    // te mandamos a tu pantalla correspondiente
     if (to.meta.role && auth.user?.role_id !== to.meta.role) {
       return redirigirPorRol(auth.user?.role_id)
     }
   }
-  // Si todo está bien, deja pasar (no retorna nada = continúa)
 })
 
-// Función auxiliar: según el rol te manda a la ruta correcta
 function redirigirPorRol(roleId?: number) {
-  if (roleId === 1) return { path: '/admin/usuarios' }
-  if (roleId === 2) return { path: '/empleado/clientes' }
-  if (roleId === 3) return { path: '/cliente/mis-mascotas' }
-  return { name: 'Login' }
+  if (roleId === 1) return { path: '/admin/citas' }
+  if (roleId === 2) return { path: '/recepcion' }
+  if (roleId === 4) return { path: '/veterinario/agenda' }
+  if (roleId === 3) return { path: '/client/dashboard' }
+  return { path: '/' }
 }
 
 export default router
