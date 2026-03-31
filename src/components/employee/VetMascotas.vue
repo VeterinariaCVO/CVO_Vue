@@ -31,6 +31,13 @@ function loadPets() {
 
 loadPets()
 
+
+function expedientepet(){
+  isLoading.value= true
+
+  const { data, onFetchResponse, onFetchError, execute}= ApiUseFetch('/veterinario/expediente/:id')
+}
+
 const filtered = computed(() => {
   if (!search.value.trim()) return pets.value
   const q = search.value.toLowerCase()
