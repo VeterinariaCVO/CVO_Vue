@@ -133,7 +133,7 @@ defineOptions({ name: 'VetExpediente' })
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-6">
+  <div class="min-h-screen bg-linear-to-br from-blue-50 via-white to-blue-100 p-6">
 
     <div class="flex items-center gap-3 mb-6">
       <button
@@ -292,7 +292,7 @@ defineOptions({ name: 'VetExpediente' })
           <button
             @click="saveRecord"
             :disabled="isSaving"
-            class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold text-sm shadow-md shadow-blue-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:transform-none"
+            class="flex-1 py-2.5 rounded-xl bg-linear-to-r from-blue-500 to-blue-700 text-white font-semibold text-sm shadow-md shadow-blue-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:transform-none"
           >
             {{ isSaving ? 'Guardando...' : 'Guardar cambios' }}
           </button>

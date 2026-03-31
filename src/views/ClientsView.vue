@@ -162,7 +162,7 @@ async function eliminarMascota(id: number) {
   <!-- MODAL: VER PERFIL -->
   <div
     v-if="mostrarPerfil"
-    class="fixed inset-0 bg-black/45 flex items-center justify-center z-[9999]"
+    class="fixed inset-0 bg-black/45 flex items-center justify-center z-9999"
   >
     <div
       class="bg-white rounded-2xl p-7 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-[0_8px_40px_rgba(0,0,0,0.18)]"

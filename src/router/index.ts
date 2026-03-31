@@ -106,10 +106,29 @@ const router: Router = createRouter({
       component: () => import('../views/client/DashboardClientView.vue'),
       meta: { requiresAuth: true, role: 3 },
     },
+    {
+    path: '/admin/clientes',
+    name: 'admin.clientes',
+    component: () => import('../views/admin/GestionClientesView.vue'),
+    meta: { requiresAuth: true, role: 1 },
+    },
+    {
+      path: '/admin/empleados',
+      name: 'admin.empleados',
+      component: () => import('../views/admin/GestionEmpleadosView.vue'),
+      meta: { requiresAuth: true, role: 1 },
+    },
+    {
+    path: '/admin/mascotas',
+    name: 'admin.mascotas',
+    component: () => import('../views/admin/GestionMascotasView.vue'),
+    meta: { requiresAuth: true, role: 1 },
+    },
+
   ],
 })
 
-router.beforeEach((to) => {
+router.beforeEach((to: any) => {
   const auth = useAuthStore()
 
   if (to.meta.guest && auth.isAuthenticated) {

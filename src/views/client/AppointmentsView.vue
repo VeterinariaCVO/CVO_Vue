@@ -156,7 +156,7 @@ onMounted(function () {
           :key="cita.id"
           class="bg-white rounded-xl border border-gray-100 px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
         >
-          <div class="min-w-[140px]">
+          <div class="min-w-35">
             <p class="font-semibold text-gray-800">{{ cita.pet.name }}</p>
             <p class="text-sm text-gray-400">{{ cita.service.name }}</p>
           </div>
@@ -187,7 +187,7 @@ onMounted(function () {
             Cancelar
           </button>
 
-          <div v-else class="w-[80px]"></div>
+          <div v-else class="w-20"></div>
         </div>
       </div>
     </div>
