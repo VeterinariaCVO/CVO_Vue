@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
+import { useAuthStore } from '@/stores/authStore'
 import type { Pet } from '@/types/pet'
 
 const props = defineProps<{ id: number }>()
@@ -10,23 +10,65 @@ const emit = defineEmits<{
   guardado: []
 }>()
 
+const authStore = useAuthStore()
 const cargando = ref(true)
 const form = ref<Pet>({} as Pet)
 
+const preview = ref<string | null>(null)
+const fotoArchivo = ref<File | null>(null)
+const inputFoto = ref<HTMLInputElement | null>(null)
+
+function seleccionarFoto(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  fotoArchivo.value = file
+  preview.value = URL.createObjectURL(file)
+}
 async function cargarMascota() {
-  const { data, execute } = ApiUseFetch(`mis-mascotas/${props.id}`).get().json()
-  await execute()
-  form.value = data.value.data
+  const response = await fetch(`${import.meta.env.VITE_API_URL}/mis-mascotas/${props.id}`, {
+    headers: {
+      Authorization: `Bearer ${authStore.token}`,
+      Accept: 'application/json',
+    },
+  })
+  const json = await response.json()
+  form.value = json.data
+  preview.value = json.data.photo_url ?? null
   cargando.value = false
 }
 
 async function guardar() {
-  const { execute } = ApiUseFetch(`mis-mascotas/${props.id}`).put(form.value).json()
-  await execute()
+  const formData = new FormData()
+  formData.append('_method', 'PUT')
+  formData.append('name', form.value.name)
+  formData.append('species', form.value.species)
+  formData.append('sex', form.value.sex)
+  formData.append('breed', form.value.breed ?? '')
+  formData.append('color', form.value.color ?? '')
+  formData.append('special_marks', form.value.special_marks ?? '')
+  formData.append('age', String(form.value.age ?? ''))
+  formData.append('weight', String(form.value.weight ?? ''))
+
+  if (fotoArchivo.value) {
+    formData.append('photo', fotoArchivo.value)
+  }
+
+  await fetch(`${import.meta.env.VITE_API_URL}/mis-mascotas/${props.id}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${authStore.token}`,
+      Accept: 'application/json',
+    },
+    body: formData,
+  })
+
   emit('cerrar')
 }
+
 onMounted(cargarMascota)
 </script>
+
 <template>
   <div class="fixed inset-0 bg-black/45 flex items-center justify-center z-[9999]">
     <div
@@ -38,6 +80,28 @@ onMounted(cargarMascota)
 
       <template v-else>
         <div class="flex flex-col gap-3">
+          <!-- Foto -->
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-slate-500">Foto</label>
+            <div
+              @click="inputFoto?.click()"
+              class="w-full h-36 border-2 border-dashed border-[#dce6f0] rounded-xl cursor-pointer overflow-hidden flex items-center justify-center bg-slate-50 hover:border-[#1d6bbf] transition-colors"
+            >
+              <img v-if="preview" :src="preview" class="w-full h-full object-cover" />
+              <div v-else class="flex flex-col items-center gap-1.5 text-slate-400">
+                <span class="text-3xl">📷</span>
+                <p class="text-xs m-0">Click para cambiar foto</p>
+              </div>
+            </div>
+            <input
+              ref="inputFoto"
+              type="file"
+              accept="image/*"
+              class="hidden"
+              @change="seleccionarFoto"
+            />
+          </div>
+
           <!-- Nombre -->
           <div class="flex flex-col gap-1">
             <label class="text-xs font-semibold text-slate-500">Nombre *</label>

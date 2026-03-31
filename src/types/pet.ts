@@ -8,11 +8,10 @@ export interface Pet {
   weight: number | null
   sex: 'male' | 'female'
   age: number | null
-  photo_path: string | null
+  photo_url?: string | null
   owner_id: number
   active: boolean
 }
-
 
 export interface PetVet {
   id: number

@@ -9,11 +9,18 @@
       :key="mascota.id"
       class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl"
     >
+      <img
+        v-if="mascota.photo_url"
+        :src="mascota.photo_url"
+        class="w-9 h-9 rounded-full object-cover border-2 border-[#dce6f0] flex-shrink-0"
+      />
       <div
+        v-else
         class="w-9 h-9 rounded-full bg-[#e8f0fa] flex items-center justify-center text-base flex-shrink-0"
       >
         🐾
       </div>
+
       <div>
         <p class="font-semibold text-[#1e3a5f] text-sm m-0">{{ mascota.name }}</p>
         <p class="text-xs text-slate-500 mt-0.5 m-0">{{ mascota.species }}</p>

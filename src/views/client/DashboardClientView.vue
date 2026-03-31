@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-[#f0f4f8] p-8">
     <!-- Encabezado -->
     <div class="mb-7">
-      <h1 class="text-[1.6rem] font-bold text-[#1e3a5f] m-0">Bienvenido, {{ nombreUsuario }} 👋</h1>
+      <h1 class="text-[1.6rem] font-bold text-[#1e3a5f] m-0">Bienvenido, {{ nombreUsuario }}</h1>
       <p class="text-sm text-slate-500 mt-1">Aquí puedes ver toda la información de tu cuenta</p>
     </div>
 
@@ -16,7 +16,7 @@
     <!-- Mis Mascotas -->
     <div class="bg-white rounded-2xl border border-[#dce6f0] p-6 shadow-sm mb-7">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-bold text-[#1e3a5f] m-0">🐾 Mis Mascotas</h2>
+        <h2 class="text-lg font-bold text-[#1e3a5f] m-0">Mis Mascotas</h2>
         <button
           @click="irAMascotas"
           class="bg-[#e8f0fa] hover:bg-blue-100 text-[#1d6bbf] font-semibold text-xs px-4 py-1.5 rounded-lg border-none cursor-pointer transition-colors"
@@ -30,7 +30,7 @@
     <!-- Servicios Disponibles -->
     <div class="bg-white rounded-2xl border border-[#dce6f0] p-6 shadow-sm">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-bold text-[#1e3a5f] m-0">🏥 Servicios Disponibles</h2>
+        <h2 class="text-lg font-bold text-[#1e3a5f] m-0">Servicios Disponibles</h2>
       </div>
       <ServiciosResumen />
     </div>

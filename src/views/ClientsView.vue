@@ -78,7 +78,6 @@ async function eliminarMascota(id: number) {
 
 onMounted(obtenerMascotas)
 </script>
-
 <template>
   <div class="min-h-screen bg-slate-100 p-8">
     <!-- Header -->
@@ -111,8 +110,8 @@ onMounted(obtenerMascotas)
         <!-- Cabecera de tarjeta -->
         <div class="flex items-center gap-3">
           <img
-            v-if="mascota.photo_path"
-            :src="mascota.photo_path"
+            v-if="mascota.photo_url"
+            :src="mascota.photo_url"
             class="w-12 h-12 rounded-full object-cover border-2 border-[#dce6f0] shrink-0"
           />
           <div
@@ -163,8 +162,8 @@ onMounted(obtenerMascotas)
       <!-- Cabecera del perfil -->
       <div class="flex flex-col items-center gap-2 mb-5">
         <img
-          v-if="mascotaSeleccionada.photo_path"
-          :src="mascotaSeleccionada.photo_path"
+          v-if="mascotaSeleccionada.photo_url"
+          :src="mascotaSeleccionada.photo_url"
           class="w-22 h-22 rounded-full object-cover border-[3px] border-blue-200"
         />
         <div
@@ -204,6 +203,7 @@ onMounted(obtenerMascotas)
       >
         Cerrar
       </button>
+
       <!-- Historial clínico de la mascota -->
       <div class="mt-5 pt-4 border-t border-slate-100">
         <h3 class="text-sm font-bold text-slate-800 mb-3">📋 Historial Clínico</h3>
