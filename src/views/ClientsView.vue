@@ -22,7 +22,7 @@ async function obtenerMascotas() {
   cargando.value = true
   const { data, execute } = ApiUseFetch('mis-mascotas').get().json()
   await execute()
-  mascotas.value = data.value.data
+  mascotas.value = data.value?.data ?? []
   cargando.value = false
 }
 onMounted(() => {
