@@ -1,29 +1,62 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
-import type { Pet } from '@/types/pet'
+import { useAuthStore } from '@/stores/authStore'
 
 const emit = defineEmits<{
   cerrar: []
   guardado: []
 }>()
 
-type PetForm = Omit<Pet, 'id' | 'owner_id' | 'active' | 'photo_path'>
+const authStore = useAuthStore()
 
-const form = ref<PetForm>({
+const form = ref({
   name: '',
   species: '',
   sex: 'male',
-  breed: null,
-  color: null,
-  special_marks: null,
-  age: null,
-  weight: null,
+  breed: '',
+  color: '',
+  special_marks: '',
+  age: '',
+  weight: '',
 })
 
+// ── Foto ──────────────────────────────────────────────────────────────────────
+const preview = ref<string | null>(null)
+const fotoArchivo = ref<File | null>(null)
+const inputFoto = ref<HTMLInputElement | null>(null)
+
+function seleccionarFoto(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  fotoArchivo.value = file
+  preview.value = URL.createObjectURL(file)
+}
+
+// ── Registrar con FormData para poder enviar la foto ─────────────────────────
 async function registrar() {
-  const { execute } = ApiUseFetch('mis-mascotas').post(form.value).json()
-  await execute()
+  const formData = new FormData()
+  formData.append('name', form.value.name)
+  formData.append('species', form.value.species)
+  formData.append('sex', form.value.sex)
+  formData.append('breed', form.value.breed)
+  formData.append('color', form.value.color)
+  formData.append('special_marks', form.value.special_marks)
+  formData.append('age', form.value.age)
+  formData.append('weight', form.value.weight)
+  if (fotoArchivo.value) {
+    formData.append('photo', fotoArchivo.value)
+  }
+
+  await fetch(`${import.meta.env.VITE_API_URL}/mis-mascotas`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${authStore.token}`,
+      Accept: 'application/json',
+    },
+    body: formData,
+  })
+
   emit('cerrar')
 }
 </script>
@@ -36,6 +69,28 @@ async function registrar() {
       <h2 class="text-lg font-bold text-[#1e3a5f] mt-0 mb-5">Registrar Mascota</h2>
 
       <div class="flex flex-col gap-3">
+        <!-- Foto -->
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-semibold text-slate-500">Foto</label>
+          <div
+            @click="inputFoto?.click()"
+            class="w-full h-36 border-2 border-dashed border-[#dce6f0] rounded-xl cursor-pointer overflow-hidden flex items-center justify-center bg-slate-50 hover:border-[#1d6bbf] transition-colors"
+          >
+            <img v-if="preview" :src="preview" class="w-full h-full object-cover" />
+            <div v-else class="flex flex-col items-center gap-1.5 text-slate-400">
+              <span class="text-3xl">📷</span>
+              <p class="text-xs m-0">Click para subir foto</p>
+            </div>
+          </div>
+          <input
+            ref="inputFoto"
+            type="file"
+            accept="image/*"
+            class="hidden"
+            @change="seleccionarFoto"
+          />
+        </div>
+
         <!-- Nombre -->
         <div class="flex flex-col gap-1">
           <label class="text-xs font-semibold text-slate-500">Nombre *</label>
