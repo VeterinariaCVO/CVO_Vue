@@ -21,7 +21,7 @@
           @click="irAMascotas"
           class="bg-[#e8f0fa] hover:bg-blue-100 text-[#1d6bbf] font-semibold text-xs px-4 py-1.5 rounded-lg border-none cursor-pointer transition-colors"
         >
-          Ver todas
+          Ver Detalles
         </button>
       </div>
       <MascotasResumen />
