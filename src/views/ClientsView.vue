@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router' // ← agrega esto
 import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
 import type { Pet } from '@/types/pet'
 import RegisterPetModal from '@/components/client/RegisterPetModal.vue'
 import EditPetModal from '@/components/client/EditPetModal.vue'
+
+const router = useRouter()
 
 const mascotas = ref<Pet[]>([])
 const cargando = ref(true)
@@ -19,7 +22,7 @@ async function obtenerMascotas() {
   cargando.value = true
   const { data, execute } = ApiUseFetch('mis-mascotas').get().json()
   await execute()
-  mascotas.value = data.value.data
+  mascotas.value = data.value?.data ?? []
   cargando.value = false
 }
 onMounted(() => {
@@ -75,16 +78,21 @@ async function eliminarMascota(id: number) {
   await execute()
   obtenerMascotas()
 }
-
-onMounted(obtenerMascotas)
 </script>
 <template>
   <div class="min-h-screen bg-slate-100 p-8">
-    <!-- Header -->
     <div class="flex items-center justify-between mb-7">
-      <div>
-        <h1 class="text-2xl font-bold text-[#1e3a5f] m-0">Mis Mascotas</h1>
-        <p class="text-sm text-slate-500 mt-1 mb-0">Gestiona las mascotas registradas</p>
+      <div class="flex items-center gap-3">
+        <button
+          @click="router.back()"
+          class="bg-white hover:bg-slate-100 text-slate-600 text-sm font-semibold px-3 py-2 rounded-xl border border-[#dce6f0] cursor-pointer transition-colors"
+        >
+          Regresar
+        </button>
+        <div>
+          <h1 class="text-2xl font-bold text-[#1e3a5f] m-0">Mis Mascotas</h1>
+          <p class="text-sm text-slate-500 mt-1 mb-0">Gestiona las mascotas registradas</p>
+        </div>
       </div>
       <button
         @click="mostrarRegistro = true"
