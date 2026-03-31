@@ -17,30 +17,7 @@ async function cerrarSesion() {
     <!-- IZQUIERDA -->
     <div class="flex items-center gap-4">
 
-      <RouterLink
-        to="/"
-        class="text-white text-sm font-medium hover:text-blue-100 transition"
-      >
-        Home
-      </RouterLink>
-
       <!-- CLIENTE -->
-      <RouterLink
-        to="/client/citas"
-        v-if="auth.isCliente"
-        class="text-white text-sm font-medium hover:text-blue-100 transition"
-      >
-        Mis Citas
-      </RouterLink>
-
-      <RouterLink
-        to="/client/mascotas"
-        v-if="auth.isCliente"
-        class="text-white text-sm font-medium hover:text-blue-100 transition"
-      >
-        Mis Mascotas
-      </RouterLink>
-
       <RouterLink
         to="/cliente/perfil"
         v-if="auth.isCliente"
@@ -58,10 +35,18 @@ async function cerrarSesion() {
         Citas
       </RouterLink>
 
+      <RouterLink
+        to="/admin/empleados"
+        v-if="auth.isAdmin"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
+      >
+        Gestión Empleados
+      </RouterLink>
+
       <!-- EMPLEADO -->
       <RouterLink
         to="/empleado/registrar-cliente"
-        v-if="auth.isEmpleado"
+        v-if="auth.isRecepcionista"
         class="text-white text-sm font-medium hover:text-blue-100 transition"
       >
         Registrar Cliente
@@ -69,7 +54,7 @@ async function cerrarSesion() {
 
       <RouterLink
         to="/empleado/consultas"
-        v-if="auth.isEmpleado"
+        v-if="auth.isRecepcionista"
         class="text-white text-sm font-medium hover:text-blue-100 transition"
       >
         Consultas
