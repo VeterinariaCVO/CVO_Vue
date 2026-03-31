@@ -159,7 +159,7 @@ function statusLabel(status: string) {
 defineOptions({ name: 'VetAgenda' })
 </script>
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-6">
+  <div class="min-h-screen bg-linear-to-br from-blue-50 via-white to-blue-100 p-6">
 
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-blue-700">Mi Agenda</h1>
@@ -235,7 +235,7 @@ defineOptions({ name: 'VetAgenda' })
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div class="flex gap-4 items-start">
             <div
-              class="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+              class="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0"
               :class="apt.is_walk_in ? 'bg-orange-50' : 'bg-blue-50'"
             >
               {{ apt.is_walk_in ? '🚶' : '📋' }}
@@ -281,11 +281,11 @@ defineOptions({ name: 'VetAgenda' })
             </div>
           </div>
 
-          <div class="sm:flex-shrink-0">
+          <div class="sm:shrink-0">
             <button
               v-if="apt.status !== 'completed'"
               @click="openModal(apt)"
-              class="w-full sm:w-auto px-4 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-md shadow-blue-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 whitespace-nowrap"
+              class="w-full sm:w-auto px-4 py-2.5 rounded-xl text-sm font-semibold bg-linear-to-r from-blue-500 to-blue-700 text-white shadow-md shadow-blue-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 whitespace-nowrap"
             >
               📝 Registrar expediente
             </button>
@@ -437,7 +437,7 @@ defineOptions({ name: 'VetAgenda' })
             </button>
             <button
               @click="saveRecord"
-              class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold text-sm shadow-md shadow-blue-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              class="flex-1 py-2.5 rounded-xl bg-linear-to-r from-blue-500 to-blue-700 text-white font-semibold text-sm shadow-md shadow-blue-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
             >
               Guardar expediente
             </button>
