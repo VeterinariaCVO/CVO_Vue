@@ -87,12 +87,12 @@ onMounted(() => obtenerCitas())
           :key="cita.id"
           class="bg-white rounded-xl border border-gray-100 px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4"
         >
-          <div class="min-w-[160px]">
+          <div class="min-w-40">
             <p class="font-semibold text-gray-800">{{ cita.client.name }}</p>
             <p class="text-sm text-gray-400">{{ cita.pet.name }} · {{ cita.service.name }}</p>
           </div>
 
-          <div class="text-sm text-gray-500 min-w-[100px]">
+          <div class="text-sm text-gray-500 min-w-25">
             <p>{{ cita.time_slot.date.slice(0, 10) }}</p>
             <p>{{ cita.time_slot.start_time }}</p>
           </div>

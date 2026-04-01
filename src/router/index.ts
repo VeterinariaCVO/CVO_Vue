@@ -131,6 +131,30 @@ const router: Router = createRouter({
       component: () => import('../views/admin/PetsManagementView.vue'),
       meta: { requiresAuth: true, role: 1 },
     },
+    {
+      path: '/admin/historial',
+      name: 'admin.historial',
+      component: () => import('../views/admin/MedicalHistoryView.vue'),
+      meta: { requiresAuth: true, role: 1 },
+    },
+    {
+      path: '/perfil',
+      name: 'perfil',
+      component: () => import('../views/admin/ProfileView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/admin/servicios',
+      name: 'admin.servicios',
+      component: () => import('../views/ServicesView.vue'),
+      meta: { requiresAuth: true, role: 1 },
+    },
+    {
+      path: '/admin/walk-in',
+      name: 'admin.walkin',
+      component: () => import('../views/admin/WalkInView.vue'),
+      meta: { requiresAuth: true, role: 1 },
+    },
   ],
 })
 
