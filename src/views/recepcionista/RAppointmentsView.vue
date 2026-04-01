@@ -2,7 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 import { useRouter } from 'vue-router'
+import ReagendarCitaModal from '@/components/admin/ReagendarCitaModal.vue'
 
+const mostrarReagendar = ref(false)
+const citaReagendarId = ref<number | null>(null)
 const router = useRouter()
 const citas = ref<any[]>([])
 const cargando = ref(false)
@@ -17,6 +20,17 @@ async function obtenerCitas() {
   await execute()
   citas.value = data.value?.data ?? []
   cargando.value = false
+}
+
+function abrirReagendar(id: number) {
+  citaReagendarId.value = id
+  mostrarReagendar.value = true
+}
+
+function cerrarReagendar() {
+  mostrarReagendar.value = false
+  citaReagendarId.value = null
+  obtenerCitas()
 }
 
 function cambiarFiltro(estado: string) {
@@ -87,12 +101,12 @@ onMounted(() => obtenerCitas())
           :key="cita.id"
           class="bg-white rounded-xl border border-gray-100 px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4"
         >
-          <div class="min-w-[160px]">
+          <div class="min-w-40">
             <p class="font-semibold text-gray-800">{{ cita.client.name }}</p>
             <p class="text-sm text-gray-400">{{ cita.pet.name }} · {{ cita.service.name }}</p>
           </div>
 
-          <div class="text-sm text-gray-500 min-w-[100px]">
+          <div class="text-sm text-gray-500 min-w-25">
             <p>{{ cita.time_slot.date.slice(0, 10) }}</p>
             <p>{{ cita.time_slot.start_time }}</p>
           </div>
@@ -122,6 +136,12 @@ onMounted(() => obtenerCitas())
             >Completar</button>
 
             <button
+              v-if="cita.status === 'pending' || cita.status === 'confirmed'"
+              @click="abrirReagendar(cita.id)"
+              class="text-xs px-3 py-1.5 rounded-lg bg-yellow-50 text-yellow-600 hover:bg-yellow-100 transition font-medium"
+            >Reagendar</button>
+
+            <button
               v-if="cita.status !== 'cancelled' && cita.status !== 'completed'"
               @click="cancelarCita(cita.id)"
               class="text-xs px-3 py-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition font-medium"
@@ -132,4 +152,11 @@ onMounted(() => obtenerCitas())
 
     </div>
   </div>
+
+  <ReagendarCitaModal
+    v-if="mostrarReagendar && citaReagendarId"
+    :citaId="citaReagendarId"
+    @cerrar="cerrarReagendar"
+    @guardado="cerrarReagendar"
+  />
 </template>

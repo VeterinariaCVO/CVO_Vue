@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 
 const props = defineProps<{ citaId: number }>()
