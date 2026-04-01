@@ -13,10 +13,8 @@ async function cerrarSesion() {
 
 <template>
   <nav class="bg-blue-500 px-6 py-3 flex items-center justify-between shadow-sm">
-
     <!-- IZQUIERDA -->
     <div class="flex items-center gap-4">
-
       <!-- CLIENTE -->
       <RouterLink
         to="/cliente/perfil"
@@ -53,12 +51,10 @@ async function cerrarSesion() {
       </RouterLink>
 
       <RouterLink
-        to="/empleado/consultas"
+        to="/recepcionista/citas"
         v-if="auth.isRecepcionista"
         class="text-white text-sm font-medium hover:text-blue-100 transition"
-      >
-        Consultas
-      </RouterLink>
+        >Citas</RouterLink>
 
       <!-- VETERINARIO -->
       <RouterLink
@@ -76,12 +72,10 @@ async function cerrarSesion() {
       >
         Mascotas
       </RouterLink>
-
     </div>
 
     <!-- DERECHA -->
     <div class="flex items-center gap-4">
-
       <span v-if="auth.user" class="text-blue-100 text-sm">
         {{ auth.user.name }} · {{ auth.roleName }}
       </span>
@@ -105,7 +99,6 @@ async function cerrarSesion() {
       <span class="text-white font-semibold text-sm hidden sm:block">
         Veterinaria del Oriente
       </span>
-
     </div>
   </nav>
 

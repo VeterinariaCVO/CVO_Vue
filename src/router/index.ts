@@ -13,6 +13,8 @@ import AppointmentsView from '@/views/client/AppointmentsView.vue'
 import CreateAppointmentView from '@/views/client/CreateAppointmentView.vue'
 import AAppointmentsView from '@/views/admin/AAppointmentsView.vue'
 import ACreateAppointmentView from '@/views/admin/ACreateAppointmentView.vue'
+import RAppointmentsView from '@/views/recepcionista/RAppointmentsView.vue'
+import RCreateAppointmentView from '@/views/recepcionista/RCreateAppointment.vue'
 
 const router: Router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -57,6 +59,18 @@ const router: Router = createRouter({
       name: 'admin.agendar.cita',
       component: ACreateAppointmentView,
       meta: { requiresAuth: true, role: 1 },
+    },
+    {
+      path: '/recepcionista/citas',
+      name: 'recepcionista.citas',
+      component: RAppointmentsView,
+      meta: { requiresAuth: true, role: 2 },
+    },
+    {
+      path: '/recepcionista/agendar',
+      name: 'recepcionista.agendar.cita',
+      component: RCreateAppointmentView,
+      meta: { requiresAuth: true, role: 2 },
     },
     {
       path: '/veterinario/agenda',
@@ -107,10 +121,10 @@ const router: Router = createRouter({
       meta: { requiresAuth: true, role: 3 },
     },
     {
-    path: '/admin/clientes',
-    name: 'admin.clientes',
-    component: () => import('../views/admin/GestionClientesView.vue'),
-    meta: { requiresAuth: true, role: 1 },
+      path: '/admin/clientes',
+      name: 'admin.clientes',
+      component: () => import('../views/admin/GestionClientesView.vue'),
+      meta: { requiresAuth: true, role: 1 },
     },
     {
       path: '/admin/empleados',
@@ -119,12 +133,11 @@ const router: Router = createRouter({
       meta: { requiresAuth: true, role: 1 },
     },
     {
-    path: '/admin/mascotas',
-    name: 'admin.mascotas',
-    component: () => import('../views/admin/GestionMascotasView.vue'),
-    meta: { requiresAuth: true, role: 1 },
+      path: '/admin/mascotas',
+      name: 'admin.mascotas',
+      component: () => import('../views/admin/GestionMascotasView.vue'),
+      meta: { requiresAuth: true, role: 1 },
     },
-
   ],
 })
 
@@ -147,7 +160,7 @@ router.beforeEach((to: any) => {
 
 function redirigirPorRol(roleId?: number) {
   if (roleId === 1) return { path: '/admin/citas' }
-  if (roleId === 2) return { path: '/recepcion' }
+  if (roleId === 2) return { path: '/recepcionista/citas' }
   if (roleId === 4) return { path: '/veterinario/agenda' }
   if (roleId === 3) return { path: '/client/dashboard' }
   return { path: '/' }
