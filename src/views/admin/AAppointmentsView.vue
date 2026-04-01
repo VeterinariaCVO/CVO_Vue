@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 import { useRouter } from 'vue-router'
-import ReagendarCitaModal from '@/components/admin/ReagendarCitaModal.vue'
+import ReagendarCitaModal from '@/components/admin/RescheduleAppointmentModal.vue'
 
 const mostrarReagendar = ref(false)
 const citaReagendarId = ref<number | null>(null)

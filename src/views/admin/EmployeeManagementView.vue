@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
 import type { User } from '@/types/user'
 import AdminNavbar from '@/components/admin/AdminNavbar.vue'
-import EmpleadosTable from '@/components/admin/EmpleadosTable.vue'
+import EmpleadosTable from '@/components/admin/EmployeeTable.vue'
 import RegisterUserModal from '@/components/admin/RegisterUserModal.vue'
 import EditUserModal from '@/components/admin/EditUserModal.vue'
 

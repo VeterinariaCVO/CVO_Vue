@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
 import type { PetVet } from '@/types/pet'
 import AdminNavbar from '@/components/admin/AdminNavbar.vue'
-import MascotasTable from '@/components/admin/MascotasTable.vue'
+import MascotasTable from '@/components/admin/PetTable.vue'
 import RegisterPetAdminModal from '@/components/admin/RegisterPetModal.vue'
 import EditPetAdminModal from '@/components/admin/EditPetModal.vue'
 
