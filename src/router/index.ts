@@ -49,6 +49,12 @@ const router: Router = createRouter({
       meta: { requiresAuth: true, role: 3 },
     },
     {
+      path: '/admin/dashboard',
+      name: 'admin.dashboard',
+      component: () => import('../views/admin/Admindashboard.vue'),
+      meta: { requiresAuth: true, role: 1 },
+    },
+    {
       path: '/admin/citas',
       name: 'admin.citas',
       component: AAppointmentsView,
@@ -123,19 +129,19 @@ const router: Router = createRouter({
     {
       path: '/admin/clientes',
       name: 'admin.clientes',
-      component: () => import('../views/admin/GestionClientesView.vue'),
+      component: () => import('../views/admin/ClientManagementView.vue'),
       meta: { requiresAuth: true, role: 1 },
     },
     {
       path: '/admin/empleados',
       name: 'admin.empleados',
-      component: () => import('../views/admin/GestionEmpleadosView.vue'),
+      component: () => import('../views/admin/EmployeeManagementView.vue'),
       meta: { requiresAuth: true, role: 1 },
     },
     {
       path: '/admin/mascotas',
       name: 'admin.mascotas',
-      component: () => import('../views/admin/GestionMascotasView.vue'),
+      component: () => import('../views/admin/PetsManagementView.vue'),
       meta: { requiresAuth: true, role: 1 },
     },
   ],
@@ -159,7 +165,7 @@ router.beforeEach((to: any) => {
 })
 
 function redirigirPorRol(roleId?: number) {
-  if (roleId === 1) return { path: '/admin/citas' }
+  if (roleId === 1) return { path: '/admin/dashboard' }  // ← cambiado a dashboard
   if (roleId === 2) return { path: '/recepcionista/citas' }
   if (roleId === 4) return { path: '/veterinario/agenda' }
   if (roleId === 3) return { path: '/client/dashboard' }
