@@ -12,7 +12,6 @@ import VetExpediente from '@/components/employee/VetExpediente.vue'
 import AppointmentsView from '@/views/client/AppointmentsView.vue'
 import CreateAppointmentView from '@/views/client/CreateAppointmentView.vue'
 import AAppointmentsView from '@/views/admin/AAppointmentsView.vue'
-import ACreateAppointmentView from '@/views/admin/ACreateAppointmentView.vue'
 import RAppointmentsView from '@/views/recepcionista/RAppointmentsView.vue'
 import RCreateAppointmentView from '@/views/recepcionista/RCreateAppointment.vue'
 
@@ -51,19 +50,13 @@ const router: Router = createRouter({
     {
       path: '/admin/dashboard',
       name: 'admin.dashboard',
-      component: () => import('../views/admin/Admindashboard.vue'),
+      component: () => import('../views/admin/AdminDashboard.vue'),
       meta: { requiresAuth: true, role: 1 },
     },
     {
       path: '/admin/citas',
       name: 'admin.citas',
       component: AAppointmentsView,
-      meta: { requiresAuth: true, role: 1 },
-    },
-    {
-      path: '/admin/agendar',
-      name: 'admin.agendar.cita',
-      component: ACreateAppointmentView,
       meta: { requiresAuth: true, role: 1 },
     },
     {
@@ -127,12 +120,6 @@ const router: Router = createRouter({
       meta: { requiresAuth: true, role: 3 },
     },
     {
-      path: '/admin/clientes',
-      name: 'admin.clientes',
-      component: () => import('../views/admin/ClientManagementView.vue'),
-      meta: { requiresAuth: true, role: 1 },
-    },
-    {
       path: '/admin/empleados',
       name: 'admin.empleados',
       component: () => import('../views/admin/EmployeeManagementView.vue'),
@@ -165,7 +152,7 @@ router.beforeEach((to: any) => {
 })
 
 function redirigirPorRol(roleId?: number) {
-  if (roleId === 1) return { path: '/admin/dashboard' }  // ← cambiado a dashboard
+  if (roleId === 1) return { path: '/admin/dashboard' }
   if (roleId === 2) return { path: '/recepcionista/citas' }
   if (roleId === 4) return { path: '/veterinario/agenda' }
   if (roleId === 3) return { path: '/client/dashboard' }
