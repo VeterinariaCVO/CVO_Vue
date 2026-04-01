@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
+import NotificationBell from '@/components/notifications/NotificationBell.vue' // ← agregar
+
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -61,7 +63,7 @@ async function cerrarSesion() {
       <!-- EMPLEADO -->
       <RouterLink
         to="/empleado/registrar-cliente"
-        v-if="auth.isEmpleado"
+        v-if="auth.isRecepcionista"
         class="text-white text-sm font-medium hover:text-blue-100 transition"
       >
         Registrar Cliente
@@ -69,7 +71,7 @@ async function cerrarSesion() {
 
       <RouterLink
         to="/empleado/consultas"
-        v-if="auth.isEmpleado"
+        v-if="auth.isRecepcionista"
         class="text-white text-sm font-medium hover:text-blue-100 transition"
       >
         Consultas
@@ -94,12 +96,14 @@ async function cerrarSesion() {
 
     </div>
 
-    <!-- DERECHA -->
+      <!-- DERECHA -->
     <div class="flex items-center gap-4">
 
       <span v-if="auth.user" class="text-blue-100 text-sm">
         {{ auth.user.name }} · {{ auth.roleName }}
       </span>
+
+      <NotificationBell v-if="auth.isAuthenticated" />
 
       <RouterLink
         v-if="!auth.isAuthenticated"
