@@ -13,7 +13,7 @@ import CreateAppointmentView from '@/views/client/CreateAppointmentView.vue'
 import AAppointmentsView from '@/views/admin/AAppointmentsView.vue'
 import RAppointmentsView from '@/views/recepcionista/RAppointmentsView.vue'
 import RCreateAppointmentView from '@/views/recepcionista/RCreateAppointment.vue'
-import AdminDashboard from '@/views/admin/AdminDashboard.vue'
+import AdminDashboard from '@/views/admin/Admindashboard.vue'
 import CalendarManagementView from '@/views/admin/CalendarManagementView.vue'
 
 const router: Router = createRouter({
