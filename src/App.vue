@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
+import NotificationBell from '@/components/notifications/NotificationBell.vue'
+
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -204,25 +206,20 @@ async function cerrarSesion() {
 
     </div>
 
-    <!-- DERECHA -->
-    <div class="flex items-center gap-2 shrink-0">
-
-      <!-- Campana — próximamente (sin router-link) -->
-      <span
-        v-if="auth.isAuthenticated"
-        class="relative text-white/35 p-2 rounded-lg cursor-not-allowed select-none"
-        title="Próximamente"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </span>
+      <!-- DERECHA -->
+    <div class="flex items-center gap-4">
 
       <!-- Nombre · rol -->
       <span v-if="auth.user" class="text-white/80 text-sm">
         {{ auth.user.name }} · {{ auth.roleName }}
       </span>
 
+      <NotificationBell v-if="auth.isAuthenticated" />
+
+      <RouterLink
+        v-if="!auth.isAuthenticated"
+        to="/login"
+        class="text-white text-sm font-medium hover:text-blue-100 transition"
       <!-- Separador vertical -->
       <div v-if="auth.isAuthenticated" class="w-px h-5 bg-white/20 mx-1"></div>
 
