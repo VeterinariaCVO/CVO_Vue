@@ -10,6 +10,7 @@ export interface RegisterCredentials {
   password_confirmation: string
   phone: string
   address: string
+  role_id: number
 }
 
 export interface User {

@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory, type Router } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 
-import HomeView from '@/views/HomeView.vue'
 import Agenda from '@/views/Agenda.vue'
 import LoginView from '@/components/auth/LoginForm.vue'
 import RegisterView from '@/components/auth/RegisterForm.vue'
@@ -12,9 +11,9 @@ import VetExpediente from '@/components/employee/VetExpediente.vue'
 import AppointmentsView from '@/views/client/AppointmentsView.vue'
 import CreateAppointmentView from '@/views/client/CreateAppointmentView.vue'
 import AAppointmentsView from '@/views/admin/AAppointmentsView.vue'
-import ACreateAppointmentView from '@/views/admin/ACreateAppointmentView.vue'
 import RAppointmentsView from '@/views/recepcionista/RAppointmentsView.vue'
 import RCreateAppointmentView from '@/views/recepcionista/RCreateAppointment.vue'
+import AdminDashboard from '@/views/admin/Admindashboard.vue'
 
 const router: Router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -51,19 +50,13 @@ const router: Router = createRouter({
     {
       path: '/admin/dashboard',
       name: 'admin.dashboard',
-      component: () => import('../views/admin/Admindashboard.vue'),
+      component: AdminDashboard,
       meta: { requiresAuth: true, role: 1 },
     },
     {
       path: '/admin/citas',
       name: 'admin.citas',
       component: AAppointmentsView,
-      meta: { requiresAuth: true, role: 1 },
-    },
-    {
-      path: '/admin/agendar',
-      name: 'admin.agendar.cita',
-      component: ACreateAppointmentView,
       meta: { requiresAuth: true, role: 1 },
     },
     {
@@ -127,12 +120,6 @@ const router: Router = createRouter({
       meta: { requiresAuth: true, role: 3 },
     },
     {
-      path: '/admin/clientes',
-      name: 'admin.clientes',
-      component: () => import('../views/admin/ClientManagementView.vue'),
-      meta: { requiresAuth: true, role: 1 },
-    },
-    {
       path: '/admin/empleados',
       name: 'admin.empleados',
       component: () => import('../views/admin/EmployeeManagementView.vue'),
@@ -142,6 +129,30 @@ const router: Router = createRouter({
       path: '/admin/mascotas',
       name: 'admin.mascotas',
       component: () => import('../views/admin/PetsManagementView.vue'),
+      meta: { requiresAuth: true, role: 1 },
+    },
+    {
+      path: '/admin/historial',
+      name: 'admin.historial',
+      component: () => import('../views/admin/MedicalHistoryView.vue'),
+      meta: { requiresAuth: true, role: 1 },
+    },
+    {
+      path: '/perfil',
+      name: 'perfil',
+      component: () => import('../views/admin/ProfileView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/admin/servicios',
+      name: 'admin.servicios',
+      component: () => import('../views/ServicesView.vue'),
+      meta: { requiresAuth: true, role: 1 },
+    },
+    {
+      path: '/admin/walk-in',
+      name: 'admin.walkin',
+      component: () => import('../views/admin/WalkInView.vue'),
       meta: { requiresAuth: true, role: 1 },
     },
   ],
@@ -165,7 +176,7 @@ router.beforeEach((to: any) => {
 })
 
 function redirigirPorRol(roleId?: number) {
-  if (roleId === 1) return { path: '/admin/dashboard' } // ← cambiado a dashboard
+  if (roleId === 1) return { path: '/admin/dashboard' }
   if (roleId === 2) return { path: '/recepcionista/citas' }
   if (roleId === 4) return { path: '/veterinario/agenda' }
   if (roleId === 3) return { path: '/client/dashboard' }

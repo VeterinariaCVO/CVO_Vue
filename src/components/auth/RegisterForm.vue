@@ -13,6 +13,7 @@ const form = ref<RegisterCredentials>({
   password_confirmation: '',
   phone: '',
   address: '',
+   role_id: 3,
 })
 
 const message = ref('')
