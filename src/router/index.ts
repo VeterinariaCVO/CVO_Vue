@@ -1,11 +1,11 @@
 import { createRouter, createWebHistory, type Router } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 
-import Agenda from '@/views/Agenda.vue'
+import Agenda from '@/views/empleado/Agenda.vue'
 import LoginView from '@/components/auth/LoginForm.vue'
 import RegisterView from '@/components/auth/RegisterForm.vue'
 import WelcomeView from '@/components/auth/WelcomeView.vue'
-import RegistrarCliente from '@/views/RegisterClient.vue'
+import RegistrarCliente from '@/views/client/RegisterClient.vue'
 import VetMascotas from '@/components/employee/VetMascotas.vue'
 import VetExpediente from '@/components/employee/VetExpediente.vue'
 import AppointmentsView from '@/views/client/AppointmentsView.vue'
@@ -13,7 +13,8 @@ import CreateAppointmentView from '@/views/client/CreateAppointmentView.vue'
 import AAppointmentsView from '@/views/admin/AAppointmentsView.vue'
 import RAppointmentsView from '@/views/recepcionista/RAppointmentsView.vue'
 import RCreateAppointmentView from '@/views/recepcionista/RCreateAppointment.vue'
-import AdminDashboard from '@/views/admin/Admindashboard.vue'
+import AdminDashboard from '@/views/admin/AdminDashboard.vue'
+import CalendarManagementView from '@/views/admin/CalendarManagementView.vue'
 
 const router: Router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -57,6 +58,12 @@ const router: Router = createRouter({
       path: '/admin/citas',
       name: 'admin.citas',
       component: AAppointmentsView,
+      meta: { requiresAuth: true, role: 1 },
+    },
+    {
+      path: '/admin/calendario',
+      name: 'admin.calendario',
+      component: CalendarManagementView,
       meta: { requiresAuth: true, role: 1 },
     },
     {
@@ -110,7 +117,7 @@ const router: Router = createRouter({
     {
       path: '/client/mascotas',
       name: 'ClientMascotas',
-      component: () => import('../views/ClientsView.vue'),
+      component: () => import('../views/client/ClientsView.vue'),
       meta: { requiresAuth: true, role: 3 },
     },
     {
