@@ -72,7 +72,7 @@ async function agendar() {
 
   enviando.value = true
 
-  const { data, error: fetchError, execute } = ApiUseFetch('/appointments').post({
+  const { data, error: fetchError, execute } = ApiUseFetch('/cliente/appointments').post({
     pet_id: mascotaId.value,
     service_id: servicioId.value,
     time_slot_id: slotId.value,
