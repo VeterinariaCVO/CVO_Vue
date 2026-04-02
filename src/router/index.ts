@@ -14,6 +14,7 @@ import CreateAppointmentView from '@/views/client/CreateAppointmentView.vue'
 import AAppointmentsView from '@/views/admin/AAppointmentsView.vue'
 import RAppointmentsView from '@/views/recepcionista/RAppointmentsView.vue'
 import RCreateAppointmentView from '@/views/recepcionista/RCreateAppointment.vue'
+import AdminDashboard from '@/views/admin/Admindashboard.vue'
 
 const router: Router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,7 +51,7 @@ const router: Router = createRouter({
     {
       path: '/admin/dashboard',
       name: 'admin.dashboard',
-      component: () => import('../views/admin/AdminDashboard.vue'),
+      component: AdminDashboard,
       meta: { requiresAuth: true, role: 1 },
     },
     {
