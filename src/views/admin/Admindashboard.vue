@@ -1,16 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
+import { ApiUseFetch } from '@/composables/ApiUseFetch'
 import { useAuthStore } from '@/stores/authStore'
-import { useRouter } from 'vue-router'
-import AdminNavbar from '@/components/admin/AdminNavbar.vue'
 import type { User } from '@/types/user'
 
 const auth = useAuthStore()
-const router = useRouter()
-
-// Pantalla de bienvenida
-const mostrarBienvenida = ref(true)
+const WELCOME_KEY = 'cvo_welcome_shown'
+const mostrarBienvenida = ref(false)
 
 const usuarios = ref<User[]>([])
 const cargando = ref(true)
@@ -22,78 +18,67 @@ const totalCitas = ref(0)
 
 async function cargarDatos() {
   cargando.value = true
-
   const { data: dataUsuarios, execute: execUsuarios } = ApiUseFetch('admin/users').get().json()
   await execUsuarios()
   const todos: User[] = dataUsuarios.value?.data ?? []
   usuarios.value = todos
-
-  totalClientes.value = todos.filter((u) => u.role_id === 3).length
-  totalEmpleados.value = todos.filter((u) => u.role_id === 2).length
-  totalVeterinarios.value = todos.filter((u) => u.role_id === 4).length
-
+  totalClientes.value = todos.filter(u => u.role_id === 3).length
+  totalEmpleados.value = todos.filter(u => u.role_id === 2).length
+  totalVeterinarios.value = todos.filter(u => u.role_id === 4).length
   const { data: dataCitas, execute: execCitas } = ApiUseFetch('appointments').get().json()
   await execCitas()
   totalCitas.value = dataCitas.value?.data?.length ?? 0
-
   cargando.value = false
 }
 
 function entrarAlPanel() {
   mostrarBienvenida.value = false
+  sessionStorage.setItem(WELCOME_KEY, 'true')
 }
 
 async function toggleActivo(usuario: User) {
   const { execute } = ApiUseFetch(`admin/users/${usuario.id}`).put({ active: !usuario.active }).json()
   await execute()
-  mensajeExito.value = usuario.active ? 'Usuario desactivado correctamente' : 'Usuario reactivado correctamente'
+  mensajeExito.value = usuario.active ? 'Usuario desactivado' : 'Usuario reactivado'
   setTimeout(() => (mensajeExito.value = ''), 3000)
   cargarDatos()
 }
 
 function nombreRol(roleId: number) {
-  if (roleId === 1) return 'Admin'
-  if (roleId === 2) return 'Trabajador'
-  if (roleId === 3) return 'Cliente'
-  if (roleId === 4) return 'Veterinario'
-  return '—'
+  const map: Record<number, string> = { 1: 'Admin', 2: 'Recepcionista', 3: 'Cliente', 4: 'Veterinario' }
+  return map[roleId] ?? '—'
 }
 
-onMounted(cargarDatos)
+onMounted(() => {
+  if (!sessionStorage.getItem(WELCOME_KEY)) mostrarBienvenida.value = true
+  cargarDatos()
+})
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#eaf1fb]">
-    <AdminNavbar />
-
-    <!-- Pantalla de bienvenida -->
+  <div>
+    <!-- Pantalla bienvenida -->
     <transition name="fade">
       <div
         v-if="mostrarBienvenida"
         class="fixed inset-0 bg-[#1d6bbf] flex flex-col items-center justify-center z-50"
       >
-        <div class="flex flex-col items-center gap-6 text-center px-8">
-          <!-- Logo -->
-          <div class="w-24 h-24 rounded-full bg-white shadow-xl flex items-center justify-center">
-            <svg viewBox="0 0 60 60" fill="none" class="w-16 h-16" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="30" cy="30" r="28" fill="#e8f0fa" stroke="#1d6bbf" stroke-width="2"/>
-              <path d="M20 38c0-5.5 4.5-10 10-10s10 4.5 10 10" stroke="#1d6bbf" stroke-width="2" stroke-linecap="round"/>
-              <circle cx="30" cy="22" r="5" fill="#1d6bbf"/>
-              <path d="M16 30c1.5-3.5 3.5-5 5-5M44 30c-1.5-3.5-3.5-5-5-5" stroke="#1d6bbf" stroke-width="1.8" stroke-linecap="round"/>
+        <div class="flex flex-col items-center gap-5 text-center px-8">
+          <div class="w-20 h-20 rounded-full bg-white/15 flex items-center justify-center">
+            <svg viewBox="0 0 60 60" fill="none" class="w-12 h-12" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 38c0-5.5 4.5-10 10-10s10 4.5 10 10" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="30" cy="22" r="5" fill="white"/>
+              <path d="M16 30c1.5-3.5 3.5-5 5-5M44 30c-1.5-3.5-3.5-5-5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
             </svg>
           </div>
-
           <div>
-            <p class="text-white/70 text-sm font-medium mb-1 uppercase tracking-widest">Sistema CVO</p>
-            <h1 class="text-4xl font-bold text-white m-0">
-              Bienvenido, {{ auth.user?.name }}
-            </h1>
-            <p class="text-white/60 text-base mt-2">Panel de Administración</p>
+            <p class="text-white/50 text-xs uppercase tracking-widest mb-2">Sistema CVO</p>
+            <h1 class="text-3xl font-semibold text-white m-0">Bienvenido, {{ auth.user?.name }}</h1>
+            <p class="text-white/50 text-sm mt-1">Panel de Administración</p>
           </div>
-
           <button
             @click="entrarAlPanel"
-            class="mt-4 bg-white text-[#1d6bbf] font-bold text-sm px-8 py-3 rounded-xl border-none cursor-pointer shadow-lg hover:shadow-xl hover:bg-blue-50 transition-all duration-200"
+            class="mt-2 bg-white text-[#1d6bbf] font-semibold text-sm px-7 py-2.5 rounded-lg border-none cursor-pointer hover:bg-blue-50 transition-colors"
           >
             Entrar al panel →
           </button>
@@ -101,120 +86,113 @@ onMounted(cargarDatos)
       </div>
     </transition>
 
-    <!-- Contenido principal -->
     <div class="p-8">
-      <h1 class="text-2xl font-bold text-[#1e3a5f] mb-6">
-        Bienvenido, {{ auth.user?.name }}
-      </h1>
+      <div class="mb-6">
+        <h1 class="text-xl font-semibold text-slate-800 m-0">Bienvenido, {{ auth.user?.name }}</h1>
+        <p class="text-sm text-slate-400 mt-0.5 mb-0">Panel de administración</p>
+      </div>
 
-      <!-- Cards resumen -->
-      <div class="grid grid-cols-4 gap-5 mb-8">
-        <div class="bg-white rounded-2xl border border-[#dce6f0] shadow-sm p-5 flex flex-col gap-1">
-          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Clientes</span>
-          <span class="text-3xl font-bold text-[#1d6bbf]">{{ totalClientes }}</span>
-          <router-link to="/admin/clientes" class="text-xs text-[#1d6bbf] no-underline hover:underline mt-1">Ver todos →</router-link>
+      <!-- Stats -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl border border-slate-200 p-4 flex flex-col gap-1">
+          <span class="text-xs text-slate-400">Clientes</span>
+          <span class="text-2xl font-semibold text-[#1d6bbf]">{{ totalClientes }}</span>
+          <router-link to="/admin/clientes" class="text-xs text-slate-400 hover:text-[#1d6bbf] no-underline mt-0.5 transition-colors">Ver todos →</router-link>
         </div>
-        <div class="bg-white rounded-2xl border border-[#dce6f0] shadow-sm p-5 flex flex-col gap-1">
-          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Recepcionistas</span>
-          <span class="text-3xl font-bold text-[#1d6bbf]">{{ totalEmpleados }}</span>
-          <router-link to="/admin/empleados" class="text-xs text-[#1d6bbf] no-underline hover:underline mt-1">Ver todos →</router-link>
+        <div class="bg-white rounded-xl border border-slate-200 p-4 flex flex-col gap-1">
+          <span class="text-xs text-slate-400">Recepcionistas</span>
+          <span class="text-2xl font-semibold text-[#1d6bbf]">{{ totalEmpleados }}</span>
+          <router-link to="/admin/usuarios" class="text-xs text-slate-400 hover:text-[#1d6bbf] no-underline mt-0.5 transition-colors">Ver todos →</router-link>
         </div>
-        <div class="bg-white rounded-2xl border border-[#dce6f0] shadow-sm p-5 flex flex-col gap-1">
-          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Veterinarios</span>
-          <span class="text-3xl font-bold text-[#1d6bbf]">{{ totalVeterinarios }}</span>
-          <router-link to="/admin/empleados" class="text-xs text-[#1d6bbf] no-underline hover:underline mt-1">Ver todos →</router-link>
+        <div class="bg-white rounded-xl border border-slate-200 p-4 flex flex-col gap-1">
+          <span class="text-xs text-slate-400">Veterinarios</span>
+          <span class="text-2xl font-semibold text-[#1d6bbf]">{{ totalVeterinarios }}</span>
+          <router-link to="/admin/usuarios" class="text-xs text-slate-400 hover:text-[#1d6bbf] no-underline mt-0.5 transition-colors">Ver todos →</router-link>
         </div>
-        <div class="bg-white rounded-2xl border border-[#dce6f0] shadow-sm p-5 flex flex-col gap-1">
-          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Citas totales</span>
-          <span class="text-3xl font-bold text-[#1d6bbf]">{{ totalCitas }}</span>
-          <router-link to="/admin/citas" class="text-xs text-[#1d6bbf] no-underline hover:underline mt-1">Ver todas →</router-link>
+        <div class="bg-white rounded-xl border border-slate-200 p-4 flex flex-col gap-1">
+          <span class="text-xs text-slate-400">Citas totales</span>
+          <span class="text-2xl font-semibold text-[#1d6bbf]">{{ totalCitas }}</span>
+          <router-link to="/admin/citas" class="text-xs text-slate-400 hover:text-[#1d6bbf] no-underline mt-0.5 transition-colors">Ver todas →</router-link>
         </div>
       </div>
 
-      <!-- Tabla de usuarios -->
-      <div class="bg-white rounded-2xl border border-[#dce6f0] shadow-sm overflow-hidden">
-        <div class="flex items-center justify-between px-6 py-4 border-b border-[#dce6f0]">
-          <h2 class="text-base font-bold text-[#1d6bbf] m-0 flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-              <rect x="3" y="3" width="7" height="7" rx="1" stroke-linecap="round"/>
-              <rect x="14" y="3" width="7" height="7" rx="1" stroke-linecap="round"/>
-              <rect x="3" y="14" width="7" height="7" rx="1" stroke-linecap="round"/>
-              <rect x="14" y="14" width="7" height="7" rx="1" stroke-linecap="round"/>
-            </svg>
-            Gestión de Usuarios
-          </h2>
-          <router-link
-            to="/admin/empleados"
-            class="bg-green-500 hover:bg-green-600 text-white text-xs font-bold px-4 py-2 rounded-lg no-underline transition-colors flex items-center gap-1.5"
-          >
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-              <path d="M12 5v14M5 12h14" stroke-linecap="round"/>
-            </svg>
-            Crear Nuevo Usuario
-          </router-link>
+      <!-- Éxito -->
+      <div v-if="mensajeExito" class="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-2.5 text-sm flex items-center justify-between">
+        {{ mensajeExito }}
+        <button @click="mensajeExito = ''" class="bg-transparent border-none cursor-pointer text-green-500 text-base leading-none">×</button>
+      </div>
+
+      <!-- Tabla usuarios -->
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <h2 class="text-sm font-semibold text-slate-700 m-0">Usuarios del sistema</h2>
+          <router-link to="/admin/usuarios" class="text-xs text-[#1d6bbf] hover:underline no-underline transition-colors">Gestionar →</router-link>
         </div>
 
-        <!-- Mensaje éxito -->
-        <div v-if="mensajeExito" class="mx-6 mt-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm flex items-center justify-between">
-          {{ mensajeExito }}
-          <button @click="mensajeExito = ''" class="bg-transparent border-none cursor-pointer text-green-500 font-bold text-base leading-none">×</button>
-        </div>
-
-        <p v-if="cargando" class="text-center text-slate-400 py-10">Cargando usuarios...</p>
+        <p v-if="cargando" class="text-sm text-slate-400 text-center py-10">Cargando...</p>
 
         <table v-else class="w-full border-collapse">
           <thead>
-            <tr class="border-b border-[#dce6f0]">
-              <th class="text-left text-xs font-semibold text-slate-500 px-6 py-3">Nombre</th>
-              <th class="text-left text-xs font-semibold text-slate-500 px-6 py-3">Email</th>
-              <th class="text-left text-xs font-semibold text-slate-500 px-6 py-3">Rol</th>
-              <th class="text-left text-xs font-semibold text-slate-500 px-6 py-3">Teléfono</th>
-              <th class="text-left text-xs font-semibold text-slate-500 px-6 py-3">Dirección</th>
-              <th class="text-center text-xs font-semibold text-slate-500 px-6 py-3">Activo</th>
-              <th class="text-center text-xs font-semibold text-slate-500 px-6 py-3">Acciones</th>
+            <tr class="border-b border-slate-100">
+              <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Nombre</th>
+              <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Correo</th>
+              <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Rol</th>
+              <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Teléfono</th>
+              <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Dirección</th>
+              <th class="text-xs text-slate-400 font-medium px-5 py-3">Activo</th>
+              <th class="text-xs text-slate-400 font-medium px-5 py-3"></th>
             </tr>
           </thead>
           <tbody>
             <tr
               v-for="usuario in usuarios"
               :key="usuario.id"
-              class="border-b border-slate-100 last:border-none hover:bg-slate-50 transition-colors duration-150"
+              class="border-b border-slate-50 last:border-none hover:bg-slate-50 transition-colors"
             >
-              <td class="px-6 py-3 text-sm font-semibold text-[#1e3a5f]">{{ usuario.name }}</td>
-              <td class="px-6 py-3 text-sm text-slate-600">{{ usuario.email }}</td>
-              <td class="px-6 py-3 text-sm text-slate-600">{{ nombreRol(usuario.role_id) }}</td>
-              <td class="px-6 py-3 text-sm text-slate-600">{{ usuario.phone ?? '—' }}</td>
-              <td class="px-6 py-3 text-sm text-slate-600">{{ usuario.address ?? '—' }}</td>
-              <td class="px-6 py-3 text-center">
+              <td class="px-5 py-3 text-sm text-slate-800">{{ usuario.name }}</td>
+              <td class="px-5 py-3 text-sm text-slate-500">{{ usuario.email }}</td>
+              <td class="px-5 py-3 text-sm text-slate-500">{{ nombreRol(usuario.role_id) }}</td>
+              <td class="px-5 py-3 text-sm text-slate-500">{{ usuario.phone ?? '—' }}</td>
+              <td class="px-5 py-3 text-sm text-slate-500">{{ (usuario as any).address ?? '—' }}</td>
+              <td class="px-5 py-3">
                 <span
-                  class="text-xs font-bold px-2.5 py-1 rounded"
-                  :class="usuario.active ? 'bg-green-500 text-white' : 'bg-red-100 text-red-600'"
-                >
-                  {{ usuario.active ? 'Sí' : 'No' }}
-                </span>
+                  class="text-xs px-2 py-0.5 rounded"
+                  :class="usuario.active ? 'text-green-600 bg-green-50' : 'text-slate-400 bg-slate-50'"
+                >{{ usuario.active ? 'Sí' : 'No' }}</span>
               </td>
-              <td class="px-6 py-3 text-center">
-                <span v-if="usuario.role_id === 1" class="text-xs text-slate-400">Tú</span>
-                <div v-else class="flex items-center justify-center gap-2">
-                  <router-link
-                    to="/admin/empleados"
-                    class="bg-[#1d6bbf] hover:bg-[#155fa8] text-white w-7 h-7 rounded flex items-center justify-center no-underline transition-colors"
-                    title="Editar"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                  </router-link>
-                  <button
-                    @click="toggleActivo(usuario)"
-                    class="bg-yellow-400 hover:bg-yellow-500 text-white w-7 h-7 rounded border-none cursor-pointer flex items-center justify-center transition-colors"
-                    title="Activar/Desactivar"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <rect x="3" y="11" width="18" height="11" rx="2" stroke-linecap="round"/>
-                      <path d="M7 11V7a5 5 0 0110 0v4" stroke-linecap="round"/>
-                    </svg>
-                  </button>
+              <td class="px-5 py-3">
+                <div class="flex items-center justify-end gap-1">
+                  <span v-if="usuario.role_id === 1" class="text-xs text-slate-300">—</span>
+                  <template v-else>
+                    <router-link
+                      to="/admin/usuarios"
+                      title="Editar"
+                      class="p-1.5 rounded-md text-amber-600 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors flex items-center justify-center"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </router-link>
+                    <button
+                      @click="toggleActivo(usuario)"
+                      :title="usuario.active ? 'Desactivar' : 'Activar'"
+                      class="p-1.5 rounded-md border cursor-pointer transition-colors flex items-center justify-center"
+                      :class="usuario.active ? 'text-red-500 bg-red-50 border-red-200 hover:bg-red-100' : 'text-green-600 bg-green-50 border-green-200 hover:bg-green-100'"
+                    >
+                      <!-- Desactivar: ojo tachado -->
+                      <svg v-if="usuario.active" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M1 1l22 22" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      <!-- Activar: check -->
+                      <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                  </template>
                 </div>
               </td>
             </tr>
@@ -226,12 +204,6 @@ onMounted(cargarDatos)
 </template>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.4s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
+.fade-enter-active, .fade-leave-active { transition: opacity 0.4s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>
