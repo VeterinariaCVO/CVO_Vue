@@ -24,11 +24,9 @@ const errorMsg = ref('')
 const exitoso = ref(false)
 
 async function cargarClientes() {
-  const { data, execute } = ApiUseFetch('/admin/users').get().json()
+  const { data, execute } = ApiUseFetch('/empleado/clients').get().json()
   await execute()
-  // filtrar solo clientes (role_id 3)
-  const todos = data.value?.data ?? []
-  clientes.value = todos.filter((u: any) => u.role_id === 3)
+  clientes.value = data.value?.data ?? []
 }
 
 async function cargarServicios() {
@@ -100,7 +98,7 @@ async function agendar() {
   }
 
   exitoso.value = true
-  setTimeout(() => router.push('/admin/citas'), 1500)
+  setTimeout(() => router.push('/recepcionista/citas'), 1500)
 }
 
 onMounted(() => {
@@ -114,7 +112,7 @@ onMounted(() => {
     <div class="max-w-lg mx-auto">
 
       <div class="mb-6 flex items-center gap-3">
-        <button @click="router.push('/admin/citas')" class="text-blue-400 hover:text-blue-600 transition text-sm">← Volver</button>
+        <button @click="router.push('/recepcionista/citas')" class="text-blue-400 hover:text-blue-600 transition text-sm">← Volver</button>
         <h2 class="text-xl font-bold text-blue-800">Agendar Cita</h2>
       </div>
 
@@ -124,7 +122,6 @@ onMounted(() => {
 
       <div v-if="!exitoso" class="bg-white rounded-xl border border-gray-100 p-6 grid gap-5">
 
-        <!-- Cliente -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
           <select v-model="clienteId" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
@@ -133,7 +130,6 @@ onMounted(() => {
           </select>
         </div>
 
-        <!-- Mascota -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Mascota</label>
           <div v-if="cargandoMascotas" class="text-sm text-gray-400">Cargando mascotas...</div>
@@ -143,7 +139,6 @@ onMounted(() => {
           </select>
         </div>
 
-        <!-- Servicio -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Servicio</label>
           <select v-model="servicioId" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
@@ -152,7 +147,6 @@ onMounted(() => {
           </select>
         </div>
 
-        <!-- Fecha -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
           <input
@@ -163,7 +157,6 @@ onMounted(() => {
           />
         </div>
 
-        <!-- Slots -->
         <div v-if="fechaSeleccionada">
           <label class="block text-sm font-medium text-gray-700 mb-2">Horario disponible</label>
           <div v-if="cargandoSlots" class="text-sm text-gray-400">Cargando horarios...</div>
@@ -179,18 +172,15 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Notas -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
           <textarea v-model="notas" rows="3" placeholder="Observaciones..." class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"></textarea>
         </div>
 
-        <!-- Error -->
         <div v-if="errorMsg" class="bg-red-50 border border-red-200 text-red-600 rounded-lg px-4 py-3 text-sm">
           {{ errorMsg }}
         </div>
 
-        <!-- Botón -->
         <button
           @click="agendar"
           :disabled="enviando"

@@ -1,6 +1,6 @@
 <template>
   <div
-    class="rounded-2xl p-5 flex flex-col gap-2 min-h-[120px]"
+    class="rounded-2xl p-5 flex flex-col gap-2 min-h-30"
     :class="{
       'bg-blue-100 text-blue-700': color === 'azul',
       'bg-yellow-100 text-yellow-800': color === 'amarillo',

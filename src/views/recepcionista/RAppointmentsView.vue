@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 import ReagendarCitaModal from '@/components/admin/RescheduleAppointmentModal.vue'
-import ACreateAppointmentModal from '@/components/admin/CreateAppointmentModal.vue'
+import RCreateAppointmentModal from '@/components/employee/RCreateAppointmentModal.vue'
 
 const mostrarReagendar = ref(false)
 const citaReagendarId = ref<number | null>(null)
@@ -103,11 +103,10 @@ onMounted(obtenerCitas)
 
 <template>
   <div class="p-8">
-    <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div>
         <h1 class="text-xl font-semibold text-slate-800 m-0">Citas</h1>
-        <p class="text-sm text-slate-400 mt-0.5 mb-0">Supervisa y administra todas las citas</p>
+        <p class="text-sm text-slate-400 mt-0.5 mb-0">Panel de recepcionista</p>
       </div>
       <button
         @click="mostrarAgendar = true"
@@ -120,34 +119,25 @@ onMounted(obtenerCitas)
       </button>
     </div>
 
-    <!-- Éxito -->
     <div v-if="mensajeExito" class="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-2.5 text-sm flex items-center justify-between">
       {{ mensajeExito }}
       <button @click="mensajeExito = ''" class="bg-transparent border-none cursor-pointer text-green-500 text-base leading-none">×</button>
     </div>
 
-    <!-- Tabla card -->
     <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-
-      <!-- Filtros -->
       <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100">
         <div class="flex flex-wrap gap-1.5">
           <button
             v-for="f in filtros"
             :key="f.value"
             @click="cambiarFiltro(f.value)"
-            :class="filtroEstado === f.value
-              ? 'bg-[#1d6bbf] text-white'
-              : 'bg-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'"
+            :class="filtroEstado === f.value ? 'bg-[#1d6bbf] text-white' : 'bg-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'"
             class="px-3 py-1.5 rounded-lg text-xs border-none transition-colors cursor-pointer"
-          >
-            {{ f.label }}
-          </button>
+          >{{ f.label }}</button>
         </div>
         <span class="text-xs text-slate-400">{{ citas.length }} registros</span>
       </div>
 
-      <!-- Cargando -->
       <div v-if="cargando" class="flex justify-center py-14">
         <div class="animate-spin rounded-full h-6 w-6 border-2 border-slate-200 border-t-[#1d6bbf]"></div>
       </div>
@@ -156,29 +146,29 @@ onMounted(obtenerCitas)
 
       <table v-else class="w-full border-collapse">
         <thead>
-          <tr class="border-b border-slate-100">
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Cliente</th>
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Mascota / Servicio</th>
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Fecha</th>
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Hora</th>
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Estado</th>
-            <th class="text-xs text-slate-400 font-medium px-5 py-3"></th>
-          </tr>
+        <tr class="border-b border-slate-100">
+          <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Cliente</th>
+          <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Mascota / Servicio</th>
+          <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Fecha</th>
+          <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Hora</th>
+          <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Estado</th>
+          <th class="text-xs text-slate-400 font-medium px-5 py-3"></th>
+        </tr>
         </thead>
         <tbody>
-          <tr
-            v-for="cita in citas"
-            :key="cita.id"
-            class="border-b border-slate-50 last:border-none hover:bg-slate-50 transition-colors"
-          >
-            <td class="px-5 py-3 text-sm text-slate-800">{{ cita.client?.name }}</td>
-            <td class="px-5 py-3">
-              <p class="text-sm text-slate-800 m-0">{{ cita.pet?.name }}</p>
-              <p class="text-xs text-slate-400 m-0">{{ cita.service?.name }}</p>
-            </td>
-            <td class="px-5 py-3 text-sm text-slate-500">{{ cita.time_slot?.date?.slice(0, 10) }}</td>
-            <td class="px-5 py-3 text-sm text-slate-500">{{ cita.time_slot?.start_time }}</td>
-            <td class="px-5 py-3">
+        <tr
+          v-for="cita in citas"
+          :key="cita.id"
+          class="border-b border-slate-50 last:border-none hover:bg-slate-50 transition-colors"
+        >
+          <td class="px-5 py-3 text-sm text-slate-800">{{ cita.client?.name }}</td>
+          <td class="px-5 py-3">
+            <p class="text-sm text-slate-800 m-0">{{ cita.pet?.name }}</p>
+            <p class="text-xs text-slate-400 m-0">{{ cita.service?.name }}</p>
+          </td>
+          <td class="px-5 py-3 text-sm text-slate-500">{{ cita.time_slot?.date?.slice(0, 10) }}</td>
+          <td class="px-5 py-3 text-sm text-slate-500">{{ cita.time_slot?.start_time }}</td>
+          <td class="px-5 py-3">
               <span
                 class="text-xs px-2 py-1 rounded-md font-medium"
                 :class="{
@@ -189,66 +179,24 @@ onMounted(obtenerCitas)
                   'bg-red-100 text-red-500': cita.status === 'cancelled',
                 }"
               >{{ labelEstado(cita.status) }}</span>
-            </td>
-            <td class="px-5 py-3">
-              <div class="flex items-center justify-end gap-1">
-
-                <!-- Confirmar (pending) -->
-                <button
-                  v-if="cita.status === 'pending'"
-                  @click="cambiarEstado(cita.id, 'confirmed')"
-                  title="Confirmar"
-                  class="p-1.5 rounded-md text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 cursor-pointer transition-colors flex items-center justify-center"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </button>
-
-                <!-- Completar (confirmed) -->
-                <button
-                  v-if="cita.status === 'confirmed'"
-                  @click="cambiarEstado(cita.id, 'completed')"
-                  title="Completar"
-                  class="p-1.5 rounded-md text-green-600 bg-green-50 border border-green-200 hover:bg-green-100 cursor-pointer transition-colors flex items-center justify-center"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-linecap="round" stroke-linejoin="round"/>
-                    <polyline points="22 4 12 14.01 9 11.01" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </button>
-
-                <!-- Reagendar (pending o confirmed) -->
-                <button
-                  v-if="cita.status === 'pending' || cita.status === 'confirmed'"
-                  @click="abrirReagendar(cita.id)"
-                  title="Reagendar"
-                  class="p-1.5 rounded-md text-amber-600 bg-amber-50 border border-amber-200 hover:bg-amber-100 cursor-pointer transition-colors flex items-center justify-center"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M3 3v5h5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M12 7v5l4 2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </button>
-
-                <!-- Cancelar (ni cancelada ni completada) -->
-                <button
-                  v-if="cita.status !== 'cancelled' && cita.status !== 'completed'"
-                  @click="cancelarCita(cita.id)"
-                  title="Cancelar"
-                  class="p-1.5 rounded-md text-red-500 bg-red-50 border border-red-200 hover:bg-red-100 cursor-pointer transition-colors flex items-center justify-center"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M15 9l-6 6M9 9l6 6" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </button>
-
-              </div>
-            </td>
-          </tr>
+          </td>
+          <td class="px-5 py-3">
+            <div class="flex items-center justify-end gap-1">
+              <button v-if="cita.status === 'pending'" @click="cambiarEstado(cita.id, 'confirmed')" title="Confirmar" class="p-1.5 rounded-md text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 cursor-pointer transition-colors flex items-center justify-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button v-if="cita.status === 'confirmed'" @click="cambiarEstado(cita.id, 'completed')" title="Completar" class="p-1.5 rounded-md text-green-600 bg-green-50 border border-green-200 hover:bg-green-100 cursor-pointer transition-colors flex items-center justify-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-linecap="round" stroke-linejoin="round"/><polyline points="22 4 12 14.01 9 11.01" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button v-if="cita.status === 'pending' || cita.status === 'confirmed'" @click="abrirReagendar(cita.id)" title="Reagendar" class="p-1.5 rounded-md text-amber-600 bg-amber-50 border border-amber-200 hover:bg-amber-100 cursor-pointer transition-colors flex items-center justify-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 3v5h5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 7v5l4 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button v-if="cita.status !== 'cancelled' && cita.status !== 'completed'" @click="cancelarCita(cita.id)" title="Cancelar" class="p-1.5 rounded-md text-red-500 bg-red-50 border border-red-200 hover:bg-red-100 cursor-pointer transition-colors flex items-center justify-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 9l-6 6M9 9l6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
         </tbody>
       </table>
     </div>
@@ -260,7 +208,7 @@ onMounted(obtenerCitas)
     @cerrar="cerrarReagendar"
     @guardado="cerrarReagendar"
   />
-  <ACreateAppointmentModal
+  <RCreateAppointmentModal
     v-if="mostrarAgendar"
     @cerrar="mostrarAgendar = false"
     @guardado="cerrarAgendar"

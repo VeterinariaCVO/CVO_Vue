@@ -3,7 +3,7 @@
   <p v-else-if="mascotas.length === 0" class="text-slate-400 text-center py-4">
     No tienes mascotas registradas.
   </p>
-  <div v-else class="flex flex-col gap-2.5 max-h-[300px] overflow-y-auto pr-1">
+  <div v-else class="flex flex-col gap-2.5 max-h-75 overflow-y-auto pr-1">
     <div
       v-for="mascota in mascotas"
       :key="mascota.id"
@@ -12,11 +12,11 @@
       <img
         v-if="mascota.photo_url"
         :src="mascota.photo_url"
-        class="w-9 h-9 rounded-full object-cover border-2 border-[#dce6f0] flex-shrink-0"
+        class="w-9 h-9 rounded-full object-cover border-2 border-[#dce6f0] shrink-0"
       />
       <div
         v-else
-        class="w-9 h-9 rounded-full bg-[#e8f0fa] flex items-center justify-center text-base flex-shrink-0"
+        class="w-9 h-9 rounded-full bg-[#e8f0fa] flex items-center justify-center text-base shrink-0"
       >
         🐾
       </div>

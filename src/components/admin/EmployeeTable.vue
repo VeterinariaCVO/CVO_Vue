@@ -1,47 +1,62 @@
 <script setup lang="ts">
-import type { Client } from '@/types/client'
+import type { User } from '@/types/user'
 
-defineProps<{ clientes: Client[] }>()
+defineProps<{ empleados: User[] }>()
 const emit = defineEmits<{
   (e: 'editar', id: number): void
   (e: 'eliminar', id: number): void
+  (e: 'toggleActivo', empleado: User): void
 }>()
+
+function nombreRol(roleId: number) {
+  if (roleId === 2) return 'Recepcionista'
+  if (roleId === 4) return 'Veterinario'
+  return 'Empleado'
+}
 </script>
 
 <template>
   <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-    <p v-if="clientes.length === 0" class="text-sm text-slate-400 text-center py-10">No hay clientes registrados.</p>
+    <p v-if="empleados.length === 0" class="text-sm text-slate-400 text-center py-10">No hay empleados registrados.</p>
     <table v-else class="w-full border-collapse">
       <thead>
         <tr class="border-b border-slate-100">
           <th class="text-left text-xs text-slate-400 font-medium px-4 py-3">Nombre</th>
           <th class="text-left text-xs text-slate-400 font-medium px-4 py-3">Correo</th>
+          <th class="text-left text-xs text-slate-400 font-medium px-4 py-3">Rol</th>
           <th class="text-left text-xs text-slate-400 font-medium px-4 py-3">Teléfono</th>
-          <th class="text-left text-xs text-slate-400 font-medium px-4 py-3">Dirección</th>
+          <th class="text-left text-xs text-slate-400 font-medium px-4 py-3">Estado</th>
           <th class="text-xs text-slate-400 font-medium px-4 py-3"></th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="cliente in clientes" :key="cliente.id" class="border-b border-slate-50 last:border-none hover:bg-slate-50 transition-colors">
+        <tr v-for="empleado in empleados" :key="empleado.id" class="border-b border-slate-50 last:border-none hover:bg-slate-50 transition-colors">
           <td class="px-4 py-3">
             <div class="flex items-center gap-2.5">
-              <img v-if="cliente.profile_photo" :src="cliente.profile_photo" class="w-7 h-7 rounded-full object-cover shrink-0" />
+              <img v-if="empleado.profile_photo" :src="empleado.profile_photo" class="w-7 h-7 rounded-full object-cover shrink-0" />
               <div v-else class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
                 <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
                   <circle cx="12" cy="7" r="4" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </div>
-              <span class="text-sm text-slate-800">{{ cliente.name }}</span>
+              <span class="text-sm text-slate-800">{{ empleado.name }}</span>
             </div>
           </td>
-          <td class="px-4 py-3 text-sm text-slate-500">{{ cliente.email }}</td>
-          <td class="px-4 py-3 text-sm text-slate-500">{{ cliente.phone ?? '—' }}</td>
-          <td class="px-4 py-3 text-sm text-slate-500">{{ cliente.address ?? '—' }}</td>
+          <td class="px-4 py-3 text-sm text-slate-500">{{ empleado.email }}</td>
+          <td class="px-4 py-3 text-sm text-slate-500">{{ nombreRol(empleado.role_id) }}</td>
+          <td class="px-4 py-3 text-sm text-slate-500">{{ empleado.phone ?? '—' }}</td>
+          <td class="px-4 py-3">
+            <button @click="emit('toggleActivo', empleado)"
+              :class="empleado.active ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-slate-400 bg-slate-50 hover:bg-slate-100'"
+              class="text-xs px-2 py-1 rounded border-none cursor-pointer transition-colors">
+              {{ empleado.active ? 'Activo' : 'Inactivo' }}
+            </button>
+          </td>
           <td class="px-4 py-3">
             <div class="flex items-center justify-end gap-1">
               <button
-                @click="emit('editar', cliente.id)"
+                @click="emit('editar', empleado.id)"
                 title="Editar"
                 class="p-1.5 rounded-md text-amber-600 bg-amber-50 border border-amber-200 hover:bg-amber-100 cursor-pointer transition-colors flex items-center justify-center"
               >
@@ -51,7 +66,7 @@ const emit = defineEmits<{
                 </svg>
               </button>
               <button
-                @click="emit('eliminar', cliente.id)"
+                @click="emit('eliminar', empleado.id)"
                 title="Eliminar"
                 class="p-1.5 rounded-md text-red-500 bg-red-50 border border-red-200 hover:bg-red-100 cursor-pointer transition-colors flex items-center justify-center"
               >

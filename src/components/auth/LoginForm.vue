@@ -48,8 +48,8 @@ async function login() {
       localStorage.setItem('user', JSON.stringify(loginData.user))
 
       const roleId = loginData.user?.role_id
-      if (roleId === 1) router.push('/admin/citas')
-      else if (roleId === 2) router.push('/recepcion')
+      if (roleId === 1) router.push('/admin/dashboard')
+      else if (roleId === 2) router.push('/recepcionista/citas')
       else if (roleId === 3) router.push('/client/dashboard')
       else if (roleId === 4) router.push('/veterinario/agenda')
       else router.push('/')
