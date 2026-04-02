@@ -40,7 +40,7 @@ function update(patch: Partial<{ date: string; is_open: boolean }>) {
           <div v-if="show" class="w-full sm:max-w-sm bg-white rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl">
 
             <!-- Accent bar -->
-            <div class="h-1 w-full bg-gradient-to-r from-[#2d5be3] to-[#6b8ef0]" />
+            <div class="h-1 w-full bg-linear-to-r from-[#2d5be3] to-[#6b8ef0]" />
 
             <!-- Header -->
             <div class="flex items-start justify-between px-6 pt-5 pb-4 border-b border-[#f0ede8]">

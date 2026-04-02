@@ -34,7 +34,7 @@ const emit = defineEmits<{
           <div v-if="show" class="w-full sm:max-w-xs bg-white rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl">
 
             <!-- Accent bar rojo -->
-            <div class="h-1 w-full bg-gradient-to-r from-[#c94040] to-[#e07070]" />
+            <div class="h-1 w-full bg-linear-to-r from-[#c94040] to-[#e07070]" />
 
             <!-- Body -->
             <div class="px-6 pt-6 pb-4 text-center">

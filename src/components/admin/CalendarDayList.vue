@@ -58,7 +58,7 @@ function formatDate(dateStr: string) {
     </div>
 
     <!-- List -->
-    <div v-else class="overflow-y-auto max-h-[520px] divide-y divide-[#f0ede8]">
+    <div v-else class="overflow-y-auto max-h-130 divide-y divide-[#f0ede8]">
       <div
         v-for="day in workingDays"
         :key="day.id"
