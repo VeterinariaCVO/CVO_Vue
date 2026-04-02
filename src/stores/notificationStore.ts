@@ -26,9 +26,11 @@ export const useNotificationStore = defineStore('notifications', () => {
     async function fetchNotifications() {
         loading.value = true
         try {
-            const { data } = await ApiUseFetch('/notifications')
+            const { data, execute } = ApiUseFetch('/notifications')
                 .get()
-                .json<{ data: { notifications: NotificationData[] } }>()
+                .json<{ success: boolean; data: { notifications: NotificationData[] } }>()
+
+            await execute()
 
             if (data.value?.data?.notifications) {
                 notifications.value = data.value.data.notifications
@@ -39,13 +41,26 @@ export const useNotificationStore = defineStore('notifications', () => {
     }
 
     async function markAsRead(id: string) {
-        await ApiUseFetch(`/notifications/${id}/read`).patch().json()
+        const { execute } = ApiUseFetch(`/notifications/${id}/read`)
+            .patch()
+            .json()
+
+        await execute()
+
         const n = notifications.value.find(n => n.id === id)
-        if (n) { n.read = true; n.read_at = new Date().toISOString() }
+        if (n) {
+            n.read    = true
+            n.read_at = new Date().toISOString()
+        }
     }
 
     async function markAllAsRead() {
-        await ApiUseFetch('/notifications/read-all').patch().json()
+        const { execute } = ApiUseFetch('/notifications/read-all')
+            .patch()
+            .json()
+
+        await execute()
+
         notifications.value.forEach(n => {
             n.read    = true
             n.read_at = new Date().toISOString()
@@ -53,7 +68,12 @@ export const useNotificationStore = defineStore('notifications', () => {
     }
 
     async function remove(id: string) {
-        await ApiUseFetch(`/notifications/${id}`).delete().json()
+        const { execute } = ApiUseFetch(`/notifications/${id}`)
+            .delete()
+            .json()
+
+        await execute()
+
         notifications.value = notifications.value.filter(n => n.id !== id)
     }
 
