@@ -14,11 +14,26 @@ const mensajeExito = ref('')
 
 async function obtenerCitas() {
   cargando.value = true
-  let url = '/appointments'
-  if (filtroEstado.value) url += '?status=' + filtroEstado.value
-  const { data, execute } = ApiUseFetch(url).get().json()
-  await execute()
-  citas.value = data.value?.data ?? []
+  citas.value = []
+
+  let url = 'http://127.0.0.1:8000/api/appointments'
+  if (filtroEstado.value !== '') {
+    url += '?status=' + filtroEstado.value
+  }
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('token'),
+        'Accept': 'application/json',
+      }
+    })
+    const json = await res.json()
+    citas.value = json.data ?? []
+  } catch (e) {
+    console.error(e)
+  }
+
   cargando.value = false
 }
 

@@ -41,9 +41,20 @@ async function cargarMascotas() {
   cargandoMascotas.value = true
   mascotas.value = []
   mascotaId.value = null
-  const { data, execute } = ApiUseFetch('/pets?owner_id=' + clienteId.value).get().json()
-  await execute()
-  mascotas.value = data.value?.data ?? []
+
+  try {
+    const res = await fetch('http://127.0.0.1:8000/api/petsi?owner_id=' + clienteId.value, {
+      headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('token'),
+        'Accept': 'application/json',
+      }
+    })
+    const json = await res.json()
+    mascotas.value = json.data ?? []
+  } catch (e) {
+    console.error(e)
+  }
+
   cargandoMascotas.value = false
 }
 
@@ -52,11 +63,22 @@ async function cargarSlots() {
   cargandoSlots.value = true
   slots.value = []
   slotId.value = null
-  const { data: wdData, execute: wdExecute } = ApiUseFetch('/working-days?date=' + fechaSeleccionada.value).get().json()
+  const { data: wdData, execute: wdExecute } = ApiUseFetch(
+    '/working-days?date=' + fechaSeleccionada.value,
+  )
+    .get()
+    .json()
   await wdExecute()
   const workingDays = wdData.value?.data ?? []
-  if (workingDays.length === 0) { cargandoSlots.value = false; return }
-  const { data, execute } = ApiUseFetch('/time-slots?working_day_id=' + workingDays[0].id + '&status=available').get().json()
+  if (workingDays.length === 0) {
+    cargandoSlots.value = false
+    return
+  }
+  const { data, execute } = ApiUseFetch(
+    '/time-slots?working_day_id=' + workingDays[0].id + '&status=available',
+  )
+    .get()
+    .json()
   await execute()
   slots.value = data.value?.data ?? []
   cargandoSlots.value = false
@@ -72,12 +94,18 @@ async function agendar() {
     return
   }
   enviando.value = true
-  const { data, error: fetchError, execute } = ApiUseFetch('/appointments').post({
-    pet_id: mascotaId.value,
-    service_id: servicioId.value,
-    time_slot_id: slotId.value,
-    notes: notas.value,
-  }).json()
+  const {
+    data,
+    error: fetchError,
+    execute,
+  } = ApiUseFetch('/appointments')
+    .post({
+      pet_id: mascotaId.value,
+      service_id: servicioId.value,
+      time_slot_id: slotId.value,
+      notes: notas.value,
+    })
+    .json()
   await execute()
   enviando.value = false
   if (fetchError.value || !data.value?.success) {
@@ -88,25 +116,42 @@ async function agendar() {
   setTimeout(() => emit('guardado'), 1500)
 }
 
-onMounted(() => { cargarClientes(); cargarServicios() })
+onMounted(() => {
+  cargarClientes()
+  cargarServicios()
+})
 </script>
 
 <template>
-  <div class="fixed inset-0 bg-black/30 flex items-center justify-center z-50" @click.self="emit('cerrar')">
+  <div
+    class="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+    @click.self="emit('cerrar')"
+  >
     <div class="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
       <div class="flex items-center justify-between mb-5">
         <h2 class="text-base font-semibold text-slate-800">Agendar cita</h2>
-        <button @click="emit('cerrar')" class="text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer text-lg leading-none">✕</button>
+        <button
+          @click="emit('cerrar')"
+          class="text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer text-lg leading-none"
+        >
+          ✕
+        </button>
       </div>
 
-      <div v-if="exitoso" class="text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-center">
+      <div
+        v-if="exitoso"
+        class="text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-center"
+      >
         ¡Cita agendada correctamente!
       </div>
 
       <div v-else class="flex flex-col gap-3">
         <div class="flex flex-col gap-1">
           <label class="text-xs text-slate-500">Cliente</label>
-          <select v-model="clienteId" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors bg-white">
+          <select
+            v-model="clienteId"
+            class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors bg-white"
+          >
             <option :value="null" disabled>Selecciona un cliente</option>
             <option v-for="c in clientes" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
@@ -114,16 +159,28 @@ onMounted(() => { cargarClientes(); cargarServicios() })
 
         <div class="flex flex-col gap-1">
           <label class="text-xs text-slate-500">Mascota</label>
-          <div v-if="cargandoMascotas" class="text-xs text-slate-400 px-1">Cargando mascotas...</div>
-          <select v-else v-model="mascotaId" :disabled="!clienteId" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors bg-white disabled:opacity-50">
-            <option :value="null" disabled>{{ clienteId ? 'Selecciona una mascota' : 'Elige un cliente primero' }}</option>
+          <div v-if="cargandoMascotas" class="text-xs text-slate-400 px-1">
+            Cargando mascotas...
+          </div>
+          <select
+            v-else
+            v-model="mascotaId"
+            :disabled="!clienteId"
+            class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors bg-white disabled:opacity-50"
+          >
+            <option :value="null" disabled>
+              {{ clienteId ? 'Selecciona una mascota' : 'Elige un cliente primero' }}
+            </option>
             <option v-for="m in mascotas" :key="m.id" :value="m.id">{{ m.name }}</option>
           </select>
         </div>
 
         <div class="flex flex-col gap-1">
           <label class="text-xs text-slate-500">Servicio</label>
-          <select v-model="servicioId" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors bg-white">
+          <select
+            v-model="servicioId"
+            class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors bg-white"
+          >
             <option :value="null" disabled>Selecciona un servicio</option>
             <option v-for="s in servicios" :key="s.id" :value="s.id">{{ s.name }}</option>
           </select>
@@ -131,32 +188,68 @@ onMounted(() => { cargarClientes(); cargarServicios() })
 
         <div class="flex flex-col gap-1">
           <label class="text-xs text-slate-500">Fecha</label>
-          <input type="date" v-model="fechaSeleccionada" :min="new Date(Date.now() + 86400000).toISOString().slice(0, 10)" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors" />
+          <input
+            type="date"
+            v-model="fechaSeleccionada"
+            :min="new Date(Date.now() + 86400000).toISOString().slice(0, 10)"
+            class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors"
+          />
         </div>
 
         <div v-if="fechaSeleccionada" class="flex flex-col gap-2">
           <label class="text-xs text-slate-500">Horario</label>
           <div v-if="cargandoSlots" class="text-xs text-slate-400">Cargando horarios...</div>
-          <div v-else-if="slots.length === 0" class="text-xs text-slate-400">No hay horarios disponibles.</div>
+          <div v-else-if="slots.length === 0" class="text-xs text-slate-400">
+            No hay horarios disponibles.
+          </div>
           <div v-else class="flex flex-wrap gap-2">
-            <button v-for="slot in slots" :key="slot.id" @click="slotId = slot.id"
-              :class="slotId === slot.id ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'"
-              class="border rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer">
+            <button
+              v-for="slot in slots"
+              :key="slot.id"
+              @click="slotId = slot.id"
+              :class="
+                slotId === slot.id
+                  ? 'bg-slate-800 text-white border-slate-800'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+              "
+              class="border rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer"
+            >
               {{ slot.start_time.slice(0, 5) }}
             </button>
           </div>
         </div>
 
         <div class="flex flex-col gap-1">
-          <label class="text-xs text-slate-500">Notas <span class="text-slate-400">(opcional)</span></label>
-          <textarea v-model="notas" rows="2" placeholder="Observaciones..." class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors resize-none"></textarea>
+          <label class="text-xs text-slate-500"
+            >Notas <span class="text-slate-400">(opcional)</span></label
+          >
+          <textarea
+            v-model="notas"
+            rows="2"
+            placeholder="Observaciones..."
+            class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors resize-none"
+          ></textarea>
         </div>
 
-        <div v-if="errorMsg" class="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{{ errorMsg }}</div>
+        <div
+          v-if="errorMsg"
+          class="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2"
+        >
+          {{ errorMsg }}
+        </div>
 
         <div class="flex gap-2 mt-2">
-          <button @click="emit('cerrar')" class="flex-1 border border-slate-200 text-slate-600 text-sm py-2 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors bg-transparent">Cancelar</button>
-          <button @click="agendar" :disabled="enviando" class="flex-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white text-sm py-2 rounded-lg cursor-pointer border-none transition-colors">
+          <button
+            @click="emit('cerrar')"
+            class="flex-1 border border-slate-200 text-slate-600 text-sm py-2 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors bg-transparent"
+          >
+            Cancelar
+          </button>
+          <button
+            @click="agendar"
+            :disabled="enviando"
+            class="flex-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white text-sm py-2 rounded-lg cursor-pointer border-none transition-colors"
+          >
             {{ enviando ? 'Agendando...' : 'Confirmar' }}
           </button>
         </div>
