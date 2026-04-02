@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { Client } from '@/types/client'
+import type { PetVet } from '@/types/pet'
 
-defineProps<{ clientes: Client[] }>()
+defineProps<{ mascotas: PetVet[] }>()
 const emit = defineEmits<{
   (e: 'editar', id: number): void
   (e: 'eliminar', id: number): void
@@ -10,38 +10,39 @@ const emit = defineEmits<{
 
 <template>
   <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-    <p v-if="clientes.length === 0" class="text-sm text-slate-400 text-center py-10">No hay clientes registrados.</p>
+    <p v-if="mascotas.length === 0" class="text-sm text-slate-400 text-center py-10">No hay mascotas registradas.</p>
     <table v-else class="w-full border-collapse">
       <thead>
         <tr class="border-b border-slate-100">
-          <th class="text-left text-xs text-slate-400 font-medium px-4 py-3">Nombre</th>
-          <th class="text-left text-xs text-slate-400 font-medium px-4 py-3">Correo</th>
-          <th class="text-left text-xs text-slate-400 font-medium px-4 py-3">Teléfono</th>
-          <th class="text-left text-xs text-slate-400 font-medium px-4 py-3">Dirección</th>
+          <th class="text-left text-xs text-slate-400 font-medium px-4 py-3">Mascota</th>
+          <th class="text-left text-xs text-slate-400 font-medium px-4 py-3">Especie</th>
+          <th class="text-left text-xs text-slate-400 font-medium px-4 py-3">Raza</th>
+          <th class="text-left text-xs text-slate-400 font-medium px-4 py-3">Dueño</th>
+          <th class="text-left text-xs text-slate-400 font-medium px-4 py-3">Sexo</th>
           <th class="text-xs text-slate-400 font-medium px-4 py-3"></th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="cliente in clientes" :key="cliente.id" class="border-b border-slate-50 last:border-none hover:bg-slate-50 transition-colors">
+        <tr v-for="mascota in mascotas" :key="mascota.id" class="border-b border-slate-50 last:border-none hover:bg-slate-50 transition-colors">
           <td class="px-4 py-3">
             <div class="flex items-center gap-2.5">
-              <img v-if="cliente.profile_photo" :src="cliente.profile_photo" class="w-7 h-7 rounded-full object-cover shrink-0" />
+              <img v-if="mascota.photo_url" :src="mascota.photo_url" class="w-7 h-7 rounded-full object-cover shrink-0" />
               <div v-else class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
                 <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <circle cx="12" cy="7" r="4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke-linecap="round"/>
                 </svg>
               </div>
-              <span class="text-sm text-slate-800">{{ cliente.name }}</span>
+              <span class="text-sm text-slate-800">{{ mascota.name }}</span>
             </div>
           </td>
-          <td class="px-4 py-3 text-sm text-slate-500">{{ cliente.email }}</td>
-          <td class="px-4 py-3 text-sm text-slate-500">{{ cliente.phone ?? '—' }}</td>
-          <td class="px-4 py-3 text-sm text-slate-500">{{ cliente.address ?? '—' }}</td>
+          <td class="px-4 py-3 text-sm text-slate-500">{{ mascota.species }}</td>
+          <td class="px-4 py-3 text-sm text-slate-500">{{ mascota.breed ?? '—' }}</td>
+          <td class="px-4 py-3 text-sm text-slate-500">{{ mascota.owner?.name ?? '—' }}</td>
+          <td class="px-4 py-3 text-sm text-slate-500">{{ mascota.sex === 'male' ? 'Macho' : 'Hembra' }}</td>
           <td class="px-4 py-3">
             <div class="flex items-center justify-end gap-1">
               <button
-                @click="emit('editar', cliente.id)"
+                @click="emit('editar', mascota.id)"
                 title="Editar"
                 class="p-1.5 rounded-md text-amber-600 bg-amber-50 border border-amber-200 hover:bg-amber-100 cursor-pointer transition-colors flex items-center justify-center"
               >
@@ -51,7 +52,7 @@ const emit = defineEmits<{
                 </svg>
               </button>
               <button
-                @click="emit('eliminar', cliente.id)"
+                @click="emit('eliminar', mascota.id)"
                 title="Eliminar"
                 class="p-1.5 rounded-md text-red-500 bg-red-50 border border-red-200 hover:bg-red-100 cursor-pointer transition-colors flex items-center justify-center"
               >
