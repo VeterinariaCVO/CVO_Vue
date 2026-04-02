@@ -1,49 +1,28 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
+import type { MedicalRecord } from '@/types/medicalRecord'
 
 const route = useRoute()
 const router = useRouter()
 
+const records = ref<MedicalRecord[]>([])
 const isLoading = ref(true)
-const isSaving = ref(false)
 const message = ref('')
 const isError = ref(false)
 
-const form = ref({
-  weight: '',
-  temperature: '',
-  symptoms: '',
-  diagnosis: '',
-  treatment: '',
-  prescriptions: '',
-  observations: '',
-  next_visit: '',
-})
-
-const info = ref({
-  pet: '',
-  species: '',
-  service: '',
-  date: '',
-  vet: '',
-})
-
-function loadRecord() {
+function loadRecords() {
   isLoading.value = true
 
-  const id = route.params.id
-
-  const { data, onFetchResponse, onFetchError, execute } = ApiUseFetch(`/medical-records/${id}`)
-    .get()
-    .json()
+  const { data, onFetchResponse, onFetchError, execute } =
+    ApiUseFetch('/medical-records').get().json()
 
   onFetchResponse(() => {
     isLoading.value = false
-    const d = data.value?.data
-
-    if (!d) return
+    const all = data.value?.data ?? []
+     records.value = all.filter((r: MedicalRecord) => r.pet?.id === petId)
+  })
 
     form.value.weight = d.weight ?? ''
     form.value.temperature = d.temperature ?? ''
@@ -54,7 +33,6 @@ function loadRecord() {
     form.value.observations = d.observations ?? ''
     form.value.next_visit = d.next_visit ?? ''
 
-    // Info de solo lectura
     info.value.pet = d.pet?.name ?? ''
     info.value.species = d.pet?.species ?? ''
     info.value.service = d.service ?? ''
@@ -77,7 +55,6 @@ function loadRecord() {
 }
 
 onMounted(() => loadRecord())
-
 
 function saveRecord() {
   if (!form.value.diagnosis.trim()) {
@@ -119,8 +96,6 @@ function saveRecord() {
   execute()
 }
 
-
-
 function showMsg(text: string, error: boolean) {
   message.value = text
   isError.value = error
@@ -134,7 +109,6 @@ defineOptions({ name: 'VetExpediente' })
 
 <template>
   <div class="min-h-screen bg-linear-to-br from-blue-50 via-white to-blue-100 p-6">
-
     <div class="flex items-center gap-3 mb-6">
       <button
         @click="router.back()"
@@ -148,7 +122,6 @@ defineOptions({ name: 'VetExpediente' })
       </div>
     </div>
 
-
     <div
       v-if="message"
       class="mb-4 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2"
@@ -161,7 +134,6 @@ defineOptions({ name: 'VetExpediente' })
       <span>{{ isError ? '⚠' : '✓' }}</span> {{ message }}
     </div>
 
-
     <div v-if="isLoading" class="flex justify-center py-20">
       <div
         class="w-10 h-10 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin"
@@ -169,7 +141,6 @@ defineOptions({ name: 'VetExpediente' })
     </div>
 
     <div v-else class="max-w-2xl mx-auto">
-
       <div class="grid grid-cols-3 gap-3 mb-6">
         <div class="bg-white rounded-xl p-4 text-center border border-blue-100 shadow-sm">
           <p class="text-xs text-slate-400 mb-1">Mascota</p>
@@ -186,9 +157,7 @@ defineOptions({ name: 'VetExpediente' })
         </div>
       </div>
 
-
       <div class="bg-white rounded-2xl border border-blue-100 shadow-sm p-6 space-y-4">
-
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-semibold text-slate-600 mb-1.5">Peso (kg)</label>
@@ -214,7 +183,6 @@ defineOptions({ name: 'VetExpediente' })
           </div>
         </div>
 
-
         <div>
           <label class="block text-sm font-semibold text-slate-600 mb-1.5">Síntomas</label>
           <textarea
@@ -224,7 +192,6 @@ defineOptions({ name: 'VetExpediente' })
             class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-blue-50/40 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all resize-none"
           />
         </div>
-
 
         <div>
           <label class="block text-sm font-semibold text-slate-600 mb-1.5">
@@ -238,7 +205,6 @@ defineOptions({ name: 'VetExpediente' })
           />
         </div>
 
-
         <div>
           <label class="block text-sm font-semibold text-slate-600 mb-1.5">Tratamiento</label>
           <textarea
@@ -248,7 +214,6 @@ defineOptions({ name: 'VetExpediente' })
             class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-blue-50/40 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all resize-none"
           />
         </div>
-
 
         <div class="grid grid-cols-2 gap-4">
           <div>
@@ -281,14 +246,11 @@ defineOptions({ name: 'VetExpediente' })
           />
         </div>
 
-
         <div class="flex gap-3 pt-2">
           <button
             @click="router.back()"
             class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-500 font-semibold text-sm hover:bg-slate-50 transition-colors"
-          >
-
-          </button>
+          ></button>
           <button
             @click="saveRecord"
             :disabled="isSaving"
