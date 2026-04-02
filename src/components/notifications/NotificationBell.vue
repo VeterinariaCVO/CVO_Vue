@@ -11,7 +11,7 @@
             <!-- Badge rojo -->
             <span
                 v-if="store.unreadCount > 0"
-                class="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1"
+                class="absolute top-0.5 right-0.5 min-w-4.5 h-4.5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1"
             >
                 {{ store.unreadCount > 9 ? '9+' : store.unreadCount }}
             </span>
@@ -53,7 +53,7 @@
                     :class="n.read ? 'bg-white hover:bg-gray-50' : 'bg-blue-50 hover:bg-blue-100'">
 
                     <!-- Punto azul si no leída -->
-                    <span class="mt-2 w-2 h-2 rounded-full flex-shrink-0 transition-colors"
+                    <span class="mt-2 w-2 h-2 rounded-full shrink-0 transition-colors"
                         :class="n.read ? 'bg-gray-200' : 'bg-blue-500'" />
 
                     <div class="flex-1 min-w-0">
@@ -65,7 +65,7 @@
                     <!-- Botón eliminar -->
                     <button
                         @click.stop="store.remove(n.id)"
-                        class="flex-shrink-0 mt-1 text-gray-300 hover:text-red-400 transition"
+                        class="shrink-0 mt-1 text-gray-300 hover:text-red-400 transition"
                         title="Eliminar"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
