@@ -1,6 +1,323 @@
+<template>
+  <div class="min-h-screen bg-[#f0f4ff] font-sans antialiased">
+    <div class="max-w-[1600px] mx-auto px-10 py-8">
+      <!-- Header -->
+      <div class="flex items-start justify-between mb-8">
+        <div>
+          <!-- Botón regresar mejorado -->
+          <button
+            @click="router.back()"
+            class="group flex items-center gap-2 mb-4 bg-white border border-blue-100 shadow-sm hover:shadow-md hover:border-[#0056c2] text-slate-600 hover:text-[#0056c2] text-sm font-semibold px-4 py-2 rounded-xl cursor-pointer transition-all duration-200"
+          >
+            <svg
+              class="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            Regresar
+          </button>
+
+          <h1 class="text-3xl font-bold text-slate-800 m-0">Mis Mascotas</h1>
+          <p class="text-slate-400 text-sm mt-1 m-0">
+            Gestiona las mascotas registradas para Veterinaria del Oriente.
+          </p>
+        </div>
+
+        <div class="flex flex-col items-end gap-2">
+          <button
+            @click="!limiteAlcanzado && (mostrarRegistro = true)"
+            :disabled="limiteAlcanzado"
+            class="flex items-center gap-2 font-bold text-sm px-6 py-3 rounded-full border-none cursor-pointer transition-colors shadow-sm"
+            :class="
+              limiteAlcanzado
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-[#0056c2] hover:bg-[#004baa] text-white'
+            "
+          >
+            Registrar Mascota
+          </button>
+          <div class="text-right">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest m-0">
+              Capacidad del Plan
+            </p>
+            <p
+              class="text-sm font-bold m-0"
+              :class="limiteAlcanzado ? 'text-red-500' : 'text-slate-700'"
+            >
+              {{ mascotas.length }} / {{ LIMITE_MASCOTAS }} mascotas
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerta límite -->
+      <div
+        v-if="limiteAlcanzado"
+        class="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl px-5 py-3 text-sm mb-6 flex items-center gap-2"
+      >
+        Has alcanzado el límite de {{ LIMITE_MASCOTAS }} mascotas.
+      </div>
+
+      <p v-if="cargando" class="text-center text-slate-400 py-16">Cargando mascotas...</p>
+      <p v-else-if="mascotas.length === 0" class="text-center text-slate-400 py-16">
+        No hay mascotas registradas.
+      </p>
+
+      <!-- Grid de tarjetas -->
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 mb-10">
+        <div
+          v-for="mascota in mascotas"
+          :key="mascota.id"
+          class="bg-white rounded-2xl border border-blue-100 shadow-sm p-5 flex flex-col gap-4 hover:shadow-md transition-shadow"
+        >
+          <div class="flex items-center gap-4">
+            <img
+              v-if="mascota.photo_url"
+              :src="mascota.photo_url"
+              class="w-16 h-16 rounded-2xl object-cover shadow-sm"
+            />
+            <div
+              v-else
+              class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-2xl shadow-sm"
+            >
+              <svg
+                class="w-7 h-7 text-[#0056c2]/40"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 21c-4.97 0-9-3.134-9-7 0-1.914.96-3.64 2.5-4.9C6.5 7.69 8 5.5 8 3.5c0 0 1 1.5 1 3 .667-.333 2-1.5 2-3 0 0 1 1.5 1 3 .667-.333 2-1.5 2-3 0 2 1.5 4.19 2.5 5.6C18.04 10.36 19 12.086 19 14c0 3.866-4.03 7-7 7z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="font-bold text-lg text-slate-800 m-0">{{ mascota.name }}</p>
+              <p class="text-[#0056c2] text-sm font-medium m-0">
+                {{ mascota.species }} ({{ mascota.breed ?? 'Sin raza' }})
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center justify-between border-t border-slate-100 pt-3">
+            <button
+              @click="verPerfil(mascota)"
+              class="text-slate-500 hover:text-[#0056c2] text-sm font-semibold bg-transparent border-none cursor-pointer p-0 transition-colors"
+            >
+              Ver perfil
+            </button>
+            <div class="flex items-center gap-2">
+              <button
+                @click="abrirEdicion(mascota)"
+                class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold border-none cursor-pointer transition-colors"
+              >
+                Editar
+              </button>
+              <button
+                @click="confirmarEliminar(mascota)"
+                class="px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 text-xs font-semibold border-none cursor-pointer transition-colors"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: VER PERFIL -->
+    <div
+      v-if="mostrarPerfil"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4"
+    >
+      <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div
+          class="relative p-8 rounded-t-3xl overflow-hidden"
+          style="background: linear-gradient(135deg, #0056c2, #3b82f6)"
+        >
+          <button
+            @click="mostrarPerfil = false"
+            class="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white border-none cursor-pointer flex items-center justify-center text-lg transition-colors"
+          >
+            ✕
+          </button>
+          <div class="flex items-center gap-6">
+            <img
+              v-if="mascotaSeleccionada.photo_url"
+              :src="mascotaSeleccionada.photo_url"
+              class="w-28 h-28 rounded-2xl object-cover shadow-xl border-4 border-white/30"
+            />
+            <div
+              v-else
+              class="w-28 h-28 rounded-2xl bg-white/20 flex items-center justify-center shadow-xl"
+            >
+              <svg
+                class="w-12 h-12 text-white/60"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 21c-4.97 0-9-3.134-9-7 0-1.914.96-3.64 2.5-4.9C6.5 7.69 8 5.5 8 3.5c0 0 1 1.5 1 3 .667-.333 2-1.5 2-3 0 0 1 1.5 1 3 .667-.333 2-1.5 2-3 0 2 1.5 4.19 2.5 5.6C18.04 10.36 19 12.086 19 14c0 3.866-4.03 7-7 7z"
+                />
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-3 mb-2">
+                <h2 class="text-3xl font-bold text-white m-0">{{ mascotaSeleccionada.name }}</h2>
+                <span
+                  class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide"
+                  :class="
+                    mascotaSeleccionada.sex === 'male'
+                      ? 'bg-green-400 text-white'
+                      : 'bg-pink-400 text-white'
+                  "
+                >
+                  {{ mascotaSeleccionada.sex === 'male' ? 'Macho' : 'Hembra' }}
+                </span>
+              </div>
+              <p class="text-blue-100 text-base m-0">
+                Un compañero leal que forma parte de nuestra comunidad.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <h3 class="text-base font-bold text-slate-800 mb-5 flex items-center gap-2 m-0">
+              Información General
+            </h3>
+            <div class="flex flex-col gap-4">
+              <div
+                v-for="(item, i) in datosPerfil"
+                :key="i"
+                class="flex justify-between items-center border-b border-slate-100 pb-3 last:border-none last:pb-0"
+              >
+                <span class="text-slate-400 text-sm">{{ item.label }}</span>
+                <span class="text-slate-800 font-semibold text-sm">{{ item.valor }}</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-800 mb-5 flex items-center gap-2 m-0">
+              Historial Clínico
+            </h3>
+            <p v-if="historialMascota.length === 0" class="text-slate-400 text-sm text-center py-4">
+              Sin registros médicos.
+            </p>
+            <div v-else class="flex flex-col gap-3 max-h-64 overflow-y-auto pr-1">
+              <div
+                v-for="registro in historialMascota"
+                :key="registro.id"
+                class="bg-slate-50 rounded-xl p-4 border border-slate-100"
+              >
+                <div class="flex items-start justify-between mb-2">
+                  <p class="text-[#0056c2] font-bold text-sm m-0">
+                    {{ registro.diagnosis ?? 'Sin diagnóstico' }}
+                  </p>
+                  <span
+                    class="text-slate-400 text-[10px] font-semibold uppercase ml-2 flex-shrink-0"
+                  >
+                    {{ registro.created_at ?? '—' }}
+                  </span>
+                </div>
+                <div v-if="registro.symptoms" class="mb-1">
+                  <span class="text-[10px] font-bold uppercase text-slate-400 tracking-wide"
+                    >Síntomas:
+                  </span>
+                  <span class="text-slate-600 text-xs">{{ registro.symptoms }}</span>
+                </div>
+                <div v-if="registro.treatment" class="mb-1">
+                  <span class="text-[10px] font-bold uppercase text-slate-400 tracking-wide"
+                    >Tratamiento:
+                  </span>
+                  <span class="text-slate-600 text-xs">{{ registro.treatment }}</span>
+                </div>
+                <div v-if="registro.prescriptions" class="mb-1">
+                  <span class="text-[10px] font-bold uppercase text-slate-400 tracking-wide"
+                    >Prescripciones:
+                  </span>
+                  <span class="text-slate-600 text-xs">{{ registro.prescriptions }}</span>
+                </div>
+                <div
+                  v-if="registro.next_visit"
+                  class="mt-2 inline-flex items-center gap-1 bg-blue-50 text-[#0056c2] text-[10px] font-bold px-2 py-1 rounded-full"
+                >
+                  Próxima visita: {{ registro.next_visit }}
+                </div>
+              </div>
+            </div>
+            <button
+              class="w-full mt-4 py-3 rounded-xl text-sm font-semibold text-slate-400 border-2 border-dashed border-slate-200 bg-transparent cursor-default"
+            >
+              Ver historial completo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: CONFIRMAR ELIMINAR -->
+    <div
+      v-if="mascotaAEliminar"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4"
+    >
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-7">
+        <div class="text-center mb-6">
+          <h3 class="text-lg font-bold text-slate-800 m-0">¿Eliminar mascota?</h3>
+          <p class="text-slate-400 text-sm mt-2 m-0">
+            Estás por eliminar a <strong class="text-slate-700">{{ mascotaAEliminar.name }}</strong
+            >. Esta acción no se puede deshacer.
+          </p>
+        </div>
+        <div class="flex gap-3">
+          <button
+            @click="mascotaAEliminar = null"
+            class="flex-1 py-3 rounded-xl font-bold text-sm bg-slate-100 hover:bg-slate-200 text-slate-600 border-none cursor-pointer transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            @click="ejecutarEliminar"
+            :disabled="eliminando"
+            class="flex-1 py-3 rounded-xl font-bold text-sm border-none cursor-pointer transition-colors"
+            :class="
+              eliminando
+                ? 'bg-red-300 text-white cursor-not-allowed'
+                : 'bg-red-500 hover:bg-red-600 text-white'
+            "
+          >
+            {{ eliminando ? 'Eliminando...' : 'Sí, eliminar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: REGISTRAR -->
+    <RegisterPetModal v-if="mostrarRegistro" @cerrar="cerrarRegistro" @guardado="obtenerMascotas" />
+
+    <!-- MODAL: EDITAR -->
+    <EditPetModal
+      v-if="mostrarEdicion && mascotaEditarId"
+      :id="mascotaEditarId!"
+      @cerrar="cerrarEdicion"
+      @guardado="obtenerMascotas"
+    />
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router' // ← agrega esto
+import { useRouter } from 'vue-router'
 import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
 import type { Pet } from '@/types/pet'
 import RegisterPetModal from '@/components/client/RegisterPetModal.vue'
@@ -10,13 +327,35 @@ const router = useRouter()
 
 const mascotas = ref<Pet[]>([])
 const cargando = ref(true)
+const historial = ref<any[]>([])
 
 const mostrarPerfil = ref(false)
 const mostrarRegistro = ref(false)
 const mostrarEdicion = ref(false)
+const eliminando = ref(false)
 
 const mascotaSeleccionada = ref<Pet>({} as Pet)
 const mascotaEditarId = ref<number | null>(null)
+const mascotaAEliminar = ref<Pet | null>(null)
+
+const LIMITE_MASCOTAS = 8
+const limiteAlcanzado = computed(() => mascotas.value.length >= LIMITE_MASCOTAS)
+
+const datosPerfil = computed(() => {
+  const m = mascotaSeleccionada.value
+  return [
+    { label: 'Especie', valor: m.species ?? '—' },
+    { label: 'Raza', valor: m.breed ?? '—' },
+    { label: 'Color', valor: m.color ?? '—' },
+    { label: 'Marcas', valor: m.special_marks ?? '—' },
+    { label: 'Edad', valor: m.age ? m.age + ' años' : '—' },
+    { label: 'Peso', valor: m.weight ? m.weight + ' kg' : '—' },
+  ]
+})
+
+const historialMascota = computed(() =>
+  historial.value.filter((r: any) => r.pet?.id === mascotaSeleccionada.value.id),
+)
 
 async function obtenerMascotas() {
   cargando.value = true
@@ -25,23 +364,6 @@ async function obtenerMascotas() {
   mascotas.value = data.value?.data ?? []
   cargando.value = false
 }
-onMounted(() => {
-  obtenerMascotas()
-  cargarHistorial()
-})
-const datosPerfil = computed(() => {
-  const m = mascotaSeleccionada.value
-
-  return [
-    { label: 'Especie', valor: m.species ? m.species : '—' },
-    { label: 'Raza', valor: m.breed ? m.breed : '—' },
-    { label: 'Color', valor: m.color ? m.color : '—' },
-    { label: 'Marcas especiales', valor: m.special_marks ? m.special_marks : '—' },
-    { label: 'Edad', valor: m.age ? m.age + ' años' : '—' },
-    { label: 'Peso', valor: m.weight ? m.weight + ' kg' : '—' },
-  ]
-})
-const historial = ref<any[]>([])
 
 async function cargarHistorial() {
   const { data, execute } = ApiUseFetch('medical-records').get().json()
@@ -49,13 +371,11 @@ async function cargarHistorial() {
   historial.value = data.value?.data ?? []
 }
 
-const historialMascota = computed(() =>
-  historial.value.filter((r: any) => r.pet?.id === mascotaSeleccionada.value.id),
-)
 function verPerfil(mascota: Pet) {
   mascotaSeleccionada.value = mascota
   mostrarPerfil.value = true
 }
+
 function abrirEdicion(mascota: Pet) {
   mascotaEditarId.value = mascota.id
   mostrarEdicion.value = true
@@ -65,183 +385,28 @@ function cerrarRegistro() {
   mostrarRegistro.value = false
   obtenerMascotas()
 }
+
 function cerrarEdicion() {
   mostrarEdicion.value = false
   obtenerMascotas()
 }
 
-async function eliminarMascota(id: number) {
-  const confirmar = confirm('¿Seguro que quieres eliminar esta mascota?')
-  if (!confirmar) return
+function confirmarEliminar(mascota: Pet) {
+  mascotaAEliminar.value = mascota
+}
 
-  const { execute } = ApiUseFetch(`mis-mascotas/${id}`).delete().json()
+async function ejecutarEliminar() {
+  if (!mascotaAEliminar.value) return
+  eliminando.value = true
+  const { execute } = ApiUseFetch(`mis-mascotas/${mascotaAEliminar.value.id}`).delete().json()
   await execute()
+  eliminando.value = false
+  mascotaAEliminar.value = null
   obtenerMascotas()
 }
+
+onMounted(() => {
+  obtenerMascotas()
+  cargarHistorial()
+})
 </script>
-<template>
-  <div class="min-h-screen bg-slate-100 p-8">
-    <div class="flex items-center justify-between mb-7">
-      <div class="flex items-center gap-3">
-        <button
-          @click="router.back()"
-          class="bg-white hover:bg-slate-100 text-slate-600 text-sm font-semibold px-3 py-2 rounded-xl border border-[#dce6f0] cursor-pointer transition-colors"
-        >
-          Regresar
-        </button>
-        <div>
-          <h1 class="text-2xl font-bold text-[#1e3a5f] m-0">Mis Mascotas</h1>
-          <p class="text-sm text-slate-500 mt-1 mb-0">Gestiona las mascotas registradas</p>
-        </div>
-      </div>
-      <button
-        @click="mostrarRegistro = true"
-        class="bg-[#1d6bbf] hover:bg-[#155fa8] text-white font-semibold text-sm px-5 py-2.5 border-none rounded-xl cursor-pointer transition-colors duration-200"
-      >
-        + Registrar Mascota
-      </button>
-    </div>
-
-    <!-- Estados -->
-    <p v-if="cargando" class="text-center text-slate-400 py-10">Cargando mascotas...</p>
-    <p v-else-if="mascotas.length === 0" class="text-center text-slate-400 py-10">
-      No hay mascotas registradas.
-    </p>
-
-    <!-- Grid de tarjetas -->
-    <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-5">
-      <div
-        v-for="mascota in mascotas"
-        :key="mascota.id"
-        class="bg-white rounded-2xl border border-[#dce6f0] shadow-sm p-5 flex flex-col gap-4 transition-shadow duration-200 hover:shadow-[0_4px_16px_rgba(29,107,191,0.12)]"
-      >
-        <!-- Cabecera de tarjeta -->
-        <div class="flex items-center gap-3">
-          <img
-            v-if="mascota.photo_url"
-            :src="mascota.photo_url"
-            class="w-12 h-12 rounded-full object-cover border-2 border-[#dce6f0] shrink-0"
-          />
-          <div
-            v-else
-            class="w-12 h-12 rounded-full bg-[#e8f0fa] flex items-center justify-center text-xl border-2 border-[#dce6f0] shrink-0"
-          >
-            🐾
-          </div>
-          <div>
-            <p class="font-bold text-base text-[#1e3a5f] m-0">{{ mascota.name }}</p>
-            <p class="text-xs text-slate-500 mt-0.5 mb-0">{{ mascota.species }}</p>
-          </div>
-        </div>
-
-        <!-- Acciones -->
-        <div class="flex gap-2 border-t border-slate-100 pt-3">
-          <button
-            @click="verPerfil(mascota)"
-            class="flex-1 text-xs font-semibold py-1.5 rounded-lg border-none cursor-pointer transition-opacity duration-150 hover:opacity-80 bg-blue-100 text-blue-700"
-          >
-            Ver
-          </button>
-          <button
-            @click="abrirEdicion(mascota)"
-            class="flex-1 text-xs font-semibold py-1.5 rounded-lg border-none cursor-pointer transition-opacity duration-150 hover:opacity-80 bg-yellow-100 text-yellow-800"
-          >
-            Editar
-          </button>
-          <button
-            @click="eliminarMascota(mascota.id)"
-            class="flex-1 text-xs font-semibold py-1.5 rounded-lg border-none cursor-pointer transition-opacity duration-150 hover:opacity-80 bg-red-100 text-red-700"
-          >
-            Eliminar
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: VER PERFIL -->
-  <div
-    v-if="mostrarPerfil"
-    class="fixed inset-0 bg-black/45 flex items-center justify-center z-9999"
-  >
-    <div
-      class="bg-white rounded-2xl p-7 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-[0_8px_40px_rgba(0,0,0,0.18)]"
-    >
-      <!-- Cabecera del perfil -->
-      <div class="flex flex-col items-center gap-2 mb-5">
-        <img
-          v-if="mascotaSeleccionada.photo_url"
-          :src="mascotaSeleccionada.photo_url"
-          class="w-22 h-22 rounded-full object-cover border-[3px] border-blue-200"
-        />
-        <div
-          v-else
-          class="w-22 h-22 rounded-full bg-[#e8f0fa] flex items-center justify-center text-4xl border-[3px] border-blue-200"
-        >
-          🐾
-        </div>
-        <h2 class="text-xl font-bold text-[#1e3a5f] m-0">{{ mascotaSeleccionada.name }}</h2>
-        <span
-          class="inline-block text-xs font-semibold px-3 py-0.5 rounded-full"
-          :class="
-            mascotaSeleccionada.sex === 'male'
-              ? 'bg-blue-100 text-blue-700'
-              : 'bg-pink-100 text-pink-700'
-          "
-        >
-          {{ mascotaSeleccionada.sex === 'male' ? '♂ Macho' : '♀ Hembra' }}
-        </span>
-      </div>
-
-      <!-- Datos -->
-      <div class="flex flex-col gap-2.5 mb-5">
-        <div
-          v-for="(item, i) in datosPerfil"
-          :key="i"
-          class="flex justify-between items-center py-2 border-b border-slate-100 last:border-none"
-        >
-          <span class="text-xs font-semibold text-slate-500">{{ item.label }}</span>
-          <span class="text-sm text-[#1e3a5f] font-medium">{{ item.valor }}</span>
-        </div>
-      </div>
-
-      <button
-        @click="mostrarPerfil = false"
-        class="w-full bg-[#e8f0fa] hover:bg-blue-100 text-[#1d6bbf] font-semibold text-sm py-2.5 border-none rounded-xl cursor-pointer transition-colors duration-200"
-      >
-        Cerrar
-      </button>
-
-      <!-- Historial clínico de la mascota -->
-      <div class="mt-5 pt-4 border-t border-slate-100">
-        <h3 class="text-sm font-bold text-slate-800 mb-3">📋 Historial Clínico</h3>
-        <p v-if="historialMascota.length === 0" class="text-xs text-slate-400 text-center">
-          Sin registros médicos.
-        </p>
-        <div v-else class="flex flex-col gap-2 max-h-48 overflow-y-auto">
-          <div
-            v-for="registro in historialMascota"
-            :key="registro.id"
-            class="bg-slate-50 rounded-lg p-3"
-          >
-            <p class="text-sm font-semibold text-slate-800">
-              {{ registro.diagnosis ?? 'Sin diagnóstico' }}
-            </p>
-            <p class="text-xs text-slate-400 mt-1">{{ registro.created_at ?? '—' }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: REGISTRAR -->
-  <RegisterPetModal v-if="mostrarRegistro" @cerrar="cerrarRegistro" @guardado="obtenerMascotas" />
-
-  <!-- MODAL: EDITAR -->
-  <EditPetModal
-    v-if="mostrarEdicion && mascotaEditarId"
-    :id="mascotaEditarId!"
-    @cerrar="cerrarEdicion"
-    @guardado="obtenerMascotas"
-  />
-</template>
