@@ -106,4 +106,107 @@ defineOptions({ name: 'VetExpediente' })
         :key="record.id"
         class="bg-white rounded-2xl border border-blue-100 shadow-sm p-6"
       >
+        <!-- la cabezara del exp -->
+        <div class="flex items-start justify-between gap-4 mb-5">
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-bold text-slate-800 text-base">{{ record.pet?.name }}</span>
+              <span
+                class="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full font-semibold"
+              >
+                {{ record.pet?.species }}
+              </span>
+            </div>
+            <p class="text-sm text-slate-400 mt-1">
+              📅 {{ formatoFecha(record.date) }}
+              <span class="mx-1 text-slate-300">·</span>
+              🩺 {{ record.service }}
+              <span class="mx-1 text-slate-300">·</span>
+              👨⚕️ {{ record.veterinarian?.name }}
+            </p>
+          </div>
+
+          <!-- Botón editar — próximamente
+<button
+  @click="router.push(`/veterinario/editarexpediente/${record.id}`)"
+  class="px-3 py-2 rounded-xl text-sm font-semibold bg-blue-50 text-blue-600
+         border border-blue-200 hover:bg-blue-100 transition-colors whitespace-nowrap"
+>
+  ✏️ Editar
+</button>
+-->
+        </div>
+        <!-- Signos vitales -->
+        <div class="grid grid-cols-2 gap-3 mb-5">
+          <div class="bg-blue-50 rounded-xl p-3 text-center">
+            <p class="text-xs text-slate-400 mb-1">Peso</p>
+            <p class="font-bold text-slate-700">
+              {{ record.weight ? record.weight + ' kg' : '—' }}
+            </p>
+          </div>
+          <div class="bg-blue-50 rounded-xl p-3 text-center">
+            <p class="text-xs text-slate-400 mb-1">Temperatura</p>
+            <p class="font-bold text-slate-700">
+              {{ record.temperature ? record.temperature + ' °C' : '—' }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Campos clínicos -->
+        <div class="space-y-3">
+          <div v-if="record.symptoms">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+              Síntomas
+            </p>
+            <p class="text-sm text-slate-600 bg-slate-50 rounded-xl p-3 border border-slate-100">
+              {{ record.symptoms }}
+            </p>
+          </div>
+
+          <div v-if="record.diagnosis">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+              Diagnóstico
+            </p>
+            <p class="text-sm text-slate-600 bg-slate-50 rounded-xl p-3 border border-slate-100">
+              {{ record.diagnosis }}
+            </p>
+          </div>
+
+          <div v-if="record.treatment">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+              Tratamiento
+            </p>
+            <p class="text-sm text-slate-600 bg-slate-50 rounded-xl p-3 border border-slate-100">
+              {{ record.treatment }}
+            </p>
+          </div>
+
+          <div v-if="record.prescriptions">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+              Prescripciones
+            </p>
+            <p class="text-sm text-slate-600 bg-slate-50 rounded-xl p-3 border border-slate-100">
+              {{ record.prescriptions }}
+            </p>
+          </div>
+
+          <div v-if="record.observations">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+              Observaciones
+            </p>
+            <p class="text-sm text-slate-600 bg-slate-50 rounded-xl p-3 border border-slate-100">
+              {{ record.observations }}
+            </p>
+          </div>
+
+
+        </div>
+
+        <!-- footer final -->
+        <p class="text-xs text-slate-300 mt-4 text-right">
+          Registrado el {{ formatoFecha(record.created_at) }}
+        </p>
+      </div>
+    </div>
+  </div>
 </template>

@@ -3,26 +3,23 @@ import { ref, computed } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 import type { AppointmentVet } from '@/types/appointment.ts'
 
-
-
 const appointments = ref<AppointmentVet[]>([])
-const isLoading = ref(true)
-const message = ref('')
-const isError = ref(false)
+const isLoading    = ref(true)
+const message      = ref('')
+const isError      = ref(false)
 const filterStatus = ref('all')
-const showModal = ref(false)
-const selectedApp = ref<AppointmentVet | null>(null)
+const showModal    = ref(false)
+const selectedApp  = ref<AppointmentVet | null>(null)
 
 const form = ref({
   appointment_id: null as number | null,
-  weight: '',
-  temperature: '',
-  symptoms: '',
-  diagnosis: '',
-  treatment: '',
-  prescriptions: '',
-  observations: '',
-  next_visit: '',
+  weight:         '',
+  temperature:    '',
+  symptoms:       '',
+  diagnosis:      '',
+  treatment:      '',
+  prescriptions:  '',
+  observations:   '',
 })
 
 function loadAppointments() {
@@ -30,12 +27,10 @@ function loadAppointments() {
 
   const { data, onFetchResponse, onFetchError } = ApiUseFetch('/appointments', {
     immediate: true,
-  })
-    .get()
-    .json()
+  }).get().json()
 
   onFetchResponse(() => {
-    isLoading.value = false
+    isLoading.value    = false
     appointments.value = data.value?.data ?? []
   })
 
@@ -56,14 +51,13 @@ function openModal(appointment: AppointmentVet) {
   selectedApp.value = appointment
   form.value = {
     appointment_id: appointment.id,
-    weight: '',
-    temperature: '',
-    symptoms: '',
-    diagnosis: '',
-    treatment: '',
-    prescriptions: '',
-    observations: '',
-    next_visit: '',
+    weight:         '',
+    temperature:    '',
+    symptoms:       '',
+    diagnosis:      '',
+    treatment:      '',
+    prescriptions:  '',
+    observations:   '',
   }
   showModal.value = true
 }
@@ -76,20 +70,19 @@ function saveRecord() {
 
   const body: Record<string, any> = {
     appointment_id: form.value.appointment_id,
-    diagnosis: form.value.diagnosis,
-    treatment: form.value.treatment || null,
+    diagnosis:      form.value.diagnosis,
+    treatment:      form.value.treatment || null,
   }
 
-  if (form.value.weight) body.weight = form.value.weight
-  if (form.value.temperature) body.temperature = form.value.temperature
-  if (form.value.symptoms) body.symptoms = form.value.symptoms
+  if (form.value.weight)        body.weight        = form.value.weight
+  if (form.value.temperature)   body.temperature   = form.value.temperature
+  if (form.value.symptoms)      body.symptoms      = form.value.symptoms
   if (form.value.prescriptions) body.prescriptions = form.value.prescriptions
-  if (form.value.observations) body.observations = form.value.observations
-  if (form.value.next_visit) body.next_visit = form.value.next_visit
+  if (form.value.observations)  body.observations  = form.value.observations
 
-  const { data, onFetchResponse, onFetchError, execute } = ApiUseFetch('/medical-records')
-    .post(body)
-    .json()
+  const { data, onFetchResponse, onFetchError, execute } =
+    ApiUseFetch('/medical-records').post(body).json()
+
   onFetchResponse(() => {
     showModal.value = false
     showMsg('Expediente registrado correctamente ✓', false)
@@ -99,39 +92,36 @@ function saveRecord() {
   onFetchError(() => {
     showMsg(data.value?.message || 'Error al guardar el expediente', true)
   })
+
   execute()
 }
 
-
 function showMsg(text: string, error: boolean) {
   message.value = text
-  isError.value = error
-  setTimeout(() => {
-    message.value = ''
-  }, 3500)
+  isError.value  = error
+  setTimeout(() => { message.value = '' }, 3500)
 }
 
 function formatDate(dateStr: string) {
   if (!dateStr) return '—'
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(dateStr).toLocaleDateString('es-MX', {
+    day: '2-digit', month: 'short', year: 'numeric'
+  })
 }
 
 function statusLabel(status: string) {
   const map: Record<string, { label: string; classes: string }> = {
-    confirmed: { label: 'Confirmada', classes: 'bg-blue-50 text-blue-600 border-blue-200' },
-    in_progress: {
-      label: 'En progreso',
-      classes: 'bg-yellow-50 text-yellow-600 border-yellow-200',
-    },
-    completed: { label: 'Completada', classes: 'bg-green-50 text-green-600 border-green-200' },
-    cancelled: { label: 'Cancelada', classes: 'bg-red-50 text-red-400 border-red-200' },
+    confirmed:   { label: 'Confirmada',  classes: 'bg-blue-50 text-blue-600 border-blue-200' },
+    in_progress: { label: 'En progreso', classes: 'bg-yellow-50 text-yellow-600 border-yellow-200' },
+    completed:   { label: 'Completada',  classes: 'bg-green-50 text-green-600 border-green-200' },
+    cancelled:   { label: 'Cancelada',   classes: 'bg-red-50 text-red-400 border-red-200' },
   }
   return map[status] ?? { label: status, classes: 'bg-slate-100 text-slate-500 border-slate-200' }
 }
 
 defineOptions({ name: 'VetAgenda' })
 </script>
+
 <template>
   <div class="min-h-screen bg-linear-to-br from-blue-50 via-white to-blue-100 p-6">
 
@@ -379,16 +369,7 @@ defineOptions({ name: 'VetAgenda' })
                   class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-blue-50/40 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all resize-none"
                 />
               </div>
-              <div>
-                <label class="block text-sm font-semibold text-slate-600 mb-1.5"
-                  >Próxima visita</label
-                >
-                <input
-                  v-model="form.next_visit"
-                  type="date"
-                  class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-blue-50/40 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
-                />
-              </div>
+
             </div>
 
             <div>
