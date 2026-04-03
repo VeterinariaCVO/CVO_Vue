@@ -46,6 +46,10 @@ async function cerrarSesion() {
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Servicios
         </router-link>
+        <router-link to="/admin/calendario" class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5" active-class="!text-white !bg-white/20">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Calendario
+        </router-link>
         <router-link to="/perfil" class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5" active-class="!text-white !bg-white/20">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Perfil
