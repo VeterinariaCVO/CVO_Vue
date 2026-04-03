@@ -2,6 +2,8 @@
 import { ref, watch, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 
+const BASE = import.meta.env.VITE_API_URL
+
 const emit = defineEmits<{
   (e: 'cerrar'): void
   (e: 'guardado'): void
@@ -41,20 +43,18 @@ async function cargarMascotas() {
   cargandoMascotas.value = true
   mascotas.value = []
   mascotaId.value = null
-
   try {
-    const res = await fetch('http://127.0.0.1:8000/api/petsi?owner_id=' + clienteId.value, {
+    const res = await fetch(BASE + '/petsi?owner_id=' + clienteId.value, {
       headers: {
-        'Authorization': 'Bearer ' + localStorage.getItem('token'),
-        'Accept': 'application/json',
-      }
+        Authorization: 'Bearer ' + localStorage.getItem('token'),
+        Accept: 'application/json',
+      },
     })
     const json = await res.json()
     mascotas.value = json.data ?? []
   } catch (e) {
     console.error(e)
   }
-
   cargandoMascotas.value = false
 }
 
@@ -121,6 +121,7 @@ onMounted(() => {
   cargarServicios()
 })
 </script>
+
 
 <template>
   <div

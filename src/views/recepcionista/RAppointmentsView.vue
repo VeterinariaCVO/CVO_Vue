@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ApiUseFetch } from '@/composables/ApiUseFetch'
 import ReagendarCitaModal from '@/components/admin/RescheduleAppointmentModal.vue'
-import RCreateAppointmentModal from '@/components/employee/RCreateAppointmentModal.vue'
+import ACreateAppointmentModal from '@/components/admin/CreateAppointmentModal.vue'
+
+const BASE = import.meta.env.VITE_API_URL
 
 const mostrarReagendar = ref(false)
 const citaReagendarId = ref<number | null>(null)
@@ -16,7 +17,7 @@ async function obtenerCitas() {
   cargando.value = true
   citas.value = []
 
-  let url = 'http://127.0.0.1:8000/api/appointments'
+  let url = BASE + '/appointments'
   if (filtroEstado.value !== '') {
     url += '?status=' + filtroEstado.value
   }
@@ -24,9 +25,9 @@ async function obtenerCitas() {
   try {
     const res = await fetch(url, {
       headers: {
-        'Authorization': 'Bearer ' + localStorage.getItem('token'),
-        'Accept': 'application/json',
-      }
+        Authorization: 'Bearer ' + localStorage.getItem('token'),
+        Accept: 'application/json',
+      },
     })
     const json = await res.json()
     citas.value = json.data ?? []
@@ -62,7 +63,7 @@ function cambiarFiltro(estado: string) {
 
 async function cambiarEstado(id: number, status: string) {
   try {
-    const res = await fetch('http://127.0.0.1:8000/api/appointments/' + id, {
+    const res = await fetch(BASE + '/appointments/' + id, {
       method: 'PUT',
       headers: {
         Authorization: 'Bearer ' + localStorage.getItem('token'),
@@ -87,7 +88,6 @@ async function cambiarEstado(id: number, status: string) {
 
     mensajeExito.value = labels[status] ?? 'Estado actualizado'
     setTimeout(() => (mensajeExito.value = ''), 3000)
-
     obtenerCitas()
   } catch (error) {
     console.error(error)
@@ -97,7 +97,7 @@ async function cambiarEstado(id: number, status: string) {
 async function cancelarCita(id: number) {
   if (!confirm('¿Cancelar esta cita?')) return
 
-  await fetch('http://127.0.0.1:8000/api/appointments/' + id, {
+  await fetch(BASE + '/appointments/' + id, {
     method: 'DELETE',
     headers: {
       Authorization: 'Bearer ' + localStorage.getItem('token'),
