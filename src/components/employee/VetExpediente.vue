@@ -29,7 +29,7 @@ function loadRecords() {
 
   onFetchError(() => {
     isLoading.value = false
-    showMsg('No se pudo cargar el historial', true)
+    mensaje('No se pudo cargar el historial', true)
   })
 
   execute()
@@ -38,87 +38,24 @@ function loadRecords() {
 onMounted(() => loadRecords())
 
 
-form.value.weight = d.weight ?? ''
-    form.value.temperature = d.temperature ?? ''
-    form.value.symptoms = d.symptoms ?? ''
-    form.value.diagnosis = d.diagnosis ?? ''
-    form.value.treatment = d.treatment ?? ''
-    form.value.prescriptions = d.prescriptions ?? ''
-    form.value.observations = d.observations ?? ''
-    form.value.next_visit = d.next_visit ?? ''
 
-     info.value.pet = d.pet?.name ?? ''
-    info.value.species = d.pet?.species ?? ''
-    info.value.service = d.service ?? ''
-    info.value.date = d.date
-      ? new Date(d.date).toLocaleDateString('es-MX', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-        })
-      : ''
-    info.value.vet = d.veterinarian?.name ?? ''
-  })
+function mensaje(text: string, error: boolean){
+  message.value= text
+  isError.value= error
+  setTimeout(() => {message.value= ''},3000)
 
-  onFetchError(() => {
-    isLoading.value = false
-    showMsg('No se pudo cargar el expediente', true)
-  })
 
-  execute()
-}
-
-onMounted(() => loadRecord())
-
-function saveRecord() {
-  if (!form.value.diagnosis.trim()) {
-    showMsg('El diagnóstico es obligatorio', true)
-    return
+  function formatoFecha(dateStr: string | null){
+    if(!dateStr) return '—'
+    return  new Date(dateStr).toLocaleDateString('es-MX',{
+      day: '2-digit',month: 'short', year: 'numeric'
+    })
   }
 
-  isSaving.value = true
+  defineOptions({name: 'VetExpediente'})
 
-  const id = route.params.id
 
-  const body: Record<string, any> = {
-    diagnosis: form.value.diagnosis,
-  }
 
-  if (form.value.weight) body.weight = form.value.weight
-  if (form.value.temperature) body.temperature = form.value.temperature
-  if (form.value.symptoms) body.symptoms = form.value.symptoms
-  if (form.value.treatment) body.treatment = form.value.treatment
-  if (form.value.prescriptions) body.prescriptions = form.value.prescriptions
-  if (form.value.observations) body.observations = form.value.observations
-  if (form.value.next_visit) body.next_visit = form.value.next_visit
-
-  const { data, onFetchResponse, onFetchError, execute } = ApiUseFetch(`/medical-records/${id}`)
-    .put(body)
-    .json()
-
-  onFetchResponse(() => {
-    isSaving.value = false
-    showMsg('Expediente actualizado correctamente ✓', false)
-    setTimeout(() => router.back(), 1500)
-  })
-
-  onFetchError(() => {
-    isSaving.value = false
-    showMsg(data.value?.message || 'Error al guardar', true)
-  })
-
-  execute()
-}
-
-function showMsg(text: string, error: boolean) {
-  message.value = text
-  isError.value = error
-  setTimeout(() => {
-    message.value = ''
-  }, 3500)
-}
-
-defineOptions({ name: 'VetExpediente' })
 </script>
 
 <template>
