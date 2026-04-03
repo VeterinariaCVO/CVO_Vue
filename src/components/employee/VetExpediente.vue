@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 import type { MedicalRecord } from '@/types/medicalRecord'
@@ -11,6 +11,8 @@ const records = ref<MedicalRecord[]>([])
 const isLoading = ref(true)
 const message = ref('')
 const isError = ref(false)
+
+const petId = Number(route.params.id)
 
 function loadRecords() {
   isLoading.value = true
@@ -24,7 +26,19 @@ function loadRecords() {
      records.value = all.filter((r: MedicalRecord) => r.pet?.id === petId)
   })
 
-    form.value.weight = d.weight ?? ''
+
+  onFetchError(() => {
+    isLoading.value = false
+    showMsg('No se pudo cargar el historial', true)
+  })
+
+  execute()
+}
+
+onMounted(() => loadRecords())
+
+
+form.value.weight = d.weight ?? ''
     form.value.temperature = d.temperature ?? ''
     form.value.symptoms = d.symptoms ?? ''
     form.value.diagnosis = d.diagnosis ?? ''
@@ -33,7 +47,7 @@ function loadRecords() {
     form.value.observations = d.observations ?? ''
     form.value.next_visit = d.next_visit ?? ''
 
-    info.value.pet = d.pet?.name ?? ''
+     info.value.pet = d.pet?.name ?? ''
     info.value.species = d.pet?.species ?? ''
     info.value.service = d.service ?? ''
     info.value.date = d.date
