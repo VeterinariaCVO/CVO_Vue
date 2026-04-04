@@ -23,7 +23,6 @@ const puedeEscribir = computed(() => esVeterinario.value || esAdmin.value)
 
 async function cargarMascotas() {
   cargandoMascotas.value = true
-  // FIX: clientes usan /pets?owner_id=X, admin/vet usan /admin/pets (incluye owner en la respuesta)
   const url = esCliente.value
     ? `/pets?owner_id=${auth.user?.id}`
     : '/admin/pets'
@@ -44,8 +43,11 @@ async function seleccionarMascota(mascota: any) {
   cargandoHistorial.value = false
 }
 
+// FIX 1: status se manda como array para que el backend lo parsee correctamente
 async function cargarCitasDisponibles(petId: number) {
-  const { data, execute } = ApiUseFetch(`/appointments?pet_id=${petId}&status=confirmed,in_progress`).get().json()
+  const { data, execute } = ApiUseFetch(
+    `/appointments?pet_id=${petId}&status[]=confirmed&status[]=in_progress`
+  ).get().json()
   await execute()
   citasDisponibles.value = (data.value?.data ?? []).filter((c: any) =>
     c.status === 'confirmed' || c.status === 'in_progress'
@@ -57,10 +59,13 @@ function abrirModal(cita: any) {
   mostrarModal.value = true
 }
 
-function cerrarModal() {
+// FIX 2: cerrarModal es async y espera a que seleccionarMascota termine antes de continuar
+async function cerrarModal() {
   mostrarModal.value = false
   citaParaExpediente.value = null
-  if (mascotaSeleccionada.value) seleccionarMascota(mascotaSeleccionada.value)
+  if (mascotaSeleccionada.value) {
+    await seleccionarMascota(mascotaSeleccionada.value)
+  }
   mensajeExito.value = 'Expediente registrado correctamente'
   setTimeout(() => (mensajeExito.value = ''), 3000)
 }
@@ -148,7 +153,7 @@ onMounted(cargarMascotas)
         <div v-if="!mascotaSeleccionada" class="bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center py-20 text-center">
           <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
             <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M9 12h6M9 16h6M9 8h6M5 20h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9 12h6M9 16h6M9 8h6M5 20h14a2 2 0 0 0 2-2V6a2 2 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
           <p class="text-sm text-slate-500 m-0">Selecciona una mascota para ver su historial</p>
@@ -198,7 +203,7 @@ onMounted(cargarMascotas)
           <div v-else-if="historial.length === 0" class="bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center py-14 text-center">
             <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mb-3">
               <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M9 12h6M9 16h6M9 8h6M5 20h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 12h6M9 16h6M9 8h6M5 20h14a2 2 0 0 0 2-2V6a2 2 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
             <p class="text-sm text-slate-400 m-0">Sin expedientes médicos registrados.</p>
