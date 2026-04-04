@@ -91,8 +91,8 @@ const router: Router = createRouter({
       meta: { requiresAuth: true, role: 4 },
     },
     {
-      path: '/veterinario/expediente/:id',
-      name: 'VetExpediente',
+      path: '/veterinario/mascotas/:id/historial',
+      name: 'VetHistorial',
       component: VetExpediente,
       meta: { requiresAuth: true, role: 4 },
     },
