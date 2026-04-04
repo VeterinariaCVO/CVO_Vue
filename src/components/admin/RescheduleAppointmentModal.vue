@@ -20,11 +20,15 @@ async function cargarSlots() {
   cargandoSlots.value = true
   slots.value = []
   slotId.value = null
-  const { data: wdData, execute: wdExecute } = ApiUseFetch('/working-days?date=' + fechaSeleccionada.value).get().json()
+
+  const { data: wdData, execute: wdExecute } = ApiUseFetch('/working-days').get().json()
   await wdExecute()
   const workingDays = wdData.value?.data ?? []
-  if (workingDays.length === 0) { cargandoSlots.value = false; return }
-  const { data, execute } = ApiUseFetch('/time-slots?working_day_id=' + workingDays[0].id + '&status=available').get().json()
+  const workingDay = workingDays.find((wd: any) => wd.date?.slice(0, 10) === fechaSeleccionada.value)
+
+  if (!workingDay) { cargandoSlots.value = false; return }
+
+  const { data, execute } = ApiUseFetch('/time-slots?working_day_id=' + workingDay.id + '&status=available').get().json()
   await execute()
   slots.value = data.value?.data ?? []
   cargandoSlots.value = false
@@ -34,7 +38,8 @@ async function reagendar() {
   if (!slotId.value) { errorMsg.value = 'Selecciona un horario.'; return }
   errorMsg.value = ''
   enviando.value = true
-  const { data, execute } = ApiUseFetch('/appointments/' + props.citaId).put({ time_slot_id: slotId.value }).json()
+  const { data, execute } = ApiUseFetch('/appointments/' + props.citaId)
+    .put({ time_slot_id: slotId.value, status: 'confirmed' }).json()
   await execute()
   enviando.value = false
   if (data.value?.errors || !data.value?.success) {
@@ -58,7 +63,7 @@ watch(fechaSeleccionada, () => cargarSlots())
       <div class="flex flex-col gap-3">
         <div class="flex flex-col gap-1">
           <label class="text-xs text-slate-500">Nueva fecha</label>
-          <input type="date" v-model="fechaSeleccionada" :min="new Date(Date.now() + 86400000).toISOString().slice(0, 10)" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors" />
+          <input type="date" v-model="fechaSeleccionada" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors" />
         </div>
 
         <div v-if="fechaSeleccionada" class="flex flex-col gap-2">

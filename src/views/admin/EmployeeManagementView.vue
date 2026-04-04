@@ -19,6 +19,8 @@ const mostrarEdicionEmpleado = ref(false)
 const mostrarEdicionCliente = ref(false)
 const editarId = ref<number | null>(null)
 const mensajeExito = ref('')
+const mostrarConfirmEliminar = ref(false)
+const usuarioAEliminar = ref<User | null>(null)
 
 async function obtenerUsuarios() {
   cargando.value = true
@@ -70,13 +72,21 @@ async function toggleActivo(usuario: User) {
   obtenerUsuarios()
 }
 
-async function eliminar(usuario: User) {
+function eliminar(usuario: User) {
+  usuarioAEliminar.value = usuario
+  mostrarConfirmEliminar.value = true
+}
+
+async function confirmarEliminar() {
+  if (!usuarioAEliminar.value) return
+  const usuario = usuarioAEliminar.value
   const tipo = usuario.role_id === 3 ? 'cliente' : 'empleado'
-  if (!confirm(`¿Seguro que quieres eliminar este ${tipo}?`)) return
   const { execute } = ApiUseFetch(`admin/users/${usuario.id}`).delete().json()
   await execute()
   mostrarExito(`${tipo.charAt(0).toUpperCase() + tipo.slice(1)} eliminado`)
   obtenerUsuarios()
+  mostrarConfirmEliminar.value = false
+  usuarioAEliminar.value = null
 }
 
 function mostrarExito(msg: string) {
@@ -255,4 +265,45 @@ onMounted(obtenerUsuarios)
   <EditUserModal v-if="mostrarEdicionEmpleado && editarId" :id="editarId" @cerrar="mostrarEdicionEmpleado = false; editarId = null" @guardado="cerrarEdicionEmpleado" />
   <RegisterClientModal v-if="mostrarRegistroCliente" @cerrar="mostrarRegistroCliente = false" @guardado="cerrarRegistroCliente" />
   <EditClientModal v-if="mostrarEdicionCliente && editarId" :id="editarId" @cerrar="mostrarEdicionCliente = false; editarId = null" @guardado="cerrarEdicionCliente" />
+
+  <!-- Modal confirmar eliminar -->
+  <Teleport to="body">
+    <Transition name="modal">
+      <div
+        v-if="mostrarConfirmEliminar"
+        class="fixed inset-0 flex items-center justify-center z-50"
+        style="background: rgba(0, 0, 0, 0.25)"
+        @click.self="mostrarConfirmEliminar = false"
+      >
+        <div class="bg-white rounded-xl border border-slate-200 p-6 max-w-xs w-11/12">
+          <p class="text-sm font-semibold text-slate-800 m-0 mb-1">
+            ¿Eliminar {{ usuarioAEliminar?.role_id === 3 ? 'cliente' : 'empleado' }}?
+          </p>
+          <p class="text-sm text-slate-400 m-0 mb-5 leading-relaxed">
+            Se eliminará a <span class="text-slate-600">{{ usuarioAEliminar?.name }}</span> permanentemente.
+          </p>
+          <div class="flex gap-2 justify-end">
+            <button
+              @click="mostrarConfirmEliminar = false"
+              class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 bg-transparent text-slate-500 cursor-pointer hover:bg-slate-50 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              @click="confirmarEliminar"
+              class="text-sm px-3 py-1.5 rounded-lg border-none bg-red-500 text-white cursor-pointer hover:bg-red-600 transition-colors"
+            >
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
+
+<style scoped>
+.modal-enter-active { transition: opacity 0.15s ease; }
+.modal-leave-active { transition: opacity 0.1s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+</style>

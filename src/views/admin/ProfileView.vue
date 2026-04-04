@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 import { useAuthStore } from '@/stores/authStore'
+import ChangePasswordModal from '@/components/admin/ChangePasswordModal.vue'
 
 const auth = useAuthStore()
 const cargando = ref(false)
@@ -9,6 +10,7 @@ const cargandoDatos = ref(true)
 const mensajeExito = ref('')
 const errores = ref<any>({})
 const modoEdicion = ref(false)
+const mostrarModalContrasenia = ref(false)
 
 const nombre = ref('')
 const correo = ref('')
@@ -21,13 +23,6 @@ const fotoNueva = ref<File | null>(null)
 const fotoPreview = ref<string | null>(null)
 const eliminarFoto = ref(false)
 
-const contraseniaActual = ref('')
-const contraseniaNueva = ref('')
-const contraseniaConfirmar = ref('')
-const seccionContrasenia = ref(false)
-const cargandoContrasenia = ref(false)
-const erroresContrasenia = ref<any>({})
-
 const edad = computed(() => {
   if (!fechaNacimiento.value) return null
   const diff = Date.now() - new Date(fechaNacimiento.value).getTime()
@@ -39,19 +34,32 @@ const nombreRol = computed(() => {
   return map[auth.user?.role_id ?? 0] ?? '—'
 })
 
+// Buscar correcto de la respuesta
+function BuscarUsuario(response: any) {
+  const u = response?.data ?? response
+  nombre.value          = u?.name ?? ''
+  correo.value          = u?.email ?? ''
+  telefono.value        = u?.phone ?? ''
+  direccion.value       = u?.address ?? ''
+  genero.value          = u?.gender ?? ''
+  fechaNacimiento.value = u?.birth_date ?? ''
+  fotoActual.value      = u?.profile_photo ?? null
+}
+
 async function cargarPerfil() {
   cargandoDatos.value = true
   const { data, execute } = ApiUseFetch('/me').get().json()
   await execute()
-  const u = data.value?.data ?? data.value?.user ?? data.value
-  nombre.value = u?.name ?? ''
-  correo.value = u?.email ?? ''
-  telefono.value = u?.phone ?? ''
-  direccion.value = u?.address ?? ''
-  genero.value = u?.gender ?? ''
+
+  const u = (data.value as any)?.data
+  nombre.value          = u?.name ?? ''
+  correo.value          = u?.email ?? ''
+  telefono.value        = u?.phone ?? ''
+  direccion.value       = u?.address ?? ''
+  genero.value          = u?.gender ?? ''
   fechaNacimiento.value = u?.birth_date ?? ''
-  fotoActual.value = u?.profile_photo ?? null
-  cargandoDatos.value = false
+  fotoActual.value      = u?.profile_photo ?? null
+  cargandoDatos.value   = false
 }
 
 function onFotoChange(e: Event) {
@@ -71,58 +79,36 @@ function onEliminarFoto() {
 async function guardar() {
   errores.value = {}
   cargando.value = true
-  const formData = new FormData()
-  formData.append('name', nombre.value)
-  formData.append('email', correo.value)
-  if (telefono.value) formData.append('phone', telefono.value)
-  if (direccion.value) formData.append('address', direccion.value)
-  if (genero.value) formData.append('gender', genero.value)
-  if (fechaNacimiento.value) formData.append('birth_date', fechaNacimiento.value)
-  if (fotoNueva.value) formData.append('profile_photo', fotoNueva.value)
-  if (eliminarFoto.value) formData.append('remove_photo', '1')
-  formData.append('_method', 'PUT')
 
-  const { data, execute } = ApiUseFetch('/me').post(formData).json()
+  // Usar JSON en lugar de FormData
+  const payload: Record<string, any> = {
+    name: nombre.value,
+    email: correo.value,
+    phone: telefono.value || null,
+    address: direccion.value || null,
+    gender: genero.value || null,
+    birth_date: fechaNacimiento.value || null,
+  }
+
+  const { data, execute } = ApiUseFetch('/me/update').post(payload).json()
   await execute()
+
+  console.log('Respuesta:', data.value)
+
   cargando.value = false
-  if ((data.value as any)?.errors) {
-    const e = (data.value as any).errors
-    for (const campo in e) errores.value[campo] = e[campo][0]
+
+  const resp = data.value as any
+
+  if (resp?.errors) {
+    for (const campo in resp.errors) {
+      errores.value[campo] = resp.errors[campo][0]
+    }
     return
   }
+
+  BuscarUsuario(resp)
   mensajeExito.value = 'Perfil actualizado correctamente'
   modoEdicion.value = false
-  fotoNueva.value = null
-  fotoPreview.value = null
-  eliminarFoto.value = false
-  await cargarPerfil()
-  setTimeout(() => (mensajeExito.value = ''), 3000)
-}
-
-async function cambiarContrasenia() {
-  erroresContrasenia.value = {}
-  if (contraseniaNueva.value !== contraseniaConfirmar.value) {
-    erroresContrasenia.value.confirmar = 'Las contraseñas no coinciden'
-    return
-  }
-  cargandoContrasenia.value = true
-  const { data, execute } = ApiUseFetch('/me/password').put({
-    current_password: contraseniaActual.value,
-    password: contraseniaNueva.value,
-    password_confirmation: contraseniaConfirmar.value,
-  }).json()
-  await execute()
-  cargandoContrasenia.value = false
-  if ((data.value as any)?.errors) {
-    const e = (data.value as any).errors
-    for (const campo in e) erroresContrasenia.value[campo] = e[campo][0]
-    return
-  }
-  mensajeExito.value = 'Contraseña actualizada correctamente'
-  seccionContrasenia.value = false
-  contraseniaActual.value = ''
-  contraseniaNueva.value = ''
-  contraseniaConfirmar.value = ''
   setTimeout(() => (mensajeExito.value = ''), 3000)
 }
 
@@ -133,6 +119,12 @@ function cancelar() {
   eliminarFoto.value = false
   errores.value = {}
   cargarPerfil()
+}
+
+function onContraseniaGuardada() {
+  mostrarModalContrasenia.value = false
+  mensajeExito.value = 'Contraseña actualizada correctamente'
+  setTimeout(() => (mensajeExito.value = ''), 3000)
 }
 
 onMounted(cargarPerfil)
@@ -263,42 +255,25 @@ onMounted(cargarPerfil)
             <p class="text-xs text-slate-400 mt-0.5 m-0">Actualiza tu contraseña de acceso</p>
           </div>
           <button
-            @click="seccionContrasenia = !seccionContrasenia"
+            @click="mostrarModalContrasenia = true"
             class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 cursor-pointer transition-colors"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            {{ seccionContrasenia ? 'Cancelar' : 'Cambiar contraseña' }}
+            Cambiar contraseña
           </button>
-        </div>
-
-        <div v-if="seccionContrasenia" class="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-slate-100">
-          <div class="flex flex-col gap-1 col-span-2">
-            <label class="text-xs text-slate-400">Contraseña actual</label>
-            <input v-model="contraseniaActual" type="password" placeholder="Ingresa tu contraseña actual" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors" />
-            <span v-if="erroresContrasenia.current_password" class="text-xs text-red-500">{{ erroresContrasenia.current_password }}</span>
-          </div>
-          <div class="flex flex-col gap-1">
-            <label class="text-xs text-slate-400">Nueva contraseña</label>
-            <input v-model="contraseniaNueva" type="password" placeholder="Mínimo 6 caracteres" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors" />
-            <span v-if="erroresContrasenia.password" class="text-xs text-red-500">{{ erroresContrasenia.password }}</span>
-          </div>
-          <div class="flex flex-col gap-1">
-            <label class="text-xs text-slate-400">Confirmar nueva contraseña</label>
-            <input v-model="contraseniaConfirmar" type="password" placeholder="Repite la nueva contraseña" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors" />
-            <span v-if="erroresContrasenia.confirmar" class="text-xs text-red-500">{{ erroresContrasenia.confirmar }}</span>
-          </div>
-          <div class="col-span-2 flex gap-2 mt-1">
-            <button @click="seccionContrasenia = false; erroresContrasenia = {}" class="flex-1 border border-slate-200 text-slate-600 text-sm py-2 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors bg-transparent">Cancelar</button>
-            <button @click="cambiarContrasenia" :disabled="cargandoContrasenia" class="flex-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white text-sm py-2 rounded-lg cursor-pointer border-none transition-colors">
-              {{ cargandoContrasenia ? 'Actualizando...' : 'Actualizar contraseña' }}
-            </button>
-          </div>
         </div>
       </div>
 
     </div>
   </div>
+
+  <!-- Modal contraseña -->
+  <ChangePasswordModal
+    v-if="mostrarModalContrasenia"
+    @cerrar="mostrarModalContrasenia = false"
+    @guardado="onContraseniaGuardada"
+  />
 </template>
