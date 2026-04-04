@@ -43,18 +43,9 @@ async function cargarMascotas() {
   cargandoMascotas.value = true
   mascotas.value = []
   mascotaId.value = null
-  try {
-    const res = await fetch(BASE + '/petsi?owner_id=' + clienteId.value, {
-      headers: {
-        Authorization: 'Bearer ' + localStorage.getItem('token'),
-        Accept: 'application/json',
-      },
-    })
-    const json = await res.json()
-    mascotas.value = json.data ?? []
-  } catch (e) {
-    console.error(e)
-  }
+  const { data, execute } = ApiUseFetch(`/admin/pets?owner_id=${clienteId.value}`).get().json()
+  await execute()
+  mascotas.value = data.value?.data ?? []
   cargandoMascotas.value = false
 }
 
@@ -63,22 +54,15 @@ async function cargarSlots() {
   cargandoSlots.value = true
   slots.value = []
   slotId.value = null
-  const { data: wdData, execute: wdExecute } = ApiUseFetch(
-    '/working-days?date=' + fechaSeleccionada.value,
-  )
-    .get()
-    .json()
+
+  const { data: wdData, execute: wdExecute } = ApiUseFetch('/working-days').get().json()
   await wdExecute()
   const workingDays = wdData.value?.data ?? []
-  if (workingDays.length === 0) {
-    cargandoSlots.value = false
-    return
-  }
-  const { data, execute } = ApiUseFetch(
-    '/time-slots?working_day_id=' + workingDays[0].id + '&status=available',
-  )
-    .get()
-    .json()
+  const workingDay = workingDays.find((wd: any) => wd.date?.slice(0, 10) === fechaSeleccionada.value)
+
+  if (!workingDay) { cargandoSlots.value = false; return }
+
+  const { data, execute } = ApiUseFetch('/time-slots?working_day_id=' + workingDay.id + '&status=available').get().json()
   await execute()
   slots.value = data.value?.data ?? []
   cargandoSlots.value = false
@@ -94,18 +78,13 @@ async function agendar() {
     return
   }
   enviando.value = true
-  const {
-    data,
-    error: fetchError,
-    execute,
-  } = ApiUseFetch('/appointments')
+  const { data, error: fetchError, execute } = ApiUseFetch('/appointments')
     .post({
       pet_id: mascotaId.value,
       service_id: servicioId.value,
       time_slot_id: slotId.value,
       notes: notas.value,
-    })
-    .json()
+    }).json()
   await execute()
   enviando.value = false
   if (fetchError.value || !data.value?.success) {
@@ -132,6 +111,7 @@ onMounted(() => {
       <div class="flex items-center justify-between mb-5">
         <h2 class="text-base font-semibold text-slate-800">Agendar cita</h2>
         <button
+          v-if="!exitoso"
           @click="emit('cerrar')"
           class="text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer text-lg leading-none"
         >
@@ -192,7 +172,6 @@ onMounted(() => {
           <input
             type="date"
             v-model="fechaSeleccionada"
-            :min="new Date(Date.now() + 86400000).toISOString().slice(0, 10)"
             class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors"
           />
         </div>
@@ -221,9 +200,7 @@ onMounted(() => {
         </div>
 
         <div class="flex flex-col gap-1">
-          <label class="text-xs text-slate-500"
-            >Notas <span class="text-slate-400">(opcional)</span></label
-          >
+          <label class="text-xs text-slate-500">Notas <span class="text-slate-400">(opcional)</span></label>
           <textarea
             v-model="notas"
             rows="2"

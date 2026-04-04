@@ -128,7 +128,11 @@ const router: Router = createRouter({
     },
     {
       path: '/admin/empleados',
-      name: 'admin.empleados',
+      redirect: '/admin/usuarios',
+    },
+    {
+      path: '/admin/usuarios',
+      name: 'admin.usuarios',
       component: () => import('../views/admin/EmployeeManagementView.vue'),
       meta: { requiresAuth: true, role: 1 },
     },

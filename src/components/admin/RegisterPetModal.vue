@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
 import type { Client } from '@/types/client'
 
@@ -21,8 +21,25 @@ const clientes = ref<Client[]>([])
 const cargando = ref(false)
 const errores = ref<any>({})
 
+const especiesOpciones = ['Perro', 'Gato', 'Ave', 'Conejo', 'Reptil', 'Otro']
+
+const razasPorEspecie: Record<string, string[]> = {
+  Perro: ['Labrador', 'Pastor Alemán', 'Bulldog', 'Golden Retriever', 'Chihuahua', 'Poodle', 'Beagle', 'Rottweiler', 'Dálmata', 'Mestizo', 'Otro'],
+  Gato: ['Siamés', 'Persa', 'Maine Coon', 'Bengalí', 'Ragdoll', 'Esfinge', 'Angora', 'Mestizo', 'Otro'],
+  Ave: ['Periquito', 'Canario', 'Agapornis', 'Cacatúa', 'Loro', 'Guacamayo', 'Ninfas', 'Otro'],
+  Conejo: ['Holandés', 'Angora', 'Rex', 'Lionhead', 'Mini Lop', 'Otro'],
+  Reptil: ['Iguana', 'Gecko', 'Tortuga', 'Camaleón', 'Serpiente maíz', 'Otro'],
+  Otro: ['Otro'],
+}
+
+const razasOpciones = computed(() => especie.value ? (razasPorEspecie[especie.value] ?? ['Otro']) : [])
+
+function onEspecieChange() {
+  raza.value = ''
+}
+
 async function cargarClientes() {
-  const { data, execute } = ApiUseFetch('admin/users').get().json()
+  const { data, execute } = ApiUseFetch('/admin/users').get().json()
   await execute()
   const todos = data.value?.data ?? []
   clientes.value = todos.filter((u: any) => u.role_id === 3)
@@ -30,8 +47,12 @@ async function cargarClientes() {
 
 async function registrar() {
   errores.value = {}
+  if (!ownerId.value) {
+    errores.value.owner_id = 'Selecciona un dueño'
+    return
+  }
   cargando.value = true
-  const { data, execute } = ApiUseFetch('pets').post({
+  const { data, execute } = ApiUseFetch('/admin/pets').post({
     name: nombre.value,
     species: especie.value,
     breed: raza.value || null,
@@ -65,27 +86,49 @@ onMounted(cargarClientes)
 
       <div class="flex flex-col gap-3">
         <div class="flex flex-col gap-1">
-          <label class="text-xs text-slate-500">Dueño</label>
-          <select v-model="ownerId" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors bg-white">
+          <label class="text-xs text-slate-500">Dueño <span class="text-red-400">*</span></label>
+          <select
+            v-model="ownerId"
+            class="border rounded-lg px-3 py-2 text-sm outline-none transition-colors bg-white"
+            :class="errores.owner_id ? 'border-red-300 focus:border-red-400' : 'border-slate-200 focus:border-slate-400'"
+          >
             <option :value="null">Selecciona un cliente</option>
             <option v-for="c in clientes" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
           <span v-if="errores.owner_id" class="text-xs text-red-500">{{ errores.owner_id }}</span>
         </div>
+
         <div class="flex flex-col gap-1">
           <label class="text-xs text-slate-500">Nombre</label>
           <input v-model="nombre" type="text" placeholder="Firulais" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors" />
           <span v-if="errores.name" class="text-xs text-red-500">{{ errores.name }}</span>
         </div>
+
         <div class="flex flex-col gap-1">
           <label class="text-xs text-slate-500">Especie</label>
-          <input v-model="especie" type="text" placeholder="Perro, Gato..." class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors" />
+          <select
+            v-model="especie"
+            @change="onEspecieChange"
+            class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors bg-white"
+          >
+            <option value="">Selecciona una especie</option>
+            <option v-for="e in especiesOpciones" :key="e" :value="e">{{ e }}</option>
+          </select>
           <span v-if="errores.species" class="text-xs text-red-500">{{ errores.species }}</span>
         </div>
+
         <div class="flex flex-col gap-1">
           <label class="text-xs text-slate-500">Raza</label>
-          <input v-model="raza" type="text" placeholder="Labrador" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors" />
+          <select
+            v-model="raza"
+            :disabled="!especie"
+            class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors bg-white disabled:opacity-50"
+          >
+            <option value="">{{ especie ? 'Selecciona una raza' : 'Elige especie primero' }}</option>
+            <option v-for="r in razasOpciones" :key="r" :value="r">{{ r }}</option>
+          </select>
         </div>
+
         <div class="flex gap-3">
           <div class="flex flex-col gap-1 flex-1">
             <label class="text-xs text-slate-500">Color</label>
@@ -99,6 +142,7 @@ onMounted(cargarClientes)
             </select>
           </div>
         </div>
+
         <div class="flex gap-3">
           <div class="flex flex-col gap-1 flex-1">
             <label class="text-xs text-slate-500">Edad (años)</label>
@@ -109,6 +153,7 @@ onMounted(cargarClientes)
             <input v-model.number="peso" type="number" min="0" step="0.1" placeholder="5.5" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors" />
           </div>
         </div>
+
         <div class="flex flex-col gap-1">
           <label class="text-xs text-slate-500">Marcas especiales</label>
           <input v-model="marcas" type="text" placeholder="Mancha en la pata" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors" />

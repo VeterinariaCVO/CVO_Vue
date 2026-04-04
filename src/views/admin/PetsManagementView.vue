@@ -12,10 +12,12 @@ const mostrarRegistro = ref(false)
 const mostrarEdicion = ref(false)
 const mascotaEditarId = ref<number | null>(null)
 const mensajeExito = ref('')
+const mostrarConfirmEliminar = ref(false)
+const mascotaAEliminar = ref<PetVet | null>(null)
 
 async function obtenerMascotas() {
   cargando.value = true
-  const { data, execute } = ApiUseFetch('pets').get().json()
+  const { data, execute } = ApiUseFetch('/admin/pets').get().json()
   await execute()
   mascotas.value = data.value?.data ?? []
   cargando.value = false
@@ -26,10 +28,18 @@ function abrirEdicion(id: number) {
   mostrarEdicion.value = true
 }
 
-async function eliminarMascota(id: number) {
-  if (!confirm('¿Seguro que quieres eliminar esta mascota?')) return
-  const { execute } = ApiUseFetch(`pets/${id}`).delete().json()
+function eliminarMascota(id: number) {
+  const mascota = mascotas.value.find(m => m.id === id) ?? null
+  mascotaAEliminar.value = mascota
+  mostrarConfirmEliminar.value = true
+}
+
+async function confirmarEliminar() {
+  if (!mascotaAEliminar.value) return
+  const { execute } = ApiUseFetch(`/admin/pets/${mascotaAEliminar.value.id}`).delete().json()
   await execute()
+  mostrarConfirmEliminar.value = false
+  mascotaAEliminar.value = null
   mensajeExito.value = 'Mascota eliminada'
   setTimeout(() => (mensajeExito.value = ''), 3000)
   obtenerMascotas()
@@ -98,4 +108,43 @@ onMounted(obtenerMascotas)
 
   <RegisterPetAdminModal v-if="mostrarRegistro" @cerrar="mostrarRegistro = false" @guardado="cerrarRegistro" />
   <EditPetAdminModal v-if="mostrarEdicion && mascotaEditarId" :id="mascotaEditarId" @cerrar="mostrarEdicion = false; mascotaEditarId = null" @guardado="cerrarEdicion" />
+
+  <!-- Modal confirmar eliminar -->
+  <Teleport to="body">
+    <Transition name="modal">
+      <div
+        v-if="mostrarConfirmEliminar"
+        class="fixed inset-0 flex items-center justify-center z-50"
+        style="background: rgba(0, 0, 0, 0.25)"
+        @click.self="mostrarConfirmEliminar = false"
+      >
+        <div class="bg-white rounded-xl border border-slate-200 p-6 max-w-xs w-11/12">
+          <p class="text-sm font-semibold text-slate-800 m-0 mb-1">¿Eliminar mascota?</p>
+          <p class="text-sm text-slate-400 m-0 mb-5 leading-relaxed">
+            Se eliminará a <span class="text-slate-600">{{ mascotaAEliminar?.name }}</span> permanentemente.
+          </p>
+          <div class="flex gap-2 justify-end">
+            <button
+              @click="mostrarConfirmEliminar = false"
+              class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 bg-transparent text-slate-500 cursor-pointer hover:bg-slate-50 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              @click="confirmarEliminar"
+              class="text-sm px-3 py-1.5 rounded-lg border-none bg-red-500 text-white cursor-pointer hover:bg-red-600 transition-colors"
+            >
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
+
+<style scoped>
+.modal-enter-active { transition: opacity 0.15s ease; }
+.modal-leave-active { transition: opacity 0.1s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+</style>
