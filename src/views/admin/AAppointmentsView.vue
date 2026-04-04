@@ -14,7 +14,6 @@ const cargando = ref(false)
 const filtroEstado = ref('')
 const mensajeExito = ref('')
 
-//  Modal cancelar
 const mostrarConfirmCancelar = ref(false)
 const citaACancelar = ref<any | null>(null)
 
@@ -54,10 +53,19 @@ function cambiarFiltro(estado: string) {
   filtroEstado.value = estado
 }
 
+// FIX: solo mandar time_slot_id si la cita lo tiene (walk-in no tienen slot)
+function buildPayload(cita: any, status: string) {
+  const payload: Record<string, any> = { status }
+  if (cita?.time_slot?.id) {
+    payload.time_slot_id = cita.time_slot.id
+  }
+  return payload
+}
+
 async function cambiarEstado(id: number, status: string) {
   const cita = citas.value.find((c: any) => c.id === id)
   const { data, statusCode, execute } = ApiUseFetch(`/appointments/${id}`)
-    .put({ status, time_slot_id: cita?.time_slot?.id }).json()
+    .put(buildPayload(cita, status)).json()
   await execute()
 
   if (statusCode.value && statusCode.value >= 400) {
@@ -75,7 +83,6 @@ async function cambiarEstado(id: number, status: string) {
   obtenerCitas()
 }
 
-// Abrir modal en lugar de confirm()
 function confirmarCancelar(id: number) {
   const cita = citas.value.find((c: any) => c.id === id) ?? null
   citaACancelar.value = cita
@@ -86,7 +93,7 @@ async function ejecutarCancelar() {
   if (!citaACancelar.value) return
   const cita = citaACancelar.value
   const { data, statusCode, execute } = ApiUseFetch(`/appointments/${cita.id}`)
-    .put({ status: 'cancelled', time_slot_id: cita?.time_slot?.id }).json()
+    .put(buildPayload(cita, 'cancelled')).json()
   await execute()
 
   mostrarConfirmCancelar.value = false
@@ -238,7 +245,7 @@ onMounted(obtenerCitas)
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round" />
                     <circle cx="12" cy="12" r="10" />
-                    </svg>
+                  </svg>
                 </button>
                 <button
                   v-if="cita.status === 'pending' || cita.status === 'confirmed'"
@@ -252,7 +259,6 @@ onMounted(obtenerCitas)
                     <path d="M12 7v5l4 2" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </button>
-                <!-- Cambiado de confirm() a modal bonito -->
                 <button
                   v-if="cita.status !== 'cancelled' && cita.status !== 'completed'"
                   @click="confirmarCancelar(cita.id)"
@@ -284,7 +290,6 @@ onMounted(obtenerCitas)
     @guardado="cerrarAgendar"
   />
 
-  <!--  Modal confirmar cancelar -->
   <Teleport to="body">
     <Transition name="modal">
       <div
