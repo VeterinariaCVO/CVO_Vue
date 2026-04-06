@@ -15,6 +15,8 @@ const isError = ref(false)
 const petId = Number(route.params.id)
 
 function loadRecords() {
+
+  //actualizacion a types 6
   isLoading.value = true
 
   const { data, onFetchResponse, onFetchError, execute } = ApiUseFetch('/medical-records')
