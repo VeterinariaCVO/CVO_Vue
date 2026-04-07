@@ -173,6 +173,17 @@
               <p class="text-white font-bold text-sm m-0">📍 Periférico 9344, Torreón</p>
               <p class="text-blue-100 text-xs m-0">Lun - Sáb: 9:00am - 7:00pm</p>
             </div>
+            <div class="rounded-2xl overflow-hidden border-2 border-white/20 shadow-lg">
+              <iframe
+                width="100%"
+                height="200"
+                style="border: 0"
+                loading="lazy"
+                allowfullscreen
+                referrerpolicy="no-referrer-when-downgrade"
+                src="https://www.google.com/maps?q=Periférico+9344+Torreón+Coahuila&output=embed"
+              />
+            </div>
           </div>
         </div>
 
