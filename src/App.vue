@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
 import NotificationBell from '@/components/notifications/NotificationBell.vue'
 
+const storageUrl = (import.meta.env.VITE_API_URL as string).replace('/api', '') + '/storage/'
 const auth = useAuthStore()
 const router = useRouter()
 
@@ -367,6 +368,7 @@ async function cerrarSesion() {
           </svg>
           Inicio
         </router-link>
+
         <router-link
           to="/client/citas"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -392,6 +394,7 @@ async function cerrarSesion() {
           </svg>
           Mis Citas
         </router-link>
+
         <router-link
           to="/client/mascotas"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -416,12 +419,19 @@ async function cerrarSesion() {
           </svg>
           Mis Mascotas
         </router-link>
+
         <router-link
           to="/cliente/perfil"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
           active-class="!text-white !bg-white/20"
         >
+          <img
+            v-if="auth.user?.profile_photo"
+            :src="storageUrl + auth.user.profile_photo"
+            class="w-6 h-6 rounded-full object-cover border border-white/30"
+          />
           <svg
+            v-else
             class="w-4 h-4"
             fill="none"
             stroke="currentColor"
