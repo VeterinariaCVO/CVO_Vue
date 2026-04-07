@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
-import type { Pet } from '@/types/pet'
 
 const props = defineProps<{ id: number }>()
 const emit = defineEmits<{ cerrar: []; guardado: [] }>()
@@ -11,9 +10,20 @@ const cargando = ref(true)
 const guardando = ref(false)
 const errores = ref<Record<string, string>>({})
 const mensaje = ref('')
-const form = ref<Pet>({} as Pet)
-const formInicial = ref<string>('')
 
+const form = ref({
+  name: '',
+  species: '',
+  sex: 'male',
+  breed: '',
+  color: '',
+  special_marks: '',
+  age: '',
+  age_months: '',
+  weight: '',
+})
+
+const formInicial = ref<string>('')
 const preview = ref<string | null>(null)
 const fotoArchivo = ref<File | null>(null)
 const inputFoto = ref<HTMLInputElement | null>(null)
@@ -31,38 +41,64 @@ async function cargarMascota() {
     headers: { Authorization: `Bearer ${authStore.token}`, Accept: 'application/json' },
   })
   const json = await response.json()
-  form.value = json.data
-  preview.value = json.data.photo_url ?? null
+  const d = json.data
+
+  const totalMeses = Number(d.age ?? 0)
+  const años = Math.floor(totalMeses / 12)
+  const meses = totalMeses % 12
+
+  form.value = {
+    name: d.name ?? '',
+    species: d.species ?? '',
+    sex: d.sex ?? 'male',
+    breed: d.breed ?? '',
+    color: d.color ?? '',
+    special_marks: d.special_marks ?? '',
+    age: String(años),
+    age_months: String(meses),
+    weight: String(d.weight ?? ''),
+  }
+
+  preview.value = d.photo_url ?? null
+
   formInicial.value = JSON.stringify({
-    name: json.data.name,
-    species: json.data.species,
-    sex: json.data.sex,
-    breed: json.data.breed,
-    color: json.data.color,
-    special_marks: json.data.special_marks,
-    age: json.data.age,
-    weight: json.data.weight,
+    name: d.name,
+    species: d.species,
+    sex: d.sex,
+    breed: d.breed,
+    color: d.color,
+    special_marks: d.special_marks,
+    age: totalMeses,
+    weight: d.weight,
   })
+
   cargando.value = false
 }
 
 function validar(): boolean {
   errores.value = {}
-  if (!form.value.name?.trim()) errores.value.name = 'El nombre es obligatorio.'
-  if (!form.value.species?.trim()) errores.value.species = 'La especie es obligatoria.'
-  if (form.value.age !== null && form.value.age !== undefined) {
-    const edad = Number(form.value.age)
-    if (edad < 0 || edad > 30) errores.value.age = 'La edad debe ser entre 0 y 30 años.'
-  }
-  if (form.value.weight !== null && form.value.weight !== undefined) {
-    const peso = Number(form.value.weight)
-    if (peso < 0 || peso > 500) errores.value.weight = 'El peso debe ser entre 0 y 500 kg.'
-  }
+
+  if (!form.value.name.trim()) errores.value.name = 'El nombre es obligatorio.'
+
+  if (!form.value.species.trim()) errores.value.species = 'La especie es obligatoria.'
+
+  const años = Number(form.value.age || 0)
+  const meses = Number(form.value.age_months || 0)
+  const total = años * 12 + meses
+
+  if (años < 0 || años > 30) errores.value.age = 'Los años deben ser entre 0 y 30.'
+  if (meses < 0 || meses > 11) errores.value.age_months = 'Los meses deben ser entre 0 y 11.'
+  if (total > 360) errores.value.age = 'La edad máxima es 30 años.'
+
+  const peso = Number(form.value.weight || 0)
+  if (peso < 0 || peso > 500) errores.value.weight = 'El peso debe ser entre 0 y 500 kg.'
+
   return Object.keys(errores.value).length === 0
 }
 
 function huboCambios(): boolean {
   if (fotoArchivo.value) return true
+  const totalMeses = Number(form.value.age || 0) * 12 + Number(form.value.age_months || 0)
   const actual = JSON.stringify({
     name: form.value.name,
     species: form.value.species,
@@ -70,7 +106,7 @@ function huboCambios(): boolean {
     breed: form.value.breed,
     color: form.value.color,
     special_marks: form.value.special_marks,
-    age: form.value.age,
+    age: totalMeses,
     weight: form.value.weight,
   })
   return actual !== formInicial.value
@@ -89,16 +125,19 @@ async function guardar() {
   }
 
   guardando.value = true
+
+  const totalMeses = Number(form.value.age || 0) * 12 + Number(form.value.age_months || 0)
+
   const formData = new FormData()
   formData.append('_method', 'PUT')
   formData.append('name', form.value.name)
   formData.append('species', form.value.species)
   formData.append('sex', form.value.sex)
-  formData.append('breed', form.value.breed ?? '')
-  formData.append('color', form.value.color ?? '')
-  formData.append('special_marks', form.value.special_marks ?? '')
-  formData.append('age', String(form.value.age ?? ''))
-  formData.append('weight', String(form.value.weight ?? ''))
+  formData.append('breed', form.value.breed)
+  formData.append('color', form.value.color)
+  formData.append('special_marks', form.value.special_marks)
+  formData.append('age', String(totalMeses))
+  formData.append('weight', form.value.weight)
   if (fotoArchivo.value) formData.append('photo', fotoArchivo.value)
 
   await fetch(`${import.meta.env.VITE_API_URL}/mis-mascotas/${props.id}`, {
@@ -113,6 +152,7 @@ async function guardar() {
 
 const inputClass =
   'w-full border rounded-lg px-3 py-2 text-sm text-[#1e3a5f] bg-slate-50 outline-none transition-[border-color,box-shadow] duration-150 focus:bg-white focus:shadow-[0_0_0_3px_rgba(29,107,191,0.1)] box-border'
+
 function ic(campo: string) {
   return (
     inputClass +
@@ -133,7 +173,6 @@ onMounted(cargarMascota)
       <p v-if="cargando" class="text-center text-slate-400 py-6">Cargando...</p>
 
       <template v-else>
-        <!-- Mensaje de sin cambios -->
         <div
           v-if="mensaje"
           class="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded-xl px-4 py-3 mb-4"
@@ -210,16 +249,42 @@ onMounted(cargarMascota)
 
           <!-- Edad -->
           <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-slate-500">Edad (años)</label>
-            <input v-model.number="form.age" type="number" min="0" max="30" :class="ic('age')" />
+            <label class="text-xs font-semibold text-slate-500">Edad</label>
+            <div class="flex gap-2">
+              <div class="flex-1 flex flex-col gap-1">
+                <input
+                  v-model="form.age"
+                  type="number"
+                  min="0"
+                  max="30"
+                  placeholder="0"
+                  :class="ic('age')"
+                />
+                <span class="text-[10px] text-slate-400 text-center">Años</span>
+              </div>
+              <div class="flex-1 flex flex-col gap-1">
+                <input
+                  v-model="form.age_months"
+                  type="number"
+                  min="0"
+                  max="11"
+                  placeholder="0"
+                  :class="ic('age_months')"
+                />
+                <span class="text-[10px] text-slate-400 text-center">Meses</span>
+              </div>
+            </div>
             <p v-if="errores.age" class="text-red-500 text-xs m-0">{{ errores.age }}</p>
+            <p v-if="errores.age_months" class="text-red-500 text-xs m-0">
+              {{ errores.age_months }}
+            </p>
           </div>
 
           <!-- Peso -->
           <div class="flex flex-col gap-1">
             <label class="text-xs font-semibold text-slate-500">Peso (kg)</label>
             <input
-              v-model.number="form.weight"
+              v-model="form.weight"
               type="number"
               min="0"
               max="500"
