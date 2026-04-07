@@ -205,9 +205,8 @@
                 <label class="text-xs font-semibold text-slate-500">Género</label>
                 <select v-model="formulario.gender" :class="ic('gender')">
                   <option value="">Seleccionar</option>
-                  <option value="M">Masculino</option>
-                  <option value="F">Femenino</option>
-                  <option value="O">Otro</option>
+                  <option value="masculino">Masculino</option>
+                  <option value="femenino">Femenino</option>
                 </select>
               </div>
             </div>
@@ -394,6 +393,14 @@ import { useAuthStore } from '@/stores/authStore'
 const router = useRouter()
 const auth = useAuthStore()
 
+const baseUrl = import.meta.env.VITE_API_URL.replace('/api', '')
+
+function fotoUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  return `${baseUrl}/storage/${path}`
+}
+
 const formulario = ref({
   name: '',
   email: '',
@@ -406,6 +413,7 @@ const formulario = ref({
   password_confirmation: '',
   remove_photo: false,
 })
+
 const fotoPreview = ref<string | null>(null)
 const fotoArchivo = ref<File | null>(null)
 const cargando = ref(false)
@@ -414,7 +422,6 @@ const mostrarEliminar = ref(false)
 const mensajeExito = ref('')
 const errorGeneral = ref('')
 const errores = ref<Record<string, string>>({})
-
 const hoy = new Date().toISOString().split('T')[0]
 
 const edad = computed(() => {
@@ -434,7 +441,11 @@ const rolLabel: Record<string, string> = {
   administrador: 'Administrador',
 }
 const rolActual = computed(() => rolLabel[auth.user?.role ?? ''] ?? 'Cliente')
-const generoLabel: Record<string, string> = { M: 'Masculino', F: 'Femenino', O: 'Otro' }
+
+const generoLabel: Record<string, string> = {
+  masculino: 'Masculino',
+  femenino: 'Femenino',
+}
 
 const datosLectura = computed(() => [
   { label: 'Nombre', valor: formulario.value.name },
@@ -462,7 +473,7 @@ onMounted(() => {
   formulario.value.address = u?.address ?? ''
   formulario.value.gender = u?.gender ?? ''
   formulario.value.birth_date = u?.birth_date ?? ''
-  fotoPreview.value = (u as any)?.photo_url ?? null
+  fotoPreview.value = fotoUrl(u?.profile_photo)
 })
 
 function validar(): boolean {
@@ -549,10 +560,8 @@ async function actualizar() {
   fd.append('address', formulario.value.address)
   fd.append('gender', formulario.value.gender)
   fd.append('birth_date', formulario.value.birth_date)
-
   if (formulario.value.remove_photo) fd.append('remove_photo', '1')
-  if (fotoArchivo.value) fd.append('photo', fotoArchivo.value)
-
+  if (fotoArchivo.value) fd.append('profile_photo', fotoArchivo.value)
   if (formulario.value.password) {
     fd.append('current_password', formulario.value.current_password)
     fd.append('password', formulario.value.password)
@@ -561,10 +570,7 @@ async function actualizar() {
 
   const response = await fetch(`${import.meta.env.VITE_API_URL}/perfil`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${auth.token}`,
-      Accept: 'application/json',
-    },
+    headers: { Authorization: `Bearer ${auth.token}`, Accept: 'application/json' },
     body: fd,
   })
 
@@ -589,7 +595,7 @@ async function actualizar() {
     localStorage.setItem('user', JSON.stringify(auth.user))
   }
 
-  fotoPreview.value = json.data?.photo_url ?? fotoPreview.value
+  fotoPreview.value = fotoUrl(json.data?.profile_photo) ?? fotoPreview.value
 
   mensajeExito.value = '¡Perfil actualizado correctamente!'
   formulario.value.current_password = ''
@@ -606,19 +612,14 @@ async function ejecutarEliminar() {
 
   const response = await fetch(`${import.meta.env.VITE_API_URL}/perfil`, {
     method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${auth.token}`,
-      Accept: 'application/json',
-    },
+    headers: { Authorization: `Bearer ${auth.token}`, Accept: 'application/json' },
   })
 
   cargando.value = false
-
   if (!response.ok) {
     errorGeneral.value = 'No se pudo eliminar la cuenta.'
     return
   }
-
   auth.logout()
 }
 
