@@ -41,7 +41,7 @@ async function cargarMascotas() {
   cargandoMascotas.value = true
   mascotas.value = []
   mascotaId.value = null
-  const { data, execute } = ApiUseFetch(`/admin/pets?owner_id=${clienteId.value}`).get().json()
+  const { data, execute } = ApiUseFetch(`/admin1/pets?owner_id=${clienteId.value}`).get().json()
   await execute()
   mascotas.value = data.value?.data ?? []
   cargandoMascotas.value = false
