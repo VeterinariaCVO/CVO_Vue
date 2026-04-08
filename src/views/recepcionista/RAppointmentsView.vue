@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
-import ReagendarCitaModal from '@/views/recepcionista/RUpdateAppointment.vue'
+import RecepReagendarModal from '@/views/recepcionista/RUpdateAppointment.vue'
 import RCreateAppointmentView from '@/views/recepcionista/RCreateAppointment.vue'
 
 const mostrarReagendar = ref(false)
@@ -276,7 +276,7 @@ onMounted(obtenerCitas)
     </div>
   </div>
 
-  <ReagendarCitaModal
+  <RecepReagendarModal
     v-if="mostrarReagendar && citaReagendarId"
     :citaId="citaReagendarId"
     @cerrar="cerrarReagendar"
