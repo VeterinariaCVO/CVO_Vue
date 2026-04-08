@@ -2,8 +2,6 @@
 import { ref, watch, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 
-const BASE = import.meta.env.VITE_API_URL
-
 const emit = defineEmits<{
   (e: 'cerrar'): void
   (e: 'guardado'): void

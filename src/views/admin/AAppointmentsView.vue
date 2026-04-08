@@ -4,8 +4,6 @@ import { ApiUseFetch } from '@/composables/ApiUseFetch'
 import ReagendarCitaModal from '@/components/admin/RescheduleAppointmentModal.vue'
 import ACreateAppointmentModal from '@/components/admin/CreateAppointmentModal.vue'
 
-const BASE = import.meta.env.VITE_API_URL
-
 const mostrarReagendar = ref(false)
 const citaReagendarId = ref<number | null>(null)
 const mostrarAgendar = ref(false)
