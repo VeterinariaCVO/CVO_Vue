@@ -21,15 +21,19 @@ const duracion = ref('')
 const cargandoGuardar = ref(false)
 const errores = ref<any>({})
 
+// ✅ Modal eliminar
+const mostrarConfirmEliminar = ref(false)
+const servicioAEliminar = ref<any | null>(null)
+
 const serviciosFiltrados = computed(() => {
-  if (filtro.value === 'activos') return servicios.value.filter(s => s.active)
-  if (filtro.value === 'inactivos') return servicios.value.filter(s => !s.active)
+  if (filtro.value === 'activos') return servicios.value.filter(s => s.active == 1)
+  if (filtro.value === 'inactivos') return servicios.value.filter(s => !s.active || s.active == 0)
   return servicios.value
 })
 
 async function obtenerServicios() {
   cargando.value = true
-  const url = esAdmin.value ? '/services?all=1' : '/services'
+  const url = esAdmin.value ? '/admin/services' : '/services'
   const { data, execute } = ApiUseFetch(url).get().json()
   await execute()
   servicios.value = data.value?.data ?? []
@@ -53,7 +57,7 @@ function abrirEditar(servicio: any) {
   nombre.value = servicio.name
   descripcion.value = servicio.description ?? ''
   precio.value = servicio.price
-  duracion.value = servicio.duration
+  duracion.value = servicio.duration_minutes
   errores.value = {}
   mostrarModal.value = true
 }
@@ -61,23 +65,39 @@ function abrirEditar(servicio: any) {
 async function guardar() {
   errores.value = {}
   cargandoGuardar.value = true
+
   const payload = {
     name: nombre.value,
     description: descripcion.value || null,
     price: parseFloat(precio.value),
-    duration: parseInt(duracion.value),
+    duration_minutes: parseInt(duracion.value),
+    active: true,
   }
+
   const req = modoEdicion.value
-    ? ApiUseFetch(`/services/${servicioEditando.value.id}`).put(payload).json()
-    : ApiUseFetch('/services').post({ ...payload, active: true }).json()
-  const { data, execute } = req
+    ? ApiUseFetch(`/admin/services/${servicioEditando.value.id}`).put(payload).json()
+    : ApiUseFetch('/admin/services').post(payload).json()
+
+  const { data, statusCode, execute } = req
   await execute()
   cargandoGuardar.value = false
+
   if ((data.value as any)?.errors) {
     const e = (data.value as any).errors
     for (const campo in e) errores.value[campo] = e[campo][0]
     return
   }
+
+  if (!(data.value as any)?.success && (data.value as any)?.message) {
+    errores.value.general = (data.value as any).message
+    return
+  }
+
+  if (statusCode.value && statusCode.value >= 400) {
+    errores.value.general = `Error del servidor (${statusCode.value})`
+    return
+  }
+
   mostrarModal.value = false
   mensajeExito.value = modoEdicion.value ? 'Servicio actualizado' : 'Servicio creado'
   setTimeout(() => (mensajeExito.value = ''), 3000)
@@ -85,17 +105,39 @@ async function guardar() {
 }
 
 async function toggleActivo(servicio: any) {
-  const { execute } = ApiUseFetch(`/services/${servicio.id}`).put({ active: !servicio.active }).json()
+  const { execute } = ApiUseFetch(`/admin/services/${servicio.id}`)
+    .put({
+      name: servicio.name,
+      description: servicio.description ?? null,
+      price: parseFloat(servicio.price),
+      duration_minutes: parseInt(servicio.duration_minutes),
+      active: !servicio.active,
+    }).json()
   await execute()
   mensajeExito.value = servicio.active ? 'Servicio desactivado' : 'Servicio activado'
   setTimeout(() => (mensajeExito.value = ''), 3000)
   obtenerServicios()
 }
 
-async function eliminar(servicio: any) {
-  if (!confirm(`¿Seguro que quieres eliminar el servicio "${servicio.name}"?`)) return
-  const { execute } = ApiUseFetch(`/services/${servicio.id}`).delete().json()
+// ✅ Abrir modal en lugar de confirm()
+function confirmarEliminar(servicio: any) {
+  servicioAEliminar.value = servicio
+  mostrarConfirmEliminar.value = true
+}
+
+async function ejecutarEliminar() {
+  if (!servicioAEliminar.value) return
+  const { data, statusCode, execute } = ApiUseFetch(`/admin/services/${servicioAEliminar.value.id}`).delete().json()
   await execute()
+
+  mostrarConfirmEliminar.value = false
+  servicioAEliminar.value = null
+
+  if (statusCode.value && statusCode.value >= 400) {
+    alert(`Error al eliminar: ${(data.value as any)?.message ?? 'Error del servidor'}`)
+    return
+  }
+
   mensajeExito.value = 'Servicio eliminado'
   setTimeout(() => (mensajeExito.value = ''), 3000)
   obtenerServicios()
@@ -109,7 +151,9 @@ onMounted(obtenerServicios)
     <div class="flex items-center justify-between mb-6">
       <div>
         <h1 class="text-xl font-semibold text-slate-800 m-0">Servicios</h1>
-        <p class="text-sm text-slate-400 mt-0.5 mb-0">{{ esAdmin ? 'Administra el catálogo de servicios veterinarios' : 'Servicios disponibles' }}</p>
+        <p class="text-sm text-slate-400 mt-0.5 mb-0">
+          {{ esAdmin ? 'Administra el catálogo de servicios veterinarios' : 'Servicios disponibles' }}
+        </p>
       </div>
       <button
         v-if="esAdmin"
@@ -129,8 +173,6 @@ onMounted(obtenerServicios)
     </div>
 
     <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-
-      <!-- Filtros admin -->
       <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100">
         <div v-if="esAdmin" class="flex gap-1.5">
           <button
@@ -148,7 +190,9 @@ onMounted(obtenerServicios)
       <div v-if="cargando" class="flex justify-center py-14">
         <div class="animate-spin rounded-full h-6 w-6 border-2 border-slate-200 border-t-[#1d6bbf]"></div>
       </div>
-      <p v-else-if="serviciosFiltrados.length === 0" class="text-center text-sm text-slate-400 py-12">No hay servicios registrados.</p>
+      <p v-else-if="serviciosFiltrados.length === 0" class="text-center text-sm text-slate-400 py-12">
+        No hay servicios registrados.
+      </p>
 
       <table v-else class="w-full border-collapse">
         <thead>
@@ -180,7 +224,7 @@ onMounted(obtenerServicios)
             </td>
             <td class="px-5 py-3 text-sm text-slate-500 max-w-xs truncate">{{ servicio.description ?? '—' }}</td>
             <td class="px-5 py-3 text-sm text-slate-800 font-medium">${{ Number(servicio.price).toFixed(2) }}</td>
-            <td class="px-5 py-3 text-sm text-slate-500">{{ servicio.duration }} min</td>
+            <td class="px-5 py-3 text-sm text-slate-500">{{ servicio.duration_minutes }} min</td>
             <td v-if="esAdmin" class="px-5 py-3">
               <button
                 @click="toggleActivo(servicio)"
@@ -200,8 +244,9 @@ onMounted(obtenerServicios)
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </button>
+                <!-- ✅ Cambiado de confirm() a modal bonito -->
                 <button
-                  @click="eliminar(servicio)"
+                  @click="confirmarEliminar(servicio)"
                   title="Eliminar"
                   class="p-1.5 rounded-md text-red-500 bg-red-50 border border-red-200 hover:bg-red-100 cursor-pointer transition-colors flex items-center justify-center"
                 >
@@ -221,11 +266,21 @@ onMounted(obtenerServicios)
   </div>
 
   <!-- Modal crear/editar -->
-  <div v-if="mostrarModal" class="fixed inset-0 bg-black/30 flex items-center justify-center z-50" @click.self="mostrarModal = false">
+  <div
+    v-if="mostrarModal"
+    class="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+    @click.self="mostrarModal = false"
+  >
     <div class="bg-white rounded-xl w-full max-w-lg p-7 shadow-xl">
       <div class="flex items-center justify-between mb-6">
-        <h2 class="text-base font-semibold text-slate-800">{{ modoEdicion ? 'Editar servicio' : 'Nuevo servicio' }}</h2>
+        <h2 class="text-base font-semibold text-slate-800">
+          {{ modoEdicion ? 'Editar servicio' : 'Nuevo servicio' }}
+        </h2>
         <button @click="mostrarModal = false" class="text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer text-lg leading-none">✕</button>
+      </div>
+
+      <div v-if="errores.general" class="mb-4 bg-red-50 border border-red-200 text-red-600 rounded-lg px-4 py-2.5 text-sm">
+        {{ errores.general }}
       </div>
 
       <div class="flex flex-col gap-4">
@@ -248,7 +303,7 @@ onMounted(obtenerServicios)
           <div class="flex flex-col gap-1">
             <label class="text-xs text-slate-500">Duración (minutos)</label>
             <input v-model="duracion" type="number" min="1" placeholder="30" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors" />
-            <span v-if="errores.duration" class="text-xs text-red-500">{{ errores.duration }}</span>
+            <span v-if="errores.duration_minutes" class="text-xs text-red-500">{{ errores.duration_minutes }}</span>
           </div>
         </div>
       </div>
@@ -261,4 +316,39 @@ onMounted(obtenerServicios)
       </div>
     </div>
   </div>
+
+  <!-- ✅ Modal confirmar eliminar -->
+  <Teleport to="body">
+    <Transition name="modal">
+      <div
+        v-if="mostrarConfirmEliminar"
+        class="fixed inset-0 flex items-center justify-center z-50"
+        style="background: rgba(0,0,0,0.25)"
+        @click.self="mostrarConfirmEliminar = false"
+      >
+        <div class="bg-white rounded-xl border border-slate-200 p-6 max-w-xs w-11/12">
+          <p class="text-sm font-semibold text-slate-800 m-0 mb-1">¿Eliminar servicio?</p>
+          <p class="text-sm text-slate-400 m-0 mb-5 leading-relaxed">
+            Se eliminará <span class="text-slate-600">{{ servicioAEliminar?.name }}</span> permanentemente.
+          </p>
+          <div class="flex gap-2 justify-end">
+            <button
+              @click="mostrarConfirmEliminar = false"
+              class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 bg-transparent text-slate-500 cursor-pointer hover:bg-slate-50 transition-colors"
+            >Cancelar</button>
+            <button
+              @click="ejecutarEliminar"
+              class="text-sm px-3 py-1.5 rounded-lg border-none bg-red-500 text-white cursor-pointer hover:bg-red-600 transition-colors"
+            >Eliminar</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
+
+<style scoped>
+.modal-enter-active { transition: opacity 0.15s ease; }
+.modal-leave-active { transition: opacity 0.1s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+</style>

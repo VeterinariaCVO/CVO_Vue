@@ -91,8 +91,8 @@ const router: Router = createRouter({
       meta: { requiresAuth: true, role: 4 },
     },
     {
-      path: '/veterinario/expediente/:id',
-      name: 'VetExpediente',
+      path: '/veterinario/mascotas/:id/historial',
+      name: 'VetHistorial',
       component: VetExpediente,
       meta: { requiresAuth: true, role: 4 },
     },
@@ -128,7 +128,11 @@ const router: Router = createRouter({
     },
     {
       path: '/admin/empleados',
-      name: 'admin.empleados',
+      redirect: '/admin/usuarios',
+    },
+    {
+      path: '/admin/usuarios',
+      name: 'admin.usuarios',
       component: () => import('../views/admin/EmployeeManagementView.vue'),
       meta: { requiresAuth: true, role: 1 },
     },

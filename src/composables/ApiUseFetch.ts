@@ -1,7 +1,7 @@
 import { createFetch } from '@vueuse/core'
 import { useAuthStore } from "@/stores/authStore";
 
-const urlBase: string = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+const urlBase: string = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/'
 
 let isLoggingOut = false
 

@@ -3,6 +3,8 @@ import { ref, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 import { useAuthStore } from '@/stores/authStore'
 import type { User } from '@/types/user'
+import EditUserModal from '@/components/admin/EditUserModal.vue'
+import EditClientModal from '@/components/admin/EditClientModal.vue'
 
 const auth = useAuthStore()
 const WELCOME_KEY = 'cvo_welcome_shown'
@@ -15,6 +17,10 @@ const totalClientes = ref(0)
 const totalEmpleados = ref(0)
 const totalVeterinarios = ref(0)
 const totalCitas = ref(0)
+
+const mostrarEdicionEmpleado = ref(false)
+const mostrarEdicionCliente = ref(false)
+const editarId = ref<number | null>(null)
 
 async function cargarDatos() {
   cargando.value = true
@@ -34,6 +40,28 @@ async function cargarDatos() {
 function entrarAlPanel() {
   mostrarBienvenida.value = false
   sessionStorage.setItem(WELCOME_KEY, 'true')
+}
+
+function abrirEdicion(usuario: User) {
+  editarId.value = usuario.id
+  if (usuario.role_id === 3) mostrarEdicionCliente.value = true
+  else mostrarEdicionEmpleado.value = true
+}
+
+function cerrarEdicionEmpleado() {
+  mostrarEdicionEmpleado.value = false
+  editarId.value = null
+  mensajeExito.value = 'Empleado actualizado'
+  setTimeout(() => (mensajeExito.value = ''), 3000)
+  cargarDatos()
+}
+
+function cerrarEdicionCliente() {
+  mostrarEdicionCliente.value = false
+  editarId.value = null
+  mensajeExito.value = 'Cliente actualizado'
+  setTimeout(() => (mensajeExito.value = ''), 3000)
+  cargarDatos()
 }
 
 async function toggleActivo(usuario: User) {
@@ -57,7 +85,6 @@ onMounted(() => {
 
 <template>
   <div>
-    <!-- Pantalla bienvenida -->
     <transition name="fade">
       <div
         v-if="mostrarBienvenida"
@@ -92,37 +119,30 @@ onMounted(() => {
         <p class="text-sm text-slate-400 mt-0.5 mb-0">Panel de administración</p>
       </div>
 
-      <!-- Stats -->
       <div class="grid grid-cols-4 gap-4 mb-6">
         <div class="bg-white rounded-xl border border-slate-200 p-4 flex flex-col gap-1">
           <span class="text-xs text-slate-400">Clientes</span>
           <span class="text-2xl font-semibold text-[#1d6bbf]">{{ totalClientes }}</span>
-          <router-link to="/admin/clientes" class="text-xs text-slate-400 hover:text-[#1d6bbf] no-underline mt-0.5 transition-colors">Ver todos →</router-link>
         </div>
         <div class="bg-white rounded-xl border border-slate-200 p-4 flex flex-col gap-1">
           <span class="text-xs text-slate-400">Recepcionistas</span>
           <span class="text-2xl font-semibold text-[#1d6bbf]">{{ totalEmpleados }}</span>
-          <router-link to="/admin/usuarios" class="text-xs text-slate-400 hover:text-[#1d6bbf] no-underline mt-0.5 transition-colors">Ver todos →</router-link>
         </div>
         <div class="bg-white rounded-xl border border-slate-200 p-4 flex flex-col gap-1">
           <span class="text-xs text-slate-400">Veterinarios</span>
           <span class="text-2xl font-semibold text-[#1d6bbf]">{{ totalVeterinarios }}</span>
-          <router-link to="/admin/usuarios" class="text-xs text-slate-400 hover:text-[#1d6bbf] no-underline mt-0.5 transition-colors">Ver todos →</router-link>
         </div>
         <div class="bg-white rounded-xl border border-slate-200 p-4 flex flex-col gap-1">
           <span class="text-xs text-slate-400">Citas totales</span>
           <span class="text-2xl font-semibold text-[#1d6bbf]">{{ totalCitas }}</span>
-          <router-link to="/admin/citas" class="text-xs text-slate-400 hover:text-[#1d6bbf] no-underline mt-0.5 transition-colors">Ver todas →</router-link>
         </div>
       </div>
 
-      <!-- Éxito -->
       <div v-if="mensajeExito" class="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-2.5 text-sm flex items-center justify-between">
         {{ mensajeExito }}
         <button @click="mensajeExito = ''" class="bg-transparent border-none cursor-pointer text-green-500 text-base leading-none">×</button>
       </div>
 
-      <!-- Tabla usuarios -->
       <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <h2 class="text-sm font-semibold text-slate-700 m-0">Usuarios del sistema</h2>
@@ -164,29 +184,27 @@ onMounted(() => {
                 <div class="flex items-center justify-end gap-1">
                   <span v-if="usuario.role_id === 1" class="text-xs text-slate-300">—</span>
                   <template v-else>
-                    <router-link
-                      to="/admin/usuarios"
+                    <button
+                      @click="abrirEdicion(usuario)"
                       title="Editar"
-                      class="p-1.5 rounded-md text-amber-600 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors flex items-center justify-center"
+                      class="p-1.5 rounded-md text-amber-600 bg-amber-50 border border-amber-200 hover:bg-amber-100 cursor-pointer transition-colors flex items-center justify-center"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke-linecap="round" stroke-linejoin="round"/>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
-                    </router-link>
+                    </button>
                     <button
                       @click="toggleActivo(usuario)"
                       :title="usuario.active ? 'Desactivar' : 'Activar'"
                       class="p-1.5 rounded-md border cursor-pointer transition-colors flex items-center justify-center"
                       :class="usuario.active ? 'text-red-500 bg-red-50 border-red-200 hover:bg-red-100' : 'text-green-600 bg-green-50 border-green-200 hover:bg-green-100'"
                     >
-                      <!-- Desactivar: ojo tachado -->
                       <svg v-if="usuario.active" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" stroke-linecap="round" stroke-linejoin="round"/>
                         <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" stroke-linecap="round" stroke-linejoin="round"/>
                         <path d="M1 1l22 22" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
-                      <!-- Activar: check -->
                       <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
                         <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
@@ -201,6 +219,19 @@ onMounted(() => {
       </div>
     </div>
   </div>
+
+  <EditUserModal
+    v-if="mostrarEdicionEmpleado && editarId"
+    :id="editarId"
+    @cerrar="mostrarEdicionEmpleado = false; editarId = null"
+    @guardado="cerrarEdicionEmpleado"
+  />
+  <EditClientModal
+    v-if="mostrarEdicionCliente && editarId"
+    :id="editarId"
+    @cerrar="mostrarEdicionCliente = false; editarId = null"
+    @guardado="cerrarEdicionCliente"
+  />
 </template>
 
 <style scoped>

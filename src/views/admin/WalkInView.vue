@@ -16,20 +16,21 @@ const notas = ref('')
 
 const busquedaCliente = ref('')
 const clientesFiltrados = ref<any[]>([])
+const mostrarDropdown = ref(false)
 
 const cargandoMascotas = ref(false)
 const cargandoSlots = ref(false)
 const enviando = ref(false)
 const errorMsg = ref('')
-const exitoso = ref(false)
-const atencionCreada = ref<any>(null)
+
+const toastVisible = ref(false)
+const toastData = ref<{ mascota: string; servicio: string } | null>(null)
 
 async function cargarClientes() {
   const { data, execute } = ApiUseFetch('/admin/users').get().json()
   await execute()
   const todos = data.value?.data ?? []
   clientes.value = todos.filter((u: any) => u.role_id === 3)
-  clientesFiltrados.value = clientes.value
 }
 
 async function cargarServicios() {
@@ -43,12 +44,13 @@ function filtrarClientes() {
   clientesFiltrados.value = q
     ? clientes.value.filter(c => c.name?.toLowerCase().includes(q) || c.phone?.includes(q))
     : clientes.value
+  mostrarDropdown.value = true
 }
 
 function seleccionarCliente(cliente: any) {
   clienteId.value = cliente.id
   busquedaCliente.value = cliente.name
-  clientesFiltrados.value = []
+  mostrarDropdown.value = false
   mascotaId.value = null
   mascotas.value = []
   cargarMascotas(cliente.id)
@@ -57,7 +59,7 @@ function seleccionarCliente(cliente: any) {
 async function cargarMascotas(ownerId: number) {
   cargandoMascotas.value = true
   mascotas.value = []
-  const { data, execute } = ApiUseFetch(`/pets?owner_id=${ownerId}`).get().json()
+  const { data, execute } = ApiUseFetch(`/admin/pets?owner_id=${ownerId}`).get().json()
   await execute()
   mascotas.value = data.value?.data ?? []
   cargandoMascotas.value = false
@@ -80,32 +82,11 @@ async function cargarSlots() {
 
 watch(fechaSeleccionada, () => cargarSlots())
 
-async function registrar() {
-  errorMsg.value = ''
-  if (!mascotaId.value || !servicioId.value) {
-    errorMsg.value = 'Selecciona la mascota y el servicio.'
-    return
-  }
-  enviando.value = true
-  const { data, execute } = ApiUseFetch('/appointments/walk-in').post({
-    pet_id: mascotaId.value,
-    service_id: servicioId.value,
-    time_slot_id: slotId.value ?? undefined,
-    notes: notas.value || null,
-  }).json()
-  await execute()
-  enviando.value = false
-  if (!(data.value as any)?.success) {
-    errorMsg.value = (data.value as any)?.message ?? 'Error al registrar la atención.'
-    return
-  }
-  atencionCreada.value = data.value?.data
-  exitoso.value = true
+function initials(name: string) {
+  return name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
 }
 
-function nuevaAtencion() {
-  exitoso.value = false
-  atencionCreada.value = null
+function resetForm() {
   clienteId.value = null
   mascotaId.value = null
   servicioId.value = null
@@ -118,226 +99,231 @@ function nuevaAtencion() {
   errorMsg.value = ''
 }
 
+function mostrarToast(mascota: string, servicio: string) {
+  toastData.value = { mascota, servicio }
+  toastVisible.value = true
+  setTimeout(() => { toastVisible.value = false }, 5000)
+}
+
+async function registrar() {
+  errorMsg.value = ''
+  if (!mascotaId.value || !servicioId.value) {
+    errorMsg.value = 'Selecciona la mascota y el servicio.'
+    return
+  }
+  enviando.value = true
+
+  const mascotaNombre = mascotas.value.find(m => m.id === mascotaId.value)?.name ?? ''
+  const servicioNombre = servicios.value.find(s => s.id === servicioId.value)?.name ?? ''
+
+  const { data, execute } = ApiUseFetch('/walk-in').post({
+    pet_id: mascotaId.value,
+    service_id: servicioId.value,
+    time_slot_id: slotId.value ?? undefined,
+    notes: notas.value || null,
+  }).json()
+  await execute()
+  enviando.value = false
+
+  if (!(data.value as any)?.success) {
+    errorMsg.value = (data.value as any)?.message ?? 'Error al registrar la atención.'
+    return
+  }
+
+  resetForm()
+  mostrarToast(mascotaNombre, servicioNombre)
+}
+
 onMounted(() => { cargarClientes(); cargarServicios() })
 </script>
 
 <template>
-  <div class="p-8">
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <h1 class="text-xl font-semibold text-slate-800 m-0">Atención sin cita</h1>
-        <p class="text-sm text-slate-400 mt-0.5 mb-0">Registra una atención walk-in directamente en progreso</p>
+  <div class="walkin-root">
+
+    <!-- Header -->
+    <div class="walkin-header">
+      <div class="walkin-header-inner">
+        <div class="walkin-header-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="walkin-title">Walk-in</h1>
+          <p class="walkin-subtitle">Atención inmediata sin cita previa</p>
+        </div>
       </div>
-      <span class="text-xs bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-lg font-medium">Walk-in · In Progress</span>
     </div>
 
-    <!-- Éxito -->
-    <div v-if="exitoso" class="bg-white rounded-xl border border-slate-200 p-8 flex flex-col items-center text-center">
-      <div class="w-14 h-14 rounded-full bg-green-50 border border-green-200 flex items-center justify-center mb-4">
-        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-linecap="round" stroke-linejoin="round"/>
-          <polyline points="22 4 12 14.01 9 11.01" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+    <!-- Toast -->
+    <Transition name="toast">
+      <div v-if="toastVisible" class="walkin-toast">
+        <div class="walkin-toast-icon">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="walkin-toast-text">
+          <span class="walkin-toast-title">Atención registrada</span>
+          <span class="walkin-toast-sub">{{ toastData?.mascota }} · {{ toastData?.servicio }}</span>
+        </div>
+        <button @click="toastVisible = false" class="walkin-toast-close">×</button>
       </div>
-      <h2 class="text-base font-semibold text-slate-800 mb-1">Atención registrada</h2>
-      <p class="text-sm text-slate-500 mb-1">La atención está en progreso. Los veterinarios activos han sido notificados.</p>
-      <div v-if="atencionCreada" class="mt-4 bg-slate-50 rounded-lg border border-slate-100 px-5 py-3 text-left w-full max-w-sm">
-        <p class="text-xs text-slate-400 m-0 mb-1">Mascota: <span class="text-slate-700 font-medium">{{ atencionCreada.pet?.name }}</span></p>
-        <p class="text-xs text-slate-400 m-0 mb-1">Servicio: <span class="text-slate-700 font-medium">{{ atencionCreada.service?.name }}</span></p>
-        <p class="text-xs text-slate-400 m-0">Estado: <span class="text-purple-700 font-medium">En progreso</span></p>
-      </div>
-      <button @click="nuevaAtencion" class="mt-5 bg-slate-800 hover:bg-slate-700 text-white text-sm px-6 py-2 rounded-lg border-none cursor-pointer transition-colors">
-        Registrar otra atención
-      </button>
-    </div>
+    </Transition>
 
-    <!-- Formulario -->
-    <div v-else class="grid grid-cols-5 gap-5">
+    <!-- Cuerpo -->
+    <div class="walkin-body">
+      <div class="walkin-card">
 
-      <!-- Panel formulario -->
-      <div class="col-span-3">
-        <div class="bg-white rounded-xl border border-slate-200 p-6">
-          <div class="flex flex-col gap-5">
+        <!-- Columna izquierda -->
+        <div class="walkin-col">
+          <p class="walkin-section-label">Cliente & mascota</p>
 
-            <!-- Cliente -->
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-medium text-slate-500">Cliente</label>
-              <div class="relative">
-                <input
-                  v-model="busquedaCliente"
-                  @input="filtrarClientes"
-                  @focus="filtrarClientes"
-                  type="text"
-                  placeholder="Buscar por nombre o teléfono..."
-                  class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1d6bbf] transition-colors"
-                />
-                <div v-if="busquedaCliente && clientesFiltrados.length > 0 && !clienteId" class="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-lg mt-1 shadow-sm z-10 max-h-48 overflow-y-auto">
-                  <button
-                    v-for="cliente in clientesFiltrados.slice(0, 8)"
-                    :key="cliente.id"
-                    @click="seleccionarCliente(cliente)"
-                    class="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-slate-50 border-none bg-white cursor-pointer border-b border-slate-50 last:border-none transition-colors"
-                  >
-                    <div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                      <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="12" cy="7" r="4" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </div>
-                    <div>
-                      <p class="text-sm text-slate-800 m-0">{{ cliente.name }}</p>
-                      <p class="text-xs text-slate-400 m-0">{{ cliente.phone ?? cliente.email }}</p>
-                    </div>
-                  </button>
+          <!-- Buscador cliente -->
+          <div class="walkin-field">
+            <label class="walkin-label">Cliente</label>
+            <div class="walkin-input-wrap">
+              <svg class="walkin-input-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35" stroke-linecap="round"/>
+              </svg>
+              <input
+                v-model="busquedaCliente"
+                @input="filtrarClientes"
+                @focus="filtrarClientes"
+                :disabled="!!clienteId"
+                type="text"
+                placeholder="Nombre o teléfono..."
+                class="walkin-input"
+              />
+            </div>
+
+            <!-- Dropdown -->
+            <div v-if="mostrarDropdown && clientesFiltrados.length > 0 && !clienteId" class="walkin-dropdown">
+              <button
+                v-for="cliente in clientesFiltrados.slice(0, 6)"
+                :key="cliente.id"
+                @click="seleccionarCliente(cliente)"
+                class="walkin-dropdown-item"
+              >
+                <div class="walkin-avatar">{{ initials(cliente.name) }}</div>
+                <div>
+                  <p class="walkin-dropdown-name">{{ cliente.name }}</p>
+                  <p class="walkin-dropdown-sub">{{ cliente.phone ?? cliente.email }}</p>
                 </div>
-              </div>
-              <button v-if="clienteId" @click="clienteId = null; busquedaCliente = ''; mascotas = []; mascotaId = null" class="text-xs text-slate-400 hover:text-red-500 self-start bg-transparent border-none cursor-pointer mt-0.5">× Cambiar cliente</button>
+              </button>
             </div>
 
-            <!-- Mascota -->
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-medium text-slate-500">Mascota</label>
-              <div v-if="cargandoMascotas" class="text-xs text-slate-400">Cargando mascotas...</div>
-              <div v-else-if="!clienteId" class="text-xs text-slate-400 italic">Selecciona un cliente primero</div>
-              <div v-else-if="mascotas.length === 0" class="text-xs text-slate-400">Este cliente no tiene mascotas registradas.</div>
-              <div v-else class="grid grid-cols-2 gap-2">
-                <button
-                  v-for="mascota in mascotas"
-                  :key="mascota.id"
-                  @click="mascotaId = mascota.id"
-                  :class="mascotaId === mascota.id ? 'border-[#1d6bbf] bg-blue-50 text-slate-800' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'"
-                  class="flex items-center gap-2.5 px-3 py-2 rounded-lg border text-sm cursor-pointer transition-colors text-left"
-                >
-                  <div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                    <img v-if="mascota.photo_url" :src="mascota.photo_url" class="w-7 h-7 rounded-full object-cover" />
-                    <svg v-else class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8" stroke-linecap="round"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <p class="text-sm font-medium m-0">{{ mascota.name }}</p>
-                    <p class="text-xs text-slate-400 m-0">{{ mascota.species }}</p>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            <!-- Servicio -->
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-medium text-slate-500">Servicio</label>
-              <select v-model="servicioId" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1d6bbf] transition-colors bg-white">
-                <option :value="null" disabled>Selecciona un servicio</option>
-                <option v-for="s in servicios" :key="s.id" :value="s.id">{{ s.name }} — ${{ Number(s.price).toFixed(2) }} · {{ s.duration }} min</option>
-              </select>
-            </div>
-
-            <!-- Horario opcional -->
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-medium text-slate-500">Horario <span class="text-slate-400 font-normal">(opcional — si hay slot disponible)</span></label>
-              <input type="date" v-model="fechaSeleccionada" :min="new Date().toISOString().slice(0, 10)" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1d6bbf] transition-colors" />
-              <div v-if="fechaSeleccionada">
-                <div v-if="cargandoSlots" class="text-xs text-slate-400">Cargando horarios...</div>
-                <div v-else-if="slots.length === 0" class="text-xs text-slate-400">Sin horarios disponibles para esta fecha.</div>
-                <div v-else class="flex flex-wrap gap-2 mt-1">
-                  <button
-                    v-for="slot in slots"
-                    :key="slot.id"
-                    @click="slotId = slotId === slot.id ? null : slot.id"
-                    :class="slotId === slot.id ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'"
-                    class="border rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer"
-                  >{{ slot.start_time.slice(0, 5) }}</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Notas -->
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-medium text-slate-500">Notas <span class="text-slate-400 font-normal">(opcional)</span></label>
-              <textarea v-model="notas" rows="2" placeholder="Motivo de la visita, observaciones iniciales..." class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1d6bbf] transition-colors resize-none"></textarea>
-            </div>
-
-            <div v-if="errorMsg" class="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{{ errorMsg }}</div>
-
-            <button
-              @click="registrar"
-              :disabled="enviando"
-              class="w-full bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white text-sm py-2.5 rounded-lg cursor-pointer border-none transition-colors font-medium"
-            >
-              {{ enviando ? 'Registrando...' : 'Registrar atención sin cita' }}
+            <button v-if="clienteId" @click="clienteId = null; busquedaCliente = ''; mascotas = []; mascotaId = null" class="walkin-change-btn">
+              × Cambiar cliente
             </button>
           </div>
-        </div>
-      </div>
 
-      <!-- Panel lateral info -->
-      <div class="col-span-2 flex flex-col gap-4">
+          <!-- Mascotas -->
+          <div class="walkin-field">
+            <label class="walkin-label">Mascota</label>
+            <p v-if="cargandoMascotas" class="walkin-hint">Cargando mascotas...</p>
+            <p v-else-if="!clienteId" class="walkin-hint">Selecciona un cliente primero</p>
+            <p v-else-if="mascotas.length === 0" class="walkin-hint">Sin mascotas registradas.</p>
+            <div v-else class="walkin-pet-grid">
+              <button
+                v-for="mascota in mascotas"
+                :key="mascota.id"
+                @click="mascotaId = mascota.id"
+                :class="['walkin-pet-card', mascotaId === mascota.id ? 'walkin-pet-card--active' : '']"
+              >
+                <div class="walkin-pet-avatar">
+                  <img v-if="mascota.photo_url" :src="mascota.photo_url" class="walkin-pet-img" />
+                  <span v-else>{{ initials(mascota.name) }}</span>
+                </div>
+                <div>
+                  <p class="walkin-pet-name">{{ mascota.name }}</p>
+                  <p class="walkin-pet-species">{{ mascota.species }}</p>
+                </div>
+                <div v-if="mascotaId === mascota.id" class="walkin-pet-check">
+                  <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </button>
+            </div>
+          </div>
 
-        <div class="bg-white rounded-xl border border-slate-200 p-5">
-          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">¿Qué es un walk-in?</p>
-          <div class="flex flex-col gap-3">
-            <div class="flex items-start gap-3">
-              <div class="w-6 h-6 rounded-md bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0 mt-0.5">
-                <svg class="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-              <p class="text-xs text-slate-600 m-0">La atención se registra directamente en estado <span class="font-medium text-purple-700">In Progress</span>, sin pasar por Pendiente ni Confirmada.</p>
-            </div>
-            <div class="flex items-start gap-3">
-              <div class="w-6 h-6 rounded-md bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-                <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="6" y1="1" x2="6" y2="4" stroke-linecap="round"/><line x1="10" y1="1" x2="10" y2="4" stroke-linecap="round"/>
-                </svg>
-              </div>
-              <p class="text-xs text-slate-600 m-0">Todos los veterinarios activos recibirán una <span class="font-medium">notificación automática</span> para atender al paciente.</p>
-            </div>
-            <div class="flex items-start gap-3">
-              <div class="w-6 h-6 rounded-md bg-green-50 border border-green-100 flex items-center justify-center shrink-0 mt-0.5">
-                <svg class="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <circle cx="9" cy="7" r="4" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-              <p class="text-xs text-slate-600 m-0">El dueño de la mascota también recibirá una notificación de la atención.</p>
-            </div>
-            <div class="flex items-start gap-3">
-              <div class="w-6 h-6 rounded-md bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0 mt-0.5">
-                <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
-                  <polyline points="12 6 12 12 16 14" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-              <p class="text-xs text-slate-600 m-0">El horario es <span class="font-medium">opcional</span>. Puedes asignarlo si hay slots disponibles o dejarlo sin asignar.</p>
-            </div>
+          <!-- Servicio -->
+          <div class="walkin-field">
+            <label class="walkin-label">Servicio</label>
+            <select v-model="servicioId" class="walkin-select">
+              <option :value="null" disabled>Selecciona un servicio</option>
+              <option v-for="s in servicios" :key="s.id" :value="s.id">
+                {{ s.name }} — ${{ Number(s.price).toFixed(2) }}
+              </option>
+            </select>
           </div>
         </div>
 
-        <!-- Resumen -->
-        <div v-if="mascotaId || servicioId" class="bg-white rounded-xl border border-slate-200 p-5">
-          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Resumen</p>
-          <div class="flex flex-col gap-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xs text-slate-400">Cliente</span>
-              <span class="text-xs font-medium text-slate-700">{{ busquedaCliente || '—' }}</span>
+        <!-- Divider vertical -->
+        <div class="walkin-divider"></div>
+
+        <!-- Columna derecha -->
+        <div class="walkin-col">
+          <p class="walkin-section-label">Horario & notas <span class="walkin-optional">(opcionales)</span></p>
+
+          <!-- Fecha -->
+          <div class="walkin-field">
+            <label class="walkin-label">Fecha</label>
+            <input
+              type="date"
+              v-model="fechaSeleccionada"
+              :min="new Date().toISOString().slice(0, 10)"
+              class="walkin-input walkin-input--date"
+            />
+          </div>
+
+          <!-- Slots -->
+          <div class="walkin-field">
+            <label class="walkin-label">Horario</label>
+            <p v-if="!fechaSeleccionada" class="walkin-hint">Selecciona una fecha primero</p>
+            <p v-else-if="cargandoSlots" class="walkin-hint">Cargando horarios...</p>
+            <p v-else-if="slots.length === 0" class="walkin-hint">Sin horarios disponibles.</p>
+            <div v-else class="walkin-slots">
+              <button
+                v-for="slot in slots"
+                :key="slot.id"
+                @click="slotId = slotId === slot.id ? null : slot.id"
+                :class="['walkin-slot', slotId === slot.id ? 'walkin-slot--active' : '']"
+              >
+                {{ slot.start_time.slice(0, 5) }}
+              </button>
             </div>
-            <div class="flex items-center justify-between">
-              <span class="text-xs text-slate-400">Mascota</span>
-              <span class="text-xs font-medium text-slate-700">{{ mascotas.find(m => m.id === mascotaId)?.name ?? '—' }}</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-xs text-slate-400">Servicio</span>
-              <span class="text-xs font-medium text-slate-700">{{ servicios.find(s => s.id === servicioId)?.name ?? '—' }}</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-xs text-slate-400">Horario</span>
-              <span class="text-xs font-medium text-slate-700">{{ slotId ? slots.find(s => s.id === slotId)?.start_time?.slice(0,5) : 'Sin asignar' }}</span>
-            </div>
-            <div class="flex items-center justify-between pt-2 border-t border-slate-100">
-              <span class="text-xs text-slate-400">Estado inicial</span>
-              <span class="text-xs bg-purple-50 text-purple-700 border border-purple-100 px-2 py-0.5 rounded-md font-medium">In Progress</span>
-            </div>
+          </div>
+
+          <!-- Notas -->
+          <div class="walkin-field walkin-field--grow">
+            <label class="walkin-label">Notas</label>
+            <textarea
+              v-model="notas"
+              placeholder="Motivo de la visita, síntomas, observaciones..."
+              class="walkin-textarea"
+            ></textarea>
+          </div>
+
+          <!-- Error -->
+          <div v-if="errorMsg" class="walkin-error">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01" stroke-linecap="round"/>
+            </svg>
+            {{ errorMsg }}
+          </div>
+
+          <!-- Acciones -->
+          <div class="walkin-actions">
+            <button @click="resetForm" class="walkin-btn-secondary">Limpiar</button>
+            <button @click="registrar" :disabled="enviando" class="walkin-btn-primary">
+              <svg v-if="!enviando" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="walkin-spinner" v-if="enviando"></span>
+              {{ enviando ? 'Registrando...' : 'Registrar atención' }}
+            </button>
           </div>
         </div>
 
@@ -345,3 +331,489 @@ onMounted(() => { cargarClientes(); cargarServicios() })
     </div>
   </div>
 </template>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+.walkin-root {
+  font-family: 'DM Sans', sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 64px);
+  background: #f6f7f9;
+}
+
+/* Header */
+.walkin-header {
+  background: #fff;
+  border-bottom: 1px solid #e8eaed;
+  padding: 20px 36px;
+  flex-shrink: 0;
+}
+.walkin-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.walkin-header-icon {
+  width: 36px;
+  height: 36px;
+  background: #1d6bbf;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+.walkin-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1a2332;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+.walkin-subtitle {
+  font-size: 12.5px;
+  color: #9aa3b0;
+  margin: 2px 0 0;
+}
+
+/* Toast */
+.walkin-toast {
+  margin: 16px 36px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f0faf4;
+  border: 1px solid #b7e4c7;
+  border-radius: 12px;
+  padding: 12px 16px;
+  flex-shrink: 0;
+}
+.walkin-toast-icon {
+  width: 26px;
+  height: 26px;
+  background: #d1f0de;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2d8a55;
+  flex-shrink: 0;
+}
+.walkin-toast-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.walkin-toast-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e6e42;
+}
+.walkin-toast-sub {
+  font-size: 12px;
+  color: #4caf78;
+}
+.walkin-toast-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #7cc99a;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+}
+
+/* Body */
+.walkin-body {
+  flex: 1;
+  display: flex;
+  padding: 24px 36px;
+  min-height: 0;
+}
+
+/* Card */
+.walkin-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e8eaed;
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.walkin-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px 36px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.walkin-divider {
+  width: 1px;
+  background: #f0f1f3;
+  flex-shrink: 0;
+}
+
+/* Section label */
+.walkin-section-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #b0b8c4;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+.walkin-optional {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #c8d0da;
+  font-size: 10px;
+}
+
+/* Fields */
+.walkin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+.walkin-field--grow {
+  flex: 1;
+}
+
+.walkin-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #5a6473;
+}
+
+.walkin-hint {
+  font-size: 12px;
+  color: #b0b8c4;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Input */
+.walkin-input-wrap {
+  position: relative;
+}
+.walkin-input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #b0b8c4;
+  pointer-events: none;
+}
+.walkin-input {
+  width: 100%;
+  border: 1.5px solid #e8eaed;
+  border-radius: 10px;
+  padding: 10px 14px 10px 34px;
+  font-size: 13.5px;
+  font-family: 'DM Sans', sans-serif;
+  color: #1a2332;
+  background: #fafbfc;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+  box-sizing: border-box;
+}
+.walkin-input--date {
+  padding-left: 14px;
+}
+.walkin-input:focus {
+  border-color: #1d6bbf;
+  background: #fff;
+}
+.walkin-input:disabled {
+  background: #f4f5f7;
+  color: #7a8694;
+  cursor: not-allowed;
+}
+
+/* Select */
+.walkin-select {
+  border: 1.5px solid #e8eaed;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  font-family: 'DM Sans', sans-serif;
+  color: #1a2332;
+  background: #fafbfc;
+  outline: none;
+  transition: border-color 0.15s;
+  cursor: pointer;
+}
+.walkin-select:focus {
+  border-color: #1d6bbf;
+  background: #fff;
+}
+
+/* Dropdown */
+.walkin-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1.5px solid #e8eaed;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  z-index: 20;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.walkin-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+.walkin-dropdown-item:hover { background: #f6f7f9; }
+.walkin-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e8f0fb;
+  color: #1d6bbf;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.walkin-dropdown-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a2332;
+  margin: 0;
+}
+.walkin-dropdown-sub {
+  font-size: 11.5px;
+  color: #9aa3b0;
+  margin: 0;
+}
+
+.walkin-change-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 11.5px;
+  color: #b0b8c4;
+  padding: 0;
+  align-self: flex-start;
+  transition: color 0.15s;
+}
+.walkin-change-btn:hover { color: #e05252; }
+
+/* Mascotas */
+.walkin-pet-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.walkin-pet-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1.5px solid #e8eaed;
+  border-radius: 10px;
+  background: #fafbfc;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  position: relative;
+}
+.walkin-pet-card:hover {
+  border-color: #c2d8f5;
+  background: #f5f9ff;
+}
+.walkin-pet-card--active {
+  border-color: #1d6bbf !important;
+  background: #f0f6ff !important;
+  box-shadow: 0 0 0 3px rgba(29,107,191,0.08);
+}
+.walkin-pet-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #e8eaed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #5a6473;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.walkin-pet-img {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+}
+.walkin-pet-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a2332;
+  margin: 0;
+}
+.walkin-pet-species {
+  font-size: 11px;
+  color: #9aa3b0;
+  margin: 0;
+}
+.walkin-pet-check {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 16px;
+  height: 16px;
+  background: #1d6bbf;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+/* Slots */
+.walkin-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.walkin-slot {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  padding: 6px 12px;
+  border: 1.5px solid #e8eaed;
+  border-radius: 8px;
+  background: #fafbfc;
+  color: #5a6473;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.walkin-slot:hover {
+  border-color: #1d6bbf;
+  color: #1d6bbf;
+  background: #f0f6ff;
+}
+.walkin-slot--active {
+  background: #1d6bbf !important;
+  border-color: #1d6bbf !important;
+  color: #fff !important;
+}
+
+/* Textarea */
+.walkin-textarea {
+  flex: 1;
+  border: 1.5px solid #e8eaed;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  font-family: 'DM Sans', sans-serif;
+  color: #1a2332;
+  background: #fafbfc;
+  outline: none;
+  resize: none;
+  min-height: 110px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.walkin-textarea:focus {
+  border-color: #1d6bbf;
+  background: #fff;
+}
+.walkin-textarea::placeholder { color: #c8d0da; }
+
+/* Error */
+.walkin-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #c0392b;
+  background: #fdf3f2;
+  border: 1px solid #f5c6c2;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+/* Acciones */
+.walkin-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.walkin-btn-secondary {
+  flex: 1;
+  border: 1.5px solid #e8eaed;
+  background: #fff;
+  color: #7a8694;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 11px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.walkin-btn-secondary:hover {
+  background: #f6f7f9;
+  color: #1a2332;
+}
+.walkin-btn-primary {
+  flex: 2;
+  background: #1d6bbf;
+  color: #fff;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 11px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: background 0.15s, opacity 0.15s;
+  letter-spacing: -0.1px;
+}
+.walkin-btn-primary:hover { background: #185fa5; }
+.walkin-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.walkin-spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast transition */
+.toast-enter-active, .toast-leave-active { transition: all 0.25s ease; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(-6px); }
+</style>

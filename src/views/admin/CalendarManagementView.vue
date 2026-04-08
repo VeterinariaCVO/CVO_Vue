@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 import type { WorkingDay, TimeSlot, DeleteTarget } from '@/types/calendar'
 import CalendarDayList from '@/components/admin/CalendarDayList.vue'
@@ -146,7 +146,8 @@ defineOptions({ name: 'CalendarManagementView' })
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f5f4f0] p-6">
+  <!-- ↓ Fondo cambiado de bg-[#f5f4f0] a bg-white -->
+  <div class="min-h-screen bg-white p-6">
 
     <!-- Header -->
     <div class="mb-7">

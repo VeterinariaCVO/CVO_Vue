@@ -3,6 +3,9 @@ import { ref, computed } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 
 import type { PetVet } from '@/types/pet.ts'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const pets = ref<PetVet[]>([])
 const isLoading = ref(true)
@@ -30,6 +33,12 @@ function loadPets() {
 }
 
 loadPets()
+
+/*function expedientepet(){
+  isLoading.value= true
+
+  const { data, onFetchResponse, onFetchError, execute}= ApiUseFetch('/veterinario/expediente/:id')
+}*/
 
 const filtered = computed(() => {
   if (!search.value.trim()) return pets.value
@@ -250,6 +259,14 @@ defineOptions({ name: 'VetMascotas' })
             <p class="text-xs text-yellow-600 font-semibold mb-1">MARCAS ESPECIALES</p>
             <p class="text-sm text-slate-600">{{ selected.special_marks }}</p>
           </div>
+        </div>
+        <div class="mt-4">
+          <button
+            @click="router.push(`/veterinario/mascotas/${selected.id}/historial`)"
+            class="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold text-sm shadow-md shadow-blue-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+          >
+            📋 Ver historial médico
+          </button>
         </div>
       </div>
     </Teleport>
