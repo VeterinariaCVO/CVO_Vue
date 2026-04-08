@@ -237,7 +237,7 @@
 
     <!-- Footer -->
     <footer class="bg-white border-t border-slate-100 mt-10">
-      <div class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-10">
+      <div class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-3 gap-10">
         <div class="col-span-2 md:col-span-1 space-y-3">
           <div class="text-base font-bold text-slate-900">Veterinaria del Oriente</div>
           <p class="text-slate-400 text-sm leading-relaxed m-0">
@@ -246,38 +246,40 @@
         </div>
         <div class="space-y-3">
           <h4 class="text-[10px] font-bold text-slate-600 uppercase tracking-widest m-0">
-            Clínica
+            Navegación
           </h4>
           <ul class="space-y-2 list-none p-0 m-0">
             <li>
-              <a href="#" class="text-slate-400 hover:text-[#0056c2] text-sm transition-colors"
-                >Ubicación</a
+              <button
+                @click="router.push('/client/dashboard')"
+                class="text-slate-400 hover:text-[#0056c2] text-sm transition-colors bg-transparent border-none cursor-pointer p-0"
               >
+                Inicio
+              </button>
             </li>
             <li>
-              <a href="#" class="text-slate-400 hover:text-[#0056c2] text-sm transition-colors"
-                >Urgencias</a
+              <button
+                @click="router.push('/client/mascotas')"
+                class="text-slate-400 hover:text-[#0056c2] text-sm transition-colors bg-transparent border-none cursor-pointer p-0"
               >
+                Mis Mascotas
+              </button>
             </li>
             <li>
-              <a href="#" class="text-slate-400 hover:text-[#0056c2] text-sm transition-colors"
-                >Contacto</a
+              <button
+                @click="router.push('/client/citas')"
+                class="text-slate-400 hover:text-[#0056c2] text-sm transition-colors bg-transparent border-none cursor-pointer p-0"
               >
-            </li>
-          </ul>
-        </div>
-        <div class="space-y-3">
-          <h4 class="text-[10px] font-bold text-slate-600 uppercase tracking-widest m-0">Legal</h4>
-          <ul class="space-y-2 list-none p-0 m-0">
-            <li>
-              <a href="#" class="text-slate-400 hover:text-[#0056c2] text-sm transition-colors"
-                >Privacidad</a
-              >
+                Mis Citas
+              </button>
             </li>
             <li>
-              <a href="#" class="text-slate-400 hover:text-[#0056c2] text-sm transition-colors"
-                >Términos</a
+              <button
+                @click="router.push('/client/agendar')"
+                class="text-slate-400 hover:text-[#0056c2] text-sm transition-colors bg-transparent border-none cursor-pointer p-0"
               >
+                Agendar Cita
+              </button>
             </li>
           </ul>
         </div>
@@ -288,6 +290,8 @@
           <p class="text-slate-400 text-sm m-0">
             Lun - Vie: 8am - 8pm<br />Sáb: 9am - 4pm<br />Emergencias 24/7
           </p>
+          <p class="text-slate-400 text-sm m-0">📍 Periférico 9344, Torreón</p>
+          <p class="text-slate-400 text-sm m-0">📞 (123) 456-7890</p>
         </div>
       </div>
       <div
