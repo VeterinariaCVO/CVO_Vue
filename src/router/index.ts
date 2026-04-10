@@ -15,6 +15,9 @@ import RAppointmentsView from '@/views/recepcionista/RAppointmentsView.vue'
 import RCreateAppointmentView from '@/views/recepcionista/RCreateAppointment.vue'
 import AdminDashboard from '@/views/admin/AdminDashboard.vue'
 import CalendarManagementView from '@/views/admin/CalendarManagementView.vue'
+import RecepcionistaDashboard from '@/views/recepcionista/Recepcionistadashboard.vue'
+import RClientesView from '@/views/recepcionista/RClientesView.vue'
+
 
 const router: Router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -66,10 +69,23 @@ const router: Router = createRouter({
       component: CalendarManagementView,
       meta: { requiresAuth: true, role: 1 },
     },
+{
+       path: '/recepcionista/dashboard',
+       name: 'recepcionista.dashboard',
+       component: RecepcionistaDashboard,
+       meta: { requiresAuth: true, role: 2 },
+},
     {
       path: '/recepcionista/citas',
       name: 'recepcionista.citas',
       component: RAppointmentsView,
+      meta: { requiresAuth: true, role: 2 },
+    },
+
+    {
+      path: '/recepcionista/clientes',
+      name: 'recepcionista.clientes',
+      component: RClientesView,
       meta: { requiresAuth: true, role: 2 },
     },
     {
