@@ -3,56 +3,48 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
+import type { Appointment } from '@/types/appointment'
 
 const router = useRouter()
 const auth = useAuthStore()
 
 const WELCOME_KEY = 'cvo_welcome_shown_recep'
-const mostrarBienvenida = ref(false)
-const cargando = ref(true)
+const mostrarBienvenida = ref<boolean>(false)
+const cargando = ref<boolean>(true)
+const citas = ref<Appointment[]>([])
 
-// Stats
-const totalCitas = ref(0)
-const citasPendientes = ref(0)
-const citasConfirmadas = ref(0)
-const citasHoy = ref(0)
-const totalClientes = ref(0)
-const totalWalkins = ref(0)
-
-// Listas
-const citasRecientes = ref<any[]>([])
-
-function entrarAlPanel() {
-  mostrarBienvenida.value = false
-  sessionStorage.setItem(WELCOME_KEY, 'true')
-}
-
-function estadoLabel(status: string) {
-  const map: Record<string, string> = {
-    pending: 'Pendiente',
-    confirmed: 'Confirmada',
-    in_progress: 'En curso',
-    completed: 'Completada',
-    cancelled: 'Cancelada',
+// Lógica de colores: Morado para Walk-ins usando tu booleano is_walk_in
+function getHoraClase(cita: Appointment): string {
+  if (cita.is_walk_in || !cita.time_slot) {
+    return 'text-purple-700 font-bold bg-purple-50 px-2 py-1 rounded-lg border border-purple-100'
   }
-  return map[status] ?? status
+  return 'text-blue-600 font-semibold'
 }
 
-function estadoClase(status: string) {
+// Mapeo de estados basado en tu string de status
+function estadoClase(status: string): string {
   const map: Record<string, string> = {
-    pending: 'bg-amber-50 text-amber-600 border-amber-200',
-    confirmed: 'bg-blue-50 text-blue-600 border-blue-200',
-    in_progress: 'bg-purple-50 text-purple-600 border-purple-200',
-    completed: 'bg-green-50 text-green-600 border-green-200',
-    cancelled: 'bg-red-50 text-red-400 border-red-200',
+    pending: 'bg-amber-50 text-amber-700 border-amber-200',
+    confirmed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    in_progress: 'bg-purple-50 text-purple-700 border-purple-200',
+    completed: 'bg-slate-50 text-slate-700 border-slate-200',
+    cancelled: 'bg-red-50 text-red-700 border-red-200',
   }
-  return map[status] ?? 'bg-slate-50 text-slate-400 border-slate-200'
+  return map[status] ?? 'bg-slate-50 text-slate-500 border-slate-200'
 }
 
-function formatearFecha(fecha: string) {
-  if (!fecha) return '—'
-  return new Date(fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
-}
+const stats = computed(() => {
+  const hoy = new Date().toISOString().slice(0, 10)
+  // Usamos cita.time_slot.date de tu interfaz
+  const citasHoyLista = citas.value.filter(c => c.time_slot?.date === hoy)
+
+  return {
+    hoy: citasHoyLista.length,
+    espera: citasHoyLista.filter(c => c.status === 'confirmed' || c.status === 'in_progress').length,
+    walkins: citas.value.filter(c => c.is_walk_in && c.status !== 'cancelled').length,
+    pendientes: citas.value.filter(c => c.status === 'pending').length
+  }
+})
 
 const horaActual = computed(() => {
   const h = new Date().getHours()
@@ -63,34 +55,20 @@ const horaActual = computed(() => {
 
 async function cargarDatos() {
   cargando.value = true
+  try {
+    const { data } = await ApiUseFetch('appointments').get().json()
+    // Casteamos los datos a tu interfaz específica
+    citas.value = data.value?.data as Appointment[] ?? []
+  } catch (error) {
+    console.error("Error en CVO Dashboard:", error)
+  } finally {
+    cargando.value = false
+  }
+}
 
-  const { data: dataCitas, execute: execCitas } = ApiUseFetch('appointments').get().json()
-  await execCitas()
-  const todas: any[] = dataCitas.value?.data ?? []
-
-  totalCitas.value = todas.length
-  citasPendientes.value = todas.filter((c) => c.status === 'pending').length
-  citasConfirmadas.value = todas.filter((c) => c.status === 'confirmed').length
-
-  const hoy = new Date().toISOString().slice(0, 10)
-  citasHoy.value = todas.filter((c) => {
-    const fecha = c.time_slot?.working_day?.date ?? c.working_day?.date ?? ''
-    return fecha === hoy
-  }).length
-
-  // Walkins: citas en curso sin time_slot (o con is_walk_in flag)
-  totalWalkins.value = todas.filter((c) => c.status === 'in_progress' && !c.time_slot_id).length
-
-  citasRecientes.value = [...todas]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 6)
-
-  const { data: dataClientes, execute: execClientes } = ApiUseFetch('admin/users').get().json()
-  await execClientes()
-  const usuarios: any[] = dataClientes.value?.data ?? []
-  totalClientes.value = usuarios.filter((u) => u.role_id === 3).length
-
-  cargando.value = false
+function entrarAlPanel() {
+  mostrarBienvenida.value = false
+  sessionStorage.setItem(WELCOME_KEY, 'true')
 }
 
 onMounted(() => {
@@ -100,307 +78,129 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
-    <!-- Splash de bienvenida -->
+  <div class="min-h-screen bg-slate-50">
     <transition name="fade">
-      <div
-        v-if="mostrarBienvenida"
-        class="fixed inset-0 bg-[#1d6bbf] flex flex-col items-center justify-center z-50"
-      >
-        <div class="flex flex-col items-center gap-5 text-center px-8">
-          <div class="w-20 h-20 rounded-full bg-white/15 flex items-center justify-center">
-            <svg viewBox="0 0 60 60" fill="none" class="w-12 h-12" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 38c0-5.5 4.5-10 10-10s10 4.5 10 10" stroke="white" stroke-width="2" stroke-linecap="round"/>
-              <circle cx="30" cy="22" r="5" fill="white"/>
-              <path d="M16 30c1.5-3.5 3.5-5 5-5M44 30c-1.5-3.5-3.5-5-5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <div>
-            <p class="text-white/50 text-xs uppercase tracking-widest mb-2">Sistema CVO</p>
-            <h1 class="text-3xl font-semibold text-white m-0">{{ horaActual }}, {{ auth.user?.name }}</h1>
-            <p class="text-white/50 text-sm mt-1">Panel de Recepción</p>
-          </div>
-          <button
-            @click="entrarAlPanel"
-            class="mt-2 bg-white text-[#1d6bbf] font-semibold text-sm px-7 py-2.5 rounded-lg border-none cursor-pointer hover:bg-blue-50 transition-colors"
-          >
-            Entrar al panel →
+      <div v-if="mostrarBienvenida" class="fixed inset-0 bg-[#1d6bbf] flex flex-col items-center justify-center z-50">
+        <div class="text-center text-white">
+          <p class="text-white/50 text-[10px] uppercase tracking-[0.3em] mb-3">Veterinaria del Oriente</p>
+          <h1 class="text-4xl font-black mb-8 tracking-tight">{{ horaActual }}, {{ auth.user?.name }}</h1>
+          <button @click="entrarAlPanel" class="bg-white text-[#1d6bbf] font-extrabold px-12 py-4 rounded-2xl hover:shadow-2xl transition-all active:scale-95">
+            Comenzar Jornada
           </button>
         </div>
       </div>
     </transition>
 
-    <div class="p-8 space-y-6">
-
-      <!-- Encabezado -->
-      <div class="flex items-center justify-between">
+    <main class="p-8 max-w-[1600px] mx-auto space-y-8">
+      <header class="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 class="text-xl font-semibold text-slate-800 m-0">{{ horaActual }}, {{ auth.user?.name }}</h1>
-          <p class="text-sm text-slate-400 mt-0.5 mb-0">Panel de recepción · {{ new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }) }}</p>
+          <h1 class="text-3xl font-black text-slate-900 tracking-tighter">{{ horaActual }}, {{ auth.user?.name }}</h1>
+          <p class="text-slate-400 text-sm font-semibold uppercase tracking-widest">
+            Recepcionista · {{ new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }) }}
+          </p>
         </div>
-        <div class="flex items-center gap-2">
-          <button
-            @click="router.push('/recepcionista/agendar')"
-            class="flex items-center gap-2 bg-[#1d6bbf] hover:bg-[#1659a8] text-white text-sm font-semibold px-4 py-2 rounded-lg border-none cursor-pointer transition-colors shadow-sm"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Nueva cita
+        <div class="flex gap-4">
+          <button @click="router.push('/recepcionista/agendar')" class="bg-blue-600 text-white px-7 py-3 rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-200">
+            Nueva Cita
           </button>
-          <button
-            @click="router.push('/recepcionista/walk-in')"
-            class="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-2 rounded-lg border-none cursor-pointer transition-colors shadow-sm"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Walk-in
+          <button @click="router.push('/recepcionista/walk-in')" class="bg-purple-600 text-white px-7 py-3 rounded-2xl font-bold text-sm hover:bg-purple-700 transition-all shadow-lg shadow-purple-200">
+            Atención Walk-in
           </button>
         </div>
-      </div>
+      </header>
 
-      <!-- Tarjetas de estadísticas -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-
-        <!-- Citas hoy -->
-        <div class="bg-white rounded-xl border border-slate-200 p-5 flex flex-col gap-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs text-slate-400 font-medium">Citas hoy</span>
-            <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-              <svg class="w-4 h-4 text-[#1d6bbf]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect x="3" y="4" width="18" height="18" rx="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M16 2v4M8 2v4M3 10h18" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-          </div>
-          <div>
-            <span class="text-3xl font-bold text-slate-800">{{ cargando ? '—' : citasHoy }}</span>
-            <p class="text-xs text-slate-400 mt-0.5 m-0">programadas para hoy</p>
-          </div>
+      <section class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div v-for="(val, label) in { 'Citas de Hoy': stats.hoy, 'En Clínica': stats.espera, 'Total Walk-ins': stats.walkins, 'Pendientes': stats.pendientes }" :key="label" class="bg-white p-7 rounded-[2rem] border border-slate-200 shadow-sm">
+          <p class="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2">{{ label }}</p>
+          <p class="text-4xl font-black text-slate-800 tracking-tighter">{{ cargando ? '...' : val }}</p>
         </div>
+      </section>
 
-        <!-- Pendientes -->
-        <div class="bg-white rounded-xl border border-slate-200 p-5 flex flex-col gap-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs text-slate-400 font-medium">Pendientes</span>
-            <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
-              <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-          </div>
-          <div>
-            <span class="text-3xl font-bold text-slate-800">{{ cargando ? '—' : citasPendientes }}</span>
-            <p class="text-xs text-slate-400 mt-0.5 m-0">por confirmar</p>
-          </div>
-        </div>
-
-        <!-- Confirmadas -->
-        <div class="bg-white rounded-xl border border-slate-200 p-5 flex flex-col gap-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs text-slate-400 font-medium">Confirmadas</span>
-            <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
-              <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="12" cy="12" r="10"/>
-              </svg>
-            </div>
-          </div>
-          <div>
-            <span class="text-3xl font-bold text-slate-800">{{ cargando ? '—' : citasConfirmadas }}</span>
-            <p class="text-xs text-slate-400 mt-0.5 m-0">listas para atender</p>
-          </div>
-        </div>
-
-        <!-- Clientes registrados -->
-        <div class="bg-white rounded-xl border border-slate-200 p-5 flex flex-col gap-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs text-slate-400 font-medium">Clientes</span>
-            <div class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center">
-              <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-          </div>
-          <div>
-            <span class="text-3xl font-bold text-slate-800">{{ cargando ? '—' : totalClientes }}</span>
-            <p class="text-xs text-slate-400 mt-0.5 m-0">registrados en el sistema</p>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Accesos rápidos + tabla de citas recientes -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-        <!-- Accesos rápidos -->
-        <div class="bg-white rounded-xl border border-slate-200 p-5 flex flex-col gap-3">
-          <h2 class="text-sm font-semibold text-slate-700 m-0">Acciones rápidas</h2>
-
-          <button
-            @click="router.push('/recepcionista/citas')"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-100 cursor-pointer transition-colors text-left"
-          >
-            <div class="w-8 h-8 rounded-lg bg-[#1d6bbf] flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect x="3" y="4" width="18" height="18" rx="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M16 2v4M8 2v4M3 10h18" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-slate-800 m-0">Ver todas las citas</p>
-              <p class="text-xs text-slate-400 m-0">Gestionar, confirmar, cancelar</p>
-            </div>
-          </button>
-
-          <button
-            @click="router.push('/recepcionista/agendar')"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-100 cursor-pointer transition-colors text-left"
-          >
-            <div class="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-slate-800 m-0">Nueva cita</p>
-              <p class="text-xs text-slate-400 m-0">Agendar para un cliente</p>
-            </div>
-          </button>
-
-          <button
-            @click="router.push('/recepcionista/walk-in')"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-purple-50 hover:bg-purple-100 border border-purple-100 cursor-pointer transition-colors text-left"
-          >
-            <div class="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-slate-800 m-0">Registrar Walk-in</p>
-              <p class="text-xs text-slate-400 m-0">Atención sin cita previa</p>
-            </div>
-          </button>
-
-          <button
-            @click="router.push('/empleado/registrar-cliente')"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-100 cursor-pointer transition-colors text-left"
-          >
-            <div class="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8zM19 8v6M22 11h-6" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-slate-800 m-0">Registrar cliente</p>
-              <p class="text-xs text-slate-400 m-0">Agregar nuevo propietario</p>
-            </div>
-          </button>
-
-          <button
-            @click="router.push('/recepcionista/clientes')"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-100 cursor-pointer transition-colors text-left"
-          >
-            <div class="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8z" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-slate-800 m-0">Gestionar clientes</p>
-              <p class="text-xs text-slate-400 m-0">Ver, editar y eliminar</p>
-            </div>
-          </button>
-
-          <button
-            @click="router.push('/recepcionista/mascotas')"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-100 cursor-pointer transition-colors text-left"
-          >
-            <div class="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="9" cy="4" r="1.5" fill="currentColor" stroke="none"/>
-                <circle cx="15" cy="4" r="1.5" fill="currentColor" stroke="none"/>
-                <circle cx="5" cy="8" r="1.5" fill="currentColor" stroke="none"/>
-                <circle cx="19" cy="8" r="1.5" fill="currentColor" stroke="none"/>
-                <path d="M12 21c-4 0-7-3-7-7 0-2 1-3.5 3-4.5s4-1 4-1 2 0 4 1 3 2.5 3 4.5c0 4-3 7-7 7z" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-slate-800 m-0">Mascotas</p>
-              <p class="text-xs text-slate-400 m-0">Consultar y registrar mascotas</p>
-            </div>
-          </button>
-        </div>
-
-        <!-- Citas recientes -->
-        <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col">
-          <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
-            <h2 class="text-sm font-semibold text-slate-700 m-0">Citas recientes</h2>
-            <button
-              @click="router.push('/recepcionista/citas')"
-              class="text-xs text-[#1d6bbf] hover:underline bg-transparent border-none cursor-pointer p-0"
-            >
-              Ver todas →
-            </button>
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <section class="lg:col-span-3 bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-7 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <h2 class="font-black text-slate-800 uppercase tracking-tight">Flujo de Pacientes</h2>
+            <button @click="router.push('/recepcionista/citas')" class="text-xs font-black text-blue-600 hover:text-blue-800 transition-colors">VER TODO</button>
           </div>
 
-          <div v-if="cargando" class="flex-1 flex items-center justify-center py-12">
-            <p class="text-sm text-slate-400">Cargando...</p>
-          </div>
-
-          <div v-else-if="citasRecientes.length === 0" class="flex-1 flex items-center justify-center py-12">
-            <p class="text-sm text-slate-400">No hay citas registradas.</p>
-          </div>
-
-          <div v-else class="flex-1 overflow-auto">
-            <table class="w-full border-collapse">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-separate border-spacing-0">
               <thead>
-                <tr class="border-b border-slate-100">
-                  <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Mascota</th>
-                  <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Servicio</th>
-                  <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Fecha</th>
-                  <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Estado</th>
+                <tr class="text-slate-400 text-[10px] uppercase font-black tracking-widest border-b">
+                  <th class="px-8 py-5">Horario / Tipo</th>
+                  <th class="px-8 py-5">Mascota</th>
+                  <th class="px-8 py-5">Propietario</th>
+                  <th class="px-8 py-5">Estado</th>
+                  <th class="px-8 py-5 text-center">Historial</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr
-                  v-for="cita in citasRecientes"
-                  :key="cita.id"
-                  class="border-b border-slate-50 last:border-none hover:bg-slate-50 transition-colors"
-                >
-                  <td class="px-5 py-3 text-sm text-slate-800 font-medium">
-                    {{ cita.pet?.name ?? '—' }}
-                  </td>
-                  <td class="px-5 py-3 text-sm text-slate-500">
-                    {{ cita.service?.name ?? '—' }}
-                  </td>
-                  <td class="px-5 py-3 text-sm text-slate-500">
-                    {{ formatearFecha(cita.time_slot?.working_day?.date ?? cita.working_day?.date ?? '') }}
-                  </td>
-                  <td class="px-5 py-3">
-                    <span
-                      class="text-xs px-2 py-0.5 rounded border font-medium"
-                      :class="estadoClase(cita.status)"
-                    >
-                      {{ estadoLabel(cita.status) }}
+              <tbody class="divide-y divide-slate-50">
+                <tr v-for="cita in citas.slice(0, 10)" :key="cita.id" class="group hover:bg-blue-50/20 transition-all">
+                  <td class="px-8 py-5">
+                    <span :class="getHoraClase(cita)">
+                      {{ cita.time_slot?.start_time ?? 'SIN CITA' }}
                     </span>
+                  </td>
+                  <td class="px-8 py-5">
+                    <div class="text-sm font-black text-slate-800">{{ cita.pet.name }}</div>
+                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{{ cita.service?.name ?? 'General' }}</div>
+                  </td>
+                  <td class="px-8 py-5">
+                    <div class="text-sm font-bold text-slate-600">{{ cita.client?.name ?? 'Desconocido' }}</div>
+                    <div class="text-[10px] text-slate-400 italic">{{ cita.client?.phone ?? 'Sin teléfono' }}</div>
+                  </td>
+                  <td class="px-8 py-5">
+                    <span class="px-3 py-1.5 rounded-xl text-[9px] font-black border uppercase tracking-wider" :class="estadoClase(cita.status)">
+                      {{ cita.status }}
+                    </span>
+                  </td>
+                  <td class="px-8 py-5 text-center">
+                    <button @click="router.push(`/recepcionista/mascotas/${cita.pet.id}/historial`)" class="p-3 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2.5"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-width="2.5"/>
+                      </svg>
+                    </button>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
 
+        <aside class="space-y-6">
+          <div class="bg-white p-7 rounded-[2.5rem] border border-slate-200 shadow-sm">
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Administración</h3>
+            <div class="space-y-3">
+              <button @click="router.push('/recepcionista/clientes')" class="w-full text-left p-5 rounded-3xl bg-slate-50 border border-transparent hover:border-blue-200 hover:bg-white transition-all group">
+                <p class="text-sm font-black text-slate-700 group-hover:text-blue-600">CLIENTES</p>
+                <p class="text-[10px] text-slate-400 font-bold uppercase">Gestión de base de datos</p>
+              </button>
+              <button @click="router.push('/recepcionista/notificaciones')" class="w-full text-left p-5 rounded-3xl bg-slate-50 border border-transparent hover:border-blue-200 hover:bg-white transition-all group">
+                <p class="text-sm font-black text-slate-700 group-hover:text-blue-600">AVISOS</p>
+                <p class="text-[10px] text-slate-400 font-bold uppercase">Notificaciones activas</p>
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl"></div>
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+              <span class="text-[9px] font-black text-white/40 uppercase tracking-[0.2em]">Live Status</span>
+            </div>
+            <p class="text-xs text-white font-bold mb-1">Droplet Sincronizado</p>
+            <p class="text-[10px] text-white/30 font-medium italic">CVO Production Server</p>
+          </div>
+        </aside>
       </div>
-
-    </div>
+    </main>
   </div>
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.4s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active, .fade-leave-active { transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
+.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-20px) scale(0.95); }
+
+/* Tipografía de sistema profesional */
+main { font-family: 'Inter', system-ui, sans-serif; }
 </style>

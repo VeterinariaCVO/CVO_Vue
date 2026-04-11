@@ -56,3 +56,4 @@ export interface AppointmentVet {
   created_by: string
   created_at: string
 }
+
