@@ -54,25 +54,24 @@ async function cargarSlots() {
   slots.value = []
   slotId.value = null
 
-  const { data: wdData, execute: wdExecute } = ApiUseFetch('/working-days').get().json()
-  await wdExecute()
-  const workingDays = wdData.value?.data ?? []
-  const workingDay = workingDays.find(
-    (wd: any) => wd.date?.slice(0, 10) === fechaSeleccionada.value,
-  )
+  const fecha = fechaSeleccionada.value
+  const year = Number(fecha.slice(0, 4))
+  const month = Number(fecha.slice(5, 7))
 
-  if (!workingDay) {
+  const { data, execute } = ApiUseFetch(`working-days?year=${year}&month=${month}`).get().json()
+
+  await execute()
+
+  const days = Array.isArray(data.value) ? data.value : (data.value?.data ?? [])
+  const wd = days.find((d: any) => d.date === fecha)
+
+  if (!wd || !wd.is_open) {
     cargandoSlots.value = false
     return
   }
 
-  const { data, execute } = ApiUseFetch(
-    '/time-slots?working_day_id=' + workingDay.id + '&status=available',
-  )
-    .get()
-    .json()
-  await execute()
-  slots.value = data.value?.data ?? []
+  slots.value = (wd.time_slots ?? []).filter((s: any) => s.status === 'available' && s.is_open)
+
   cargandoSlots.value = false
 }
 
@@ -184,6 +183,7 @@ onMounted(() => {
           <input
             type="date"
             v-model="fechaSeleccionada"
+            :min="new Date(Date.now() + 86400000).toISOString().slice(0, 10)"
             class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors"
           />
         </div>

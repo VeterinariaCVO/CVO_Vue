@@ -86,7 +86,7 @@ function confirmarCancelar(id: number) {
 async function ejecutarCancelar() {
   if (!citaACancelar.value) return
   const { data, statusCode, execute } = ApiUseFetch(`/appointments/${citaACancelar.value.id}`)
-    .put({ status: 'cancelled' })
+    .delete()
     .json()
   await execute()
 
