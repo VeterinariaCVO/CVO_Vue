@@ -135,14 +135,20 @@ onMounted(() => {
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-50">
+                <tr v-if="cargando">
+                  <td colspan="5" class="px-8 py-10 text-center text-slate-400 animate-pulse font-bold uppercase text-xs">Cargando pacientes...</td>
+                </tr>
+                <tr v-else-if="citas.length === 0">
+                  <td colspan="5" class="px-8 py-10 text-center text-slate-400 italic">No hay citas registradas para hoy</td>
+                </tr>
                 <tr v-for="cita in citas.slice(0, 10)" :key="cita.id" class="group hover:bg-blue-50/20 transition-all">
                   <td class="px-8 py-5">
                     <span :class="getHoraClase(cita)">
-                      {{ cita.time_slot?.start_time ?? 'SIN CITA' }}
+                      {{ cita.time_slot?.start_time ?? 'SIN HORA' }}
                     </span>
                   </td>
                   <td class="px-8 py-5">
-                    <div class="text-sm font-black text-slate-800">{{ cita.pet.name }}</div>
+                    <div class="text-sm font-black text-slate-800">{{ cita.pet?.name || 'N/A' }}</div>
                     <div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{{ cita.service?.name ?? 'General' }}</div>
                   </td>
                   <td class="px-8 py-5">
@@ -155,7 +161,7 @@ onMounted(() => {
                     </span>
                   </td>
                   <td class="px-8 py-5 text-center">
-                    <button @click="router.push(`/recepcionista/mascotas/${cita.pet.id}/historial`)" class="p-3 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all">
+                    <button v-if="cita.pet?.id" @click="router.push(`/recepcionista/mascotas/${cita.pet.id}/historial`)" class="p-3 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2.5"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-width="2.5"/>
                       </svg>
@@ -181,26 +187,8 @@ onMounted(() => {
               </button>
             </div>
           </div>
-
-          <div class="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-            <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl"></div>
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-              <span class="text-[9px] font-black text-white/40 uppercase tracking-[0.2em]">Live Status</span>
-            </div>
-            <p class="text-xs text-white font-bold mb-1">Droplet Sincronizado</p>
-            <p class="text-[10px] text-white/30 font-medium italic">CVO Production Server</p>
-          </div>
-        </aside>
+          </aside>
       </div>
     </main>
   </div>
 </template>
-
-<style scoped>
-.fade-enter-active, .fade-leave-active { transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
-.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-20px) scale(0.95); }
-
-/* Tipografía de sistema profesional */
-main { font-family: 'Inter', system-ui, sans-serif; }
-</style>

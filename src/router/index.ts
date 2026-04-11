@@ -204,7 +204,7 @@ router.beforeEach((to: any) => {
 
 function redirigirPorRol(roleId?: number) {
   if (roleId === 1) return { path: '/admin/dashboard' }
-  if (roleId === 2) return { path: '/recepcionista/citas' }
+  if (roleId === 2) return { path: '/recepcionista/dashboard' }
   if (roleId === 4) return { path: '/veterinario/agenda' }
   if (roleId === 3) return { path: '/client/dashboard' }
   return { path: '/' }
