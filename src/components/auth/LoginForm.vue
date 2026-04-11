@@ -49,7 +49,7 @@ async function login() {
 
       const roleId = loginData.user?.role_id
       if (roleId === 1) router.push('/admin/dashboard')
-      else if (roleId === 2) router.push('/recepcionista/citas')
+      else if (roleId === 2) router.push('/recepcionista/dashboard')
       else if (roleId === 3) router.push('/client/dashboard')
       else if (roleId === 4) router.push('/veterinario/agenda')
       else router.push('/')
