@@ -15,7 +15,7 @@ import RAppointmentsView from '@/views/recepcionista/RAppointmentsView.vue'
 import RCreateAppointmentView from '@/views/recepcionista/RCreateAppointment.vue'
 import AdminDashboard from '@/views/admin/AdminDashboard.vue'
 import CalendarManagementView from '@/views/admin/CalendarManagementView.vue'
-import RecepcionistaDashboard from '@/views/recepcionista/Recepcionistadashboard.vue'
+import RDashboard from '@/views/recepcionista/RDashboard.vue'
 import RClientesView from '@/views/recepcionista/RClientesView.vue'
 
 
@@ -72,7 +72,7 @@ const router: Router = createRouter({
 {
        path: '/recepcionista/dashboard',
        name: 'recepcionista.dashboard',
-       component: RecepcionistaDashboard,
+       component: RDashboard,
        meta: { requiresAuth: true, role: 2 },
 },
     {
