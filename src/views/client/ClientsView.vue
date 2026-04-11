@@ -4,7 +4,6 @@
       <!-- Header -->
       <div class="flex items-start justify-between mb-8">
         <div>
-          <!-- Botón regresar mejorado -->
           <button
             @click="router.back()"
             class="group flex items-center gap-2 mb-4 bg-white border border-blue-100 shadow-sm hover:shadow-md hover:border-[#0056c2] text-slate-600 hover:text-[#0056c2] text-sm font-semibold px-4 py-2 rounded-xl cursor-pointer transition-all duration-200"
@@ -20,13 +19,11 @@
             </svg>
             Regresar
           </button>
-
           <h1 class="text-3xl font-bold text-slate-800 m-0">Mis Mascotas</h1>
           <p class="text-slate-400 text-sm mt-1 m-0">
             Gestiona las mascotas registradas para Veterinaria del Oriente.
           </p>
         </div>
-
         <div class="flex flex-col items-end gap-2">
           <button
             @click="!limiteAlcanzado && (mostrarRegistro = true)"
@@ -82,7 +79,7 @@
             />
             <div
               v-else
-              class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-2xl shadow-sm"
+              class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center shadow-sm"
             >
               <svg
                 class="w-7 h-7 text-[#0056c2]/40"
@@ -134,7 +131,7 @@
     <!-- MODAL: VER PERFIL -->
     <div
       v-if="mostrarPerfil"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-[9998] p-4"
     >
       <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <div
@@ -192,10 +189,9 @@
           </div>
         </div>
         <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+          <!-- Información General -->
           <div>
-            <h3 class="text-base font-bold text-slate-800 mb-5 flex items-center gap-2 m-0">
-              Información General
-            </h3>
+            <h3 class="text-base font-bold text-slate-800 mb-5 m-0">Información General</h3>
             <div class="flex flex-col gap-4">
               <div
                 v-for="(item, i) in datosPerfil"
@@ -207,10 +203,9 @@
               </div>
             </div>
           </div>
+          <!-- Historial Clínico -->
           <div>
-            <h3 class="text-base font-bold text-slate-800 mb-5 flex items-center gap-2 m-0">
-              Historial Clínico
-            </h3>
+            <h3 class="text-base font-bold text-slate-800 mb-5 m-0">Historial Clínico</h3>
             <p v-if="historialMascota.length === 0" class="text-slate-400 text-sm text-center py-4">
               Sin registros médicos.
             </p>
@@ -218,50 +213,108 @@
               <div
                 v-for="registro in historialMascota"
                 :key="registro.id"
-                class="bg-slate-50 rounded-xl p-4 border border-slate-100"
+                class="bg-slate-50 rounded-xl p-4 border border-slate-100 cursor-pointer hover:border-blue-200 hover:bg-blue-50 transition-colors"
+                @click="registroSeleccionado = registro"
               >
-                <div class="flex items-start justify-between mb-2">
+                <div class="flex items-start justify-between mb-1">
                   <p class="text-[#0056c2] font-bold text-sm m-0">
                     {{ registro.diagnosis ?? 'Sin diagnóstico' }}
                   </p>
                   <span
                     class="text-slate-400 text-[10px] font-semibold uppercase ml-2 flex-shrink-0"
+                    >{{ registro.created_at ?? '—' }}</span
                   >
-                    {{ registro.created_at ?? '—' }}
-                  </span>
                 </div>
-                <div v-if="registro.symptoms" class="mb-1">
-                  <span class="text-[10px] font-bold uppercase text-slate-400 tracking-wide"
-                    >Síntomas:
-                  </span>
-                  <span class="text-slate-600 text-xs">{{ registro.symptoms }}</span>
-                </div>
-                <div v-if="registro.treatment" class="mb-1">
-                  <span class="text-[10px] font-bold uppercase text-slate-400 tracking-wide"
-                    >Tratamiento:
-                  </span>
-                  <span class="text-slate-600 text-xs">{{ registro.treatment }}</span>
-                </div>
-                <div v-if="registro.prescriptions" class="mb-1">
-                  <span class="text-[10px] font-bold uppercase text-slate-400 tracking-wide"
-                    >Prescripciones:
-                  </span>
-                  <span class="text-slate-600 text-xs">{{ registro.prescriptions }}</span>
-                </div>
-                <div
-                  v-if="registro.next_visit"
-                  class="mt-2 inline-flex items-center gap-1 bg-blue-50 text-[#0056c2] text-[10px] font-bold px-2 py-1 rounded-full"
-                >
-                  Próxima visita: {{ registro.next_visit }}
-                </div>
+                <p class="text-slate-400 text-xs m-0">Toca para ver detalles</p>
               </div>
             </div>
-            <button
-              class="w-full mt-4 py-3 rounded-xl text-sm font-semibold text-slate-400 border-2 border-dashed border-slate-200 bg-transparent cursor-default"
-            >
-              Ver historial completo
-            </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBMODAL: DETALLE DE REGISTRO CLÍNICO -->
+    <div
+      v-if="registroSeleccionado"
+      class="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4"
+    >
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div
+          class="p-6 flex items-center justify-between"
+          style="background: linear-gradient(135deg, #0056c2, #3b82f6)"
+        >
+          <div>
+            <h3 class="text-white font-bold text-lg m-0">Expediente Clínico</h3>
+            <p class="text-blue-100 text-xs mt-1 m-0">
+              {{ registroSeleccionado.created_at ?? '—' }}
+            </p>
+          </div>
+          <button
+            @click="registroSeleccionado = null"
+            class="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white border-none cursor-pointer flex items-center justify-center text-lg transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="p-6 flex flex-col gap-5 max-h-[60vh] overflow-y-auto">
+          <div v-if="registroSeleccionado.diagnosis" class="flex flex-col gap-1">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400"
+              >Diagnóstico</span
+            >
+            <p class="text-slate-800 text-sm font-semibold m-0">
+              {{ registroSeleccionado.diagnosis }}
+            </p>
+          </div>
+          <div v-if="registroSeleccionado.symptoms" class="flex flex-col gap-1">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400"
+              >Síntomas</span
+            >
+            <p class="text-slate-600 text-sm m-0">{{ registroSeleccionado.symptoms }}</p>
+          </div>
+          <div v-if="registroSeleccionado.treatment" class="flex flex-col gap-1">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400"
+              >Tratamiento</span
+            >
+            <p class="text-slate-600 text-sm m-0">{{ registroSeleccionado.treatment }}</p>
+          </div>
+          <div v-if="registroSeleccionado.prescriptions" class="flex flex-col gap-1">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400"
+              >Prescripciones</span
+            >
+            <p class="text-slate-600 text-sm m-0">{{ registroSeleccionado.prescriptions }}</p>
+          </div>
+          <div v-if="registroSeleccionado.observations" class="flex flex-col gap-1">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400"
+              >Observaciones</span
+            >
+            <p class="text-slate-600 text-sm m-0">{{ registroSeleccionado.observations }}</p>
+          </div>
+          <div v-if="registroSeleccionado.next_visit" class="flex flex-col gap-1">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400"
+              >Próxima visita</span
+            >
+            <p class="text-[#0056c2] font-bold text-sm m-0">
+              {{ registroSeleccionado.next_visit }}
+            </p>
+          </div>
+          <div
+            v-if="
+              !registroSeleccionado.diagnosis &&
+              !registroSeleccionado.symptoms &&
+              !registroSeleccionado.treatment &&
+              !registroSeleccionado.prescriptions
+            "
+          >
+            <p class="text-slate-400 text-sm text-center py-4">Sin información adicional.</p>
+          </div>
+        </div>
+        <div class="p-4 border-t border-slate-100">
+          <button
+            @click="registroSeleccionado = null"
+            class="w-full py-3 rounded-xl font-bold text-sm bg-slate-100 hover:bg-slate-200 text-slate-600 border-none cursor-pointer transition-colors"
+          >
+            Cerrar
+          </button>
         </div>
       </div>
     </div>
@@ -337,6 +390,7 @@ const eliminando = ref(false)
 const mascotaSeleccionada = ref<Pet>({} as Pet)
 const mascotaEditarId = ref<number | null>(null)
 const mascotaAEliminar = ref<Pet | null>(null)
+const registroSeleccionado = ref<any>(null)
 
 const LIMITE_MASCOTAS = 8
 const limiteAlcanzado = computed(() => mascotas.value.length >= LIMITE_MASCOTAS)
@@ -348,7 +402,7 @@ const datosPerfil = computed(() => {
     { label: 'Raza', valor: m.breed ?? '—' },
     { label: 'Color', valor: m.color ?? '—' },
     { label: 'Marcas', valor: m.special_marks ?? '—' },
-    { label: 'Edad', valor: m.age ? m.age + ' años' : '—' },
+    { label: 'Edad', valor: m.age ? formatearEdad(m.age) : '—' },
     { label: 'Peso', valor: m.weight ? m.weight + ' kg' : '—' },
   ]
 })
@@ -356,6 +410,15 @@ const datosPerfil = computed(() => {
 const historialMascota = computed(() =>
   historial.value.filter((r: any) => r.pet?.id === mascotaSeleccionada.value.id),
 )
+
+function formatearEdad(meses: number): string {
+  if (!meses) return '—'
+  const años = Math.floor(meses / 12)
+  const m = meses % 12
+  if (años === 0) return `${m} meses`
+  if (m === 0) return `${años} años`
+  return `${años} años, ${m} meses`
+}
 
 async function obtenerMascotas() {
   cargando.value = true
