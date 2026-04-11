@@ -53,16 +53,25 @@ async function cargarSlots() {
   slots.value = []
   slotId.value = null
 
-  const { data: wdData, execute: wdExecute } = ApiUseFetch('/working-days').get().json()
-  await wdExecute()
-  const workingDays = wdData.value?.data ?? []
-  const workingDay = workingDays.find((wd: any) => wd.date?.slice(0, 10) === fechaSeleccionada.value)
+  const { data: wdData, execute: wdExec } = ApiUseFetch(
+    `working-days?year=${fechaSeleccionada.value.slice(0, 4)}&month=${Number(fechaSeleccionada.value.slice(5, 7))}`,
+  )
+    .get()
+    .json()
 
-  if (!workingDay) { cargandoSlots.value = false; return }
+  await wdExec()
 
-  const { data, execute } = ApiUseFetch('/time-slots?working_day_id=' + workingDay.id + '&status=available').get().json()
-  await execute()
-  slots.value = data.value?.data ?? []
+  const days = Array.isArray(wdData.value) ? wdData.value : (wdData.value?.data ?? [])
+  const workingDay = days.find((wd: any) => wd.date === fechaSeleccionada.value)
+
+  if (!workingDay || !workingDay.is_open) {
+    cargandoSlots.value = false
+    return
+  }
+
+  slots.value =
+    workingDay.time_slots?.filter((s: any) => s.status === 'available' && s.is_open) ?? []
+
   cargandoSlots.value = false
 }
 
@@ -76,13 +85,18 @@ async function agendar() {
     return
   }
   enviando.value = true
-  const { data, error: fetchError, execute } = ApiUseFetch('/appointments')
+  const {
+    data,
+    error: fetchError,
+    execute,
+  } = ApiUseFetch('/appointments')
     .post({
       pet_id: mascotaId.value,
       service_id: servicioId.value,
       time_slot_id: slotId.value,
       notes: notas.value,
-    }).json()
+    })
+    .json()
   await execute()
   enviando.value = false
   if (fetchError.value || !data.value?.success) {
@@ -98,7 +112,6 @@ onMounted(() => {
   cargarServicios()
 })
 </script>
-
 
 <template>
   <div
@@ -198,7 +211,9 @@ onMounted(() => {
         </div>
 
         <div class="flex flex-col gap-1">
-          <label class="text-xs text-slate-500">Notas <span class="text-slate-400">(opcional)</span></label>
+          <label class="text-xs text-slate-500"
+            >Notas <span class="text-slate-400">(opcional)</span></label
+          >
           <textarea
             v-model="notas"
             rows="2"
