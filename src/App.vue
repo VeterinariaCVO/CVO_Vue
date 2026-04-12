@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
 import NotificationBell from '@/components/notifications/NotificationBell.vue'
 
-const storageUrl = (import.meta.env.VITE_API_URL as string).replace('/api', '') + '/storage/'
+const storageUrl = import.meta.env.VITE_STORAGE_URL as string
 const auth = useAuthStore()
 const router = useRouter()
 
