@@ -393,12 +393,12 @@ import { useAuthStore } from '@/stores/authStore'
 const router = useRouter()
 const auth = useAuthStore()
 
-const baseUrl = import.meta.env.VITE_API_URL.replace('/api', '')
+const storageUrl = (import.meta.env.VITE_STORAGE_URL ?? '') as string
 
 function fotoUrl(path: string | null | undefined): string | null {
   if (!path) return null
   if (path.startsWith('http')) return path
-  return `${baseUrl}/storage/${path}`
+  return `${storageUrl}${path}`
 }
 
 const formulario = ref({
