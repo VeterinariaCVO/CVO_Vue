@@ -418,7 +418,6 @@ const hoy = new Date().toISOString().split('T')[0]
 
 function fotoPerfilUrl(path: string | null | undefined): string | null {
   if (!path) return null
-  // Si ya es URL completa, corrige el dominio si es necesario
   if (path.startsWith('http')) {
     return path.replace('api.natita.me/storage/', 'natita.me/storage/')
   }
