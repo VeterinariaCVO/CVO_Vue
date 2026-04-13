@@ -27,7 +27,7 @@
               Panel del Cliente
             </p>
             <h1 class="text-white font-bold text-4xl md:text-5xl tracking-tight m-0">
-              ¡Hola, {{ nombreUsuario }}! 👋
+              ¡Hola, {{ nombreUsuario }}!
             </h1>
             <p class="text-blue-100/90 text-base max-w-md leading-relaxed m-0">
               Bienvenido de nuevo. La salud de tus mejores amigos es nuestra prioridad absoluta.
@@ -87,9 +87,21 @@
                 />
                 <div
                   v-else
-                  class="w-20 h-20 rounded-full bg-white flex items-center justify-center text-3xl shadow-md ring-4 ring-white"
+                  class="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-md ring-4 ring-white"
                 >
-                  🐾
+                  <svg
+                    class="w-8 h-8 text-[#0056c2]/30"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M12 21c-4.97 0-9-3.134-9-7 0-1.914.96-3.64 2.5-4.9C6.5 7.69 8 5.5 8 3.5c0 0 1 1.5 1 3 .667-.333 2-1.5 2-3 0 0 1 1.5 1 3 .667-.333 2-1.5 2-3 0 2 1.5 4.19 2.5 5.6C18.04 10.36 19 12.086 19 14c0 3.866-4.03 7-7 7z"
+                    />
+                  </svg>
                 </div>
                 <div class="text-center">
                   <p class="font-bold text-slate-800 text-sm m-0">{{ mascota.name }}</p>
@@ -119,6 +131,7 @@
               v-if="proximaCita !== '—'"
               class="flex items-center gap-4 p-4 bg-blue-50 rounded-xl border-l-4 border-[#0056c2]"
             >
+              <div class="w-2 h-2 rounded-full bg-[#0056c2] flex-shrink-0"></div>
               <div>
                 <p class="text-slate-800 font-bold text-sm m-0">Cita pendiente</p>
                 <p class="text-slate-500 text-xs mt-0.5 m-0">{{ proximaCita }}</p>
@@ -151,7 +164,7 @@
       <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Quiénes somos -->
         <div
-          class="rounded-3xl p-10 flex flex-col justify-between gap-6 bg-gradient-to-br from-[#0056c2] to-[#06b6d4]"
+          class="rounded-3xl p-8 flex flex-col gap-5 bg-gradient-to-br from-[#0056c2] to-[#06b6d4]"
         >
           <div class="space-y-4">
             <span
@@ -169,21 +182,22 @@
             </p>
           </div>
           <div class="flex items-center gap-3 bg-white/15 rounded-2xl px-5 py-4">
+            <div class="w-1.5 h-10 bg-white/50 rounded-full flex-shrink-0"></div>
             <div>
-              <p class="text-white font-bold text-sm m-0">📍 Periférico 9344, Torreón</p>
+              <p class="text-white font-bold text-sm m-0">Periférico 9344, Torreón</p>
               <p class="text-blue-100 text-xs m-0">Lun - Sáb: 9:00am - 7:00pm</p>
             </div>
-            <div class="rounded-2xl overflow-hidden border-2 border-white/20 shadow-lg">
-              <iframe
-                width="100%"
-                height="200"
-                style="border: 0"
-                loading="lazy"
-                allowfullscreen
-                referrerpolicy="no-referrer-when-downgrade"
-                src="https://www.google.com/maps?q=Periférico+9344+Torreón+Coahuila&output=embed"
-              />
-            </div>
+          </div>
+          <div class="rounded-2xl overflow-hidden border-2 border-white/20 shadow-lg">
+            <iframe
+              width="100%"
+              height="180"
+              style="border: 0"
+              loading="lazy"
+              allowfullscreen
+              referrerpolicy="no-referrer-when-downgrade"
+              src="https://www.google.com/maps?q=Periférico+9344+Torreón+Coahuila&output=embed"
+            />
           </div>
         </div>
 
@@ -211,9 +225,21 @@
             >
               <div class="flex items-center gap-3">
                 <div
-                  class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-lg flex-shrink-0"
+                  class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0"
                 >
-                  🩺
+                  <svg
+                    class="w-4 h-4 text-[#0056c2]"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
                 </div>
                 <div>
                   <p class="text-slate-800 font-semibold text-sm m-0">{{ servicio.name }}</p>
@@ -290,8 +316,8 @@
           <p class="text-slate-400 text-sm m-0">
             Lun - Vie: 8am - 8pm<br />Sáb: 9am - 4pm<br />Emergencias 24/7
           </p>
-          <p class="text-slate-400 text-sm m-0">📍 Periférico 9344, Torreón</p>
-          <p class="text-slate-400 text-sm m-0">📞 (123) 456-7890</p>
+          <p class="text-slate-400 text-sm m-0">Periférico 9344, Torreón</p>
+          <p class="text-slate-400 text-sm m-0">(123) 456-7890</p>
         </div>
       </div>
       <div
@@ -335,9 +361,21 @@
             >
               <div class="flex items-center gap-3">
                 <div
-                  class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-2xl flex-shrink-0 shadow-sm"
+                  class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center flex-shrink-0 shadow-sm"
                 >
-                  🩺
+                  <svg
+                    class="w-5 h-5 text-[#0056c2]"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
                 </div>
                 <div>
                   <p class="font-bold text-slate-800 text-base m-0">{{ servicio.name }}</p>

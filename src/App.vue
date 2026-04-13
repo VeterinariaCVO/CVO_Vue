@@ -3,14 +3,20 @@ import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
 import NotificationBell from '@/components/notifications/NotificationBell.vue'
 
-const storageUrl = (import.meta.env.VITE_STORAGE_URL as string)
-  || (import.meta.env.VITE_API_URL as string).replace('/api', '') + '/storage/'
-const auth = useAuthStore()
+const auth   = useAuthStore()
 const router = useRouter()
 
 async function cerrarSesion() {
   await auth.logout()
   router.push('/login')
+}
+
+function fotoPerfilUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  const base = (import.meta.env.VITE_API_URL as string).replace('/api', '')
+  if (path.startsWith('/storage/')) return `${base}${path}`
+  return `${base}/storage/${path}`
 }
 </script>
 
@@ -252,8 +258,18 @@ async function cerrarSesion() {
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
           active-class="!text-white !bg-white/20"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-            <path d="M3 12L12 3l9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M3 12L12 3l9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
           Inicio
         </router-link>
@@ -307,8 +323,18 @@ async function cerrarSesion() {
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
           active-class="!text-white !bg-white/20"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
           Walk-in
         </router-link>
@@ -448,7 +474,7 @@ async function cerrarSesion() {
         >
           <img
             v-if="auth.user?.profile_photo"
-            :src="storageUrl + auth.user.profile_photo"
+            :src="fotoPerfilUrl(auth.user.profile_photo) ?? ''"
             class="w-6 h-6 rounded-full object-cover border border-white/30"
           />
           <svg
