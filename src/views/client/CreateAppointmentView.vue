@@ -1,18 +1,20 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
-import { useRouter } from 'vue-router'
 
-const router = useRouter()
+const emit = defineEmits<{
+  (e: 'cerrar'): void
+  (e: 'guardado'): void
+}>()
 
 const mascotas = ref<any[]>([])
 const servicios = ref<any[]>([])
 const slots = ref<any[]>([])
 
-const fechaSeleccionada = ref('')
 const mascotaId = ref<number | null>(null)
 const servicioId = ref<number | null>(null)
 const slotId = ref<number | null>(null)
+const fechaSeleccionada = ref('')
 const notas = ref('')
 
 const cargandoSlots = ref(false)
@@ -34,136 +36,163 @@ async function cargarServicios() {
 
 async function cargarSlots() {
   if (!fechaSeleccionada.value) return
-
   cargandoSlots.value = true
   slots.value = []
   slotId.value = null
 
-  const { data: wdData, execute: wdExecute } = ApiUseFetch('/working-days?date=' + fechaSeleccionada.value).get().json()
-  await wdExecute()
+  const fecha = fechaSeleccionada.value
+  const year  = Number(fecha.slice(0, 4))
+  const month = Number(fecha.slice(5, 7))
 
-  const workingDays = wdData.value?.data ?? []
+  const { data, execute } = ApiUseFetch(`working-days?year=${year}&month=${month}`).get().json()
+  await execute()
 
-  if (workingDays.length === 0) {
+  const days = Array.isArray(data.value) ? data.value : (data.value?.data ?? [])
+  const wd   = days.find((d: any) => d.date === fecha)
+
+  if (!wd || !wd.is_open) {
     cargandoSlots.value = false
     return
   }
 
-  const workingDayId = workingDays[0].id
-
-  const { data, execute } = ApiUseFetch('/time-slots?working_day_id=' + workingDayId + '&status=available').get().json()
-  await execute()
-
-  slots.value = data.value?.data ?? []
+  slots.value       = (wd.time_slots ?? []).filter((s: any) => s.status === 'available' && s.is_open)
   cargandoSlots.value = false
 }
 
-watch(fechaSeleccionada, function () {
-  cargarSlots()
-})
+watch(fechaSeleccionada, () => cargarSlots())
 
 async function agendar() {
+  if (enviando.value || exitoso.value) return
+
   errorMsg.value = ''
 
-  if (!mascotaId.value || !servicioId.value || !slotId.value || !fechaSeleccionada.value) {
-    errorMsg.value = 'Por favor completa todos los campos.'
+  if (!mascotaId.value || !servicioId.value || !slotId.value) {
+    errorMsg.value = 'Completa todos los campos obligatorios.'
     return
   }
 
   enviando.value = true
 
-  const { data, error: fetchError, execute } = ApiUseFetch('/cliente/appointments').post({
-    pet_id: mascotaId.value,
-    service_id: servicioId.value,
-    time_slot_id: slotId.value,
-    notes: notas.value,
-  }).json()
+  try {
+    const { data, error: fetchError, execute } = ApiUseFetch('/cliente/appointments')
+      .post({
+        pet_id:       mascotaId.value,
+        service_id:   servicioId.value,
+        time_slot_id: slotId.value,
+        notes:        notas.value,
+      })
+      .json()
 
-  await execute()
-  enviando.value = false
+    await execute()
 
-  if (fetchError.value || !data.value?.success) {
-    errorMsg.value = data.value?.message ?? 'Error al agendar la cita'
-    return
+    if (fetchError.value || !data.value?.success) {
+      errorMsg.value = data.value?.message ?? 'Error al agendar la cita.'
+      return
+    }
+
+    exitoso.value = true
+    // Eliminar el slot de la lista para que no se pueda volver a seleccionar
+    slots.value = slots.value.filter(s => s.id !== slotId.value)
+    setTimeout(() => emit('guardado'), 1500)
+
+  } catch {
+    errorMsg.value = 'Ocurrió un error inesperado. Intenta de nuevo.'
+  } finally {
+    // ✅ Siempre libera el estado de envío
+    enviando.value = false
   }
-
-  exitoso.value = true
-  setTimeout(() => {
-    router.push('/client/citas')
-  }, 1500)
 }
 
-onMounted(function () {
+onMounted(() => {
   cargarMascotas()
   cargarServicios()
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 py-8 px-4">
-    <div class="max-w-lg mx-auto">
-
-      <!-- Header -->
-      <div class="mb-6 flex items-center gap-3">
-        <button @click="router.push('/client/citas')" class="text-blue-400 hover:text-blue-600 transition text-sm">
-          ← Volver
+  <div
+    class="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+    @click.self="!enviando && emit('cerrar')"
+  >
+    <div class="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-base font-semibold text-slate-800">Agendar cita</h2>
+        <button
+          v-if="!exitoso"
+          @click="emit('cerrar')"
+          :disabled="enviando"
+          class="text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer text-lg leading-none disabled:opacity-40"
+        >
+          ✕
         </button>
-        <h2 class="text-xl font-bold text-blue-800">Agendar Cita</h2>
       </div>
 
       <!-- Éxito -->
-      <div v-if="exitoso" class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-5 py-4 text-sm text-center">
-        ¡Cita agendada correctamente! Redirigiendo...
+      <div
+        v-if="exitoso"
+        class="text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-center"
+      >
+        ¡Cita agendada correctamente!
       </div>
 
-      <div v-if="!exitoso" class="bg-white rounded-xl border border-gray-100 p-6 grid gap-5">
-
+      <div v-else class="flex flex-col gap-3">
         <!-- Mascota -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Mascota</label>
-          <select v-model="mascotaId" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-slate-500">Mascota</label>
+          <select
+            v-model="mascotaId"
+            :disabled="enviando"
+            class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors bg-white disabled:opacity-50"
+          >
             <option :value="null" disabled>Selecciona una mascota</option>
             <option v-for="m in mascotas" :key="m.id" :value="m.id">{{ m.name }}</option>
           </select>
         </div>
 
         <!-- Servicio -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Servicio</label>
-          <select v-model="servicioId" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-slate-500">Servicio</label>
+          <select
+            v-model="servicioId"
+            :disabled="enviando"
+            class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors bg-white disabled:opacity-50"
+          >
             <option :value="null" disabled>Selecciona un servicio</option>
             <option v-for="s in servicios" :key="s.id" :value="s.id">{{ s.name }}</option>
           </select>
         </div>
 
         <!-- Fecha -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-slate-500">Fecha</label>
           <input
             type="date"
             v-model="fechaSeleccionada"
+            :disabled="enviando"
             :min="new Date(Date.now() + 86400000).toISOString().slice(0, 10)"
-            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors disabled:opacity-50"
           />
         </div>
 
         <!-- Slots -->
-        <div v-if="fechaSeleccionada">
-          <label class="block text-sm font-medium text-gray-700 mb-2">Horario disponible</label>
-
-          <div v-if="cargandoSlots" class="text-sm text-gray-400">Cargando horarios...</div>
-
-          <div v-else-if="slots.length === 0" class="text-sm text-gray-400">
+        <div v-if="fechaSeleccionada" class="flex flex-col gap-2">
+          <label class="text-xs text-slate-500">Horario</label>
+          <div v-if="cargandoSlots" class="text-xs text-slate-400">Cargando horarios...</div>
+          <div v-else-if="slots.length === 0" class="text-xs text-slate-400">
             No hay horarios disponibles para esta fecha.
           </div>
-
-          <div v-else class="grid grid-cols-3 gap-2">
+          <div v-else class="flex flex-wrap gap-2">
             <button
               v-for="slot in slots"
               :key="slot.id"
-              @click="slotId = slot.id"
-              :class="slotId === slot.id ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'"
-              class="border rounded-lg py-2 text-sm font-medium transition"
+              @click="!enviando && (slotId = slot.id)"
+              :disabled="enviando"
+              :class="
+                slotId === slot.id
+                  ? 'bg-slate-800 text-white border-slate-800'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+              "
+              class="border rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ slot.start_time.slice(0, 5) }}
             </button>
@@ -171,30 +200,44 @@ onMounted(function () {
         </div>
 
         <!-- Notas -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-slate-500">
+            Notas <span class="text-slate-400">(opcional)</span>
+          </label>
           <textarea
             v-model="notas"
-            rows="3"
-            placeholder="Ej: Mi perro tiene alergia al polvo..."
-            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"
+            :disabled="enviando"
+            rows="2"
+            placeholder="Observaciones..."
+            class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors resize-none disabled:opacity-50"
           ></textarea>
         </div>
 
         <!-- Error -->
-        <div v-if="errorMsg" class="bg-red-50 border border-red-200 text-red-600 rounded-lg px-4 py-3 text-sm">
+        <div
+          v-if="errorMsg"
+          class="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2"
+        >
           {{ errorMsg }}
         </div>
 
-        <!-- Botón -->
-        <button
-          @click="agendar"
-          :disabled="enviando"
-          class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2.5 rounded-lg text-sm transition disabled:opacity-60"
-        >
-          {{ enviando ? 'Agendando...' : 'Confirmar cita' }}
-        </button>
-
+        <!-- Botones -->
+        <div class="flex gap-2 mt-2">
+          <button
+            @click="emit('cerrar')"
+            :disabled="enviando"
+            class="flex-1 border border-slate-200 text-slate-600 text-sm py-2 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancelar
+          </button>
+          <button
+            @click="agendar"
+            :disabled="enviando || exitoso"
+            class="flex-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm py-2 rounded-lg cursor-pointer border-none transition-colors"
+          >
+            {{ enviando ? 'Agendando...' : 'Confirmar' }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
