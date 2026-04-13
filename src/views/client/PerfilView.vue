@@ -419,9 +419,9 @@ const hoy = new Date().toISOString().split('T')[0]
 function fotoPerfilUrl(path: string | null | undefined): string | null {
   if (!path) return null
   if (path.startsWith('http')) return path
-  const storageBase = import.meta.env.VITE_STORAGE_URL as string
-  const pathLimpio = path.startsWith('/storage/') ? path.replace('/storage/', '') : path
-  return `${storageBase}${pathLimpio}`
+  const storageBase = (import.meta.env.VITE_STORAGE_URL as string).replace(/\/$/, '')
+  const pathLimpio = path.replace(/^\/storage\//, '').replace(/^storage\//, '')
+  return `${storageBase}/${pathLimpio}`
 }
 
 const edad = computed(() => {
