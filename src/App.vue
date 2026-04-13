@@ -3,18 +3,20 @@ import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
 import NotificationBell from '@/components/notifications/NotificationBell.vue'
 
-const auth = useAuthStore()
+const auth   = useAuthStore()
 const router = useRouter()
-
-function fotoPerfilUrl(path: string | null | undefined): string | null {
-  if (!path) return null
-  if (path.startsWith('http')) return path
-  return `${import.meta.env.VITE_API_URL.replace('/api', '')}${path}`
-}
 
 async function cerrarSesion() {
   await auth.logout()
   router.push('/login')
+}
+
+function fotoPerfilUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  const base = (import.meta.env.VITE_API_URL as string).replace('/api', '')
+  if (path.startsWith('/storage/')) return `${base}${path}`
+  return `${base}/storage/${path}`
 }
 </script>
 
