@@ -195,6 +195,12 @@ const router: Router = createRouter({
       component: () => import('../views/admin/WalkInView.vue'),
       meta: { requiresAuth: true, role: 2 },
     },
+    {
+      path: '/admin/walk-in',
+      name: 'admin.walkin',
+      component: () => import('../views/admin/WalkInView.vue'),
+      meta: { requiresAuth: true, role: 1 },
+    },
   ],
 })
 

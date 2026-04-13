@@ -1,186 +1,146 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
 
-const formulario = ref({
-  name: '',
-  phone: '',
-  email: '',
-  address: '',
-  password: '',
-})
+const emit = defineEmits<{
+  (e: 'cerrar'): void
+  (e: 'guardado'): void
+}>()
 
-const cliente = computed(() => ({
-  name: formulario.value.name,
-  phone: formulario.value.phone,
-  email: formulario.value.email,
-  address: formulario.value.address,
-  password: formulario.value.password,
-}))
-
-const { data, error, isFetching, execute } = ApiUseFetch('/register', {
-  immediate: false,
-})
-  .post(cliente)
-  .json()
+const nombre = ref('')
+const correo = ref('')
+const telefono = ref('')
+const direccion = ref('')
+const cargando = ref(false)
+const exitoso = ref(false)
+const errores = ref<Record<string, string>>({})
 
 async function registrar() {
+  errores.value = {}
+  cargando.value = true
+
+  const { data, execute } = ApiUseFetch('admin/users').post({
+    name: nombre.value,
+    email: correo.value,
+    phone: telefono.value,
+    address: direccion.value,
+    role_id: 3,
+    password: 'password123',
+    active: true,
+  }).json()
+
   await execute()
+  cargando.value = false
+
+  if (!data.value) return
+
+  if ((data.value as any)?.errors) {
+    const e = (data.value as any).errors
+    for (const campo in e) errores.value[campo] = e[campo][0]
+    return
+  }
+
+  exitoso.value = true
+  setTimeout(() => emit('guardado'), 1500)
 }
 </script>
 
 <template>
-  <div class="layout">
-    <aside class="sidebar">
-      <p class="sidebar-title">Menú</p>
-      <a class="menu-item active">Cliente</a>
-      <a class="menu-item">Mascota</a>
-      <a class="menu-item">Servicios</a>
-      <a class="menu-item">Citas</a>
-    </aside>
+  <div
+    class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
+    @click.self="emit('cerrar')"
+  >
+    <div class="bg-white rounded-3xl w-full max-w-md shadow-xl overflow-hidden">
 
-    <main class="content">
-      <h2>Registrar Cliente</h2>
-
-      <p v-if="data" class="msg-exito">{{ data.message }}</p>
-      <p v-if="error" class="msg-error">{{ error }}</p>
-
-      <div class="card">
-        <p class="subtitulo">Añade los datos del cliente</p>
-
-        <div class="campo">
-          <label>Nombre de usuario</label>
-          <input v-model="formulario.name" type="text" placeholder="Ej. Juan Pérez" />
+      <div class="px-8 py-6 border-b border-slate-100 bg-slate-50/30 flex items-center justify-between">
+        <div>
+          <h2 class="font-black text-slate-800 text-xs uppercase tracking-widest">Registrar Cliente</h2>
+          <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Alta de nuevo propietario</p>
         </div>
-
-        <div class="campo">
-          <label>Teléfono</label>
-          <input v-model="formulario.phone" type="tel" placeholder="10 dígitos" />
-        </div>
-
-        <div class="campo">
-          <label>Email</label>
-          <input v-model="formulario.email" type="email" placeholder="correo@ejemplo.com" />
-        </div>
-
-        <div class="campo">
-          <label>Domicilio</label>
-          <input v-model="formulario.address" type="text" placeholder="Calle, número, colonia" />
-        </div>
-
-        <div class="campo">
-          <label>Contraseña temporal</label>
-          <input v-model="formulario.password" type="password" placeholder="Mínimo 4 caracteres" />
-        </div>
-
-        <button @click="registrar" :disabled="isFetching">
-          {{ isFetching ? 'Registrando...' : 'Registrar' }}
+        <button
+          @click="emit('cerrar')"
+          class="text-slate-300 hover:text-slate-500 bg-transparent border-none cursor-pointer transition-colors text-lg leading-none"
+        >
+          ✕
         </button>
       </div>
-    </main>
+
+      <div v-if="exitoso" class="px-8 py-12 text-center">
+        <p class="text-3xl mb-3">✅</p>
+        <p class="text-xs font-black text-emerald-600 uppercase tracking-widest">Cliente registrado correctamente</p>
+      </div>
+
+      <div v-else class="px-8 py-6 space-y-4">
+
+        <div class="space-y-1">
+          <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nombre completo</label>
+          <input
+            v-model="nombre"
+            type="text"
+            placeholder="Ej. Juan Pérez"
+            class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 outline-none focus:border-[#1d6bbf]/50 focus:ring-2 focus:ring-[#1d6bbf]/10 transition-all font-medium placeholder:text-slate-300"
+          />
+          <p v-if="errores.name" class="text-[10px] text-red-500 font-bold">{{ errores.name }}</p>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Correo electrónico</label>
+          <input
+            v-model="correo"
+            type="email"
+            placeholder="correo@ejemplo.com"
+            class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 outline-none focus:border-[#1d6bbf]/50 focus:ring-2 focus:ring-[#1d6bbf]/10 transition-all font-medium placeholder:text-slate-300"
+          />
+          <p v-if="errores.email" class="text-[10px] text-red-500 font-bold">{{ errores.email }}</p>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Teléfono</label>
+          <input
+            v-model="telefono"
+            type="text"
+            placeholder="10 dígitos"
+            maxlength="10"
+            class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 outline-none focus:border-[#1d6bbf]/50 focus:ring-2 focus:ring-[#1d6bbf]/10 transition-all font-medium placeholder:text-slate-300"
+          />
+          <p v-if="errores.phone" class="text-[10px] text-red-500 font-bold">{{ errores.phone }}</p>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Dirección</label>
+          <input
+            v-model="direccion"
+            type="text"
+            placeholder="Calle, colonia..."
+            class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 outline-none focus:border-[#1d6bbf]/50 focus:ring-2 focus:ring-[#1d6bbf]/10 transition-all font-medium placeholder:text-slate-300"
+          />
+          <p v-if="errores.address" class="text-[10px] text-red-500 font-bold">{{ errores.address }}</p>
+        </div>
+
+        <div class="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+          <span class="text-amber-400">🔑</span>
+          <p class="text-[10px] font-bold text-amber-600">
+            Se asignará la contraseña temporal <span class="font-black">password123</span>
+          </p>
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button
+            @click="emit('cerrar')"
+            class="flex-1 border border-slate-200 text-slate-500 text-[10px] font-black uppercase tracking-widest py-3 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors bg-transparent"
+          >
+            Cancelar
+          </button>
+          <button
+            @click="registrar"
+            :disabled="cargando"
+            class="flex-1 bg-[#1d6bbf] hover:bg-[#16569a] disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-widest py-3 rounded-xl cursor-pointer border-none transition-colors"
+          >
+            {{ cargando ? 'Guardando...' : 'Registrar' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.layout {
-  display: flex;
-  font-family: Arial, sans-serif;
-  min-height: 100vh;
-  background: #f4f4f4;
-}
-
-.sidebar {
-  width: 140px;
-  background: #fff;
-  border-right: 1px solid #ddd;
-  padding: 16px 0;
-}
-.sidebar-title {
-  font-size: 12px;
-  color: #888;
-  padding: 0 14px 8px;
-  margin: 0;
-}
-.menu-item {
-  display: block;
-  padding: 10px 14px;
-  font-size: 13px;
-  color: #333;
-  cursor: pointer;
-  text-decoration: none;
-}
-.menu-item.active {
-  background: #4fc3d8;
-  color: #fff;
-  font-weight: bold;
-}
-
-.content {
-  flex: 1;
-  padding: 28px 32px;
-}
-.content h2 {
-  margin-bottom: 16px;
-}
-
-.msg-exito {
-  color: green;
-  margin-bottom: 12px;
-}
-.msg-error {
-  color: red;
-  margin-bottom: 12px;
-}
-
-.card {
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 24px;
-  max-width: 480px;
-}
-.subtitulo {
-  margin: 0 0 18px;
-  font-weight: 500;
-}
-
-.campo {
-  margin-bottom: 14px;
-}
-.campo label {
-  display: block;
-  font-size: 13px;
-  margin-bottom: 5px;
-  color: #555;
-}
-.campo input {
-  width: 100%;
-  padding: 9px 11px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 14px;
-  box-sizing: border-box;
-  background: #f9f9f9;
-}
-.campo input:focus {
-  outline: none;
-  border-color: #4fc3d8;
-}
-
-button {
-  width: 100%;
-  padding: 11px;
-  background: #4fc3d8;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  font-size: 15px;
-  font-weight: bold;
-  cursor: pointer;
-  margin-top: 6px;
-}
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-</style>
