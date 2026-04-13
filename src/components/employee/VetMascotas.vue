@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
+import { getStorageUrl } from '@/utils/storageUrl'
 
 import type { PetVet } from '@/types/pet.ts'
 import { useRouter } from 'vue-router'
@@ -13,6 +14,10 @@ const message = ref('')
 const isError = ref(false)
 const search = ref('')
 const selected = ref<PetVet | null>(null)
+
+function petPhotoUrl(path?: string | null) {
+  return getStorageUrl(path)
+}
 
 function loadPets() {
   isLoading.value = true
@@ -154,7 +159,7 @@ defineOptions({ name: 'VetMascotas' })
             >
               <img
                 v-if="pet.photo_url"
-                :src="pet.photo_url"
+                :src="petPhotoUrl(pet.photo_url)"
                 :alt="pet.name"
                 class="w-full h-full object-cover"
               />
@@ -212,7 +217,7 @@ defineOptions({ name: 'VetMascotas' })
           >
             <img
               v-if="selected.photo_url"
-              :src="selected.photo_url"
+              :src="petPhotoUrl(selected.photo_url)"
               :alt="selected.name"
               class="w-full h-full object-cover"
             />

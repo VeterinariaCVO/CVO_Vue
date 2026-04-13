@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import type { PetVet } from '@/types/pet'
+import { getStorageUrl } from '@/utils/storageUrl'
 
 defineProps<{ mascotas: PetVet[] }>()
 const emit = defineEmits<{
   (e: 'editar', id: number): void
   (e: 'eliminar', id: number): void
 }>()
+
+function petPhotoUrl(path?: string | null) {
+  return getStorageUrl(path)
+}
 </script>
 
 <template>
@@ -26,7 +31,7 @@ const emit = defineEmits<{
         <tr v-for="mascota in mascotas" :key="mascota.id" class="border-b border-slate-50 last:border-none hover:bg-slate-50 transition-colors">
           <td class="px-4 py-3">
             <div class="flex items-center gap-2.5">
-              <img v-if="mascota.photo_url" :src="mascota.photo_url" class="w-7 h-7 rounded-full object-cover shrink-0" />
+              <img v-if="mascota.photo_url" :src="petPhotoUrl(mascota.photo_url)" class="w-7 h-7 rounded-full object-cover shrink-0" />
               <div v-else class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
                 <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke-linecap="round"/>

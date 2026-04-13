@@ -82,7 +82,7 @@
               >
                 <img
                   v-if="mascota.photo_url"
-                  :src="mascota.photo_url"
+                  :src="petPhotoUrl(mascota.photo_url)"
                   class="w-20 h-20 rounded-full object-cover shadow-md ring-4 ring-white"
                 />
                 <div
@@ -186,6 +186,17 @@
             <div>
               <p class="text-white font-bold text-sm m-0">Periférico 9344, Torreón</p>
               <p class="text-blue-100 text-xs m-0">Lun - Sáb: 9:00am - 7:00pm</p>
+            </div>
+            <div class="rounded-2xl overflow-hidden border-2 border-white/20 shadow-lg">
+              <iframe
+                width="100%"
+                height="200"
+                style="border: 0"
+                loading="lazy"
+                allowfullscreen
+                referrerpolicy="no-referrer-when-downgrade"
+                src="https://www.google.com/maps?q=Periférico+9344+Torreón+Coahuila&output=embed"
+              />
             </div>
           </div>
         </div>
@@ -395,6 +406,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
+import { getStorageUrl } from '@/utils/storageUrl'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -408,6 +420,10 @@ const servicios = ref<any[]>([])
 const cargandoMascotas = ref(true)
 const cargandoServicios = ref(true)
 const mostrarModalServicios = ref(false)
+
+function petPhotoUrl(path?: string | null) {
+  return getStorageUrl(path)
+}
 
 const serviciosPreview = computed(() => servicios.value.slice(0, 3))
 

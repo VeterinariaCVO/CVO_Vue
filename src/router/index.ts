@@ -15,6 +15,10 @@ import RAppointmentsView from '@/views/recepcionista/RAppointmentsView.vue'
 import RCreateAppointmentView from '@/views/recepcionista/RCreateAppointment.vue'
 import AdminDashboard from '@/views/admin/AdminDashboard.vue'
 import CalendarManagementView from '@/views/admin/CalendarManagementView.vue'
+import RDashboard from '@/views/recepcionista/RDashboard.vue'
+import RClientesView from '@/views/recepcionista/RClientesView.vue'
+import RHistorialView from '@/views/recepcionista/RHistorialView.vue'
+import RMascotaDetalle from '@/views/recepcionista/RMascotaDetalle.vue'
 
 const router: Router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -67,9 +71,21 @@ const router: Router = createRouter({
       meta: { requiresAuth: true, role: 1 },
     },
     {
+      path: '/recepcionista/dashboard',
+      name: 'recepcionista.dashboard',
+      component: RDashboard,
+      meta: { requiresAuth: true, role: 2 },
+    },
+    {
       path: '/recepcionista/citas',
       name: 'recepcionista.citas',
       component: RAppointmentsView,
+      meta: { requiresAuth: true, role: 2 },
+    },
+    {
+      path: '/recepcionista/clientes',
+      name: 'recepcionista.clientes',
+      component: RClientesView,
       meta: { requiresAuth: true, role: 2 },
     },
     {
@@ -78,6 +94,13 @@ const router: Router = createRouter({
       component: RCreateAppointmentView,
       meta: { requiresAuth: true, role: 2 },
     },
+    {
+      path: '/recepcionista/mascotas/:id',
+      name: 'recepcionista.mascota.detalle',
+      component: RMascotaDetalle,
+      meta: { requiresAuth: true, role: 2 },
+    },
+
     {
       path: '/veterinario/agenda',
       name: 'VetAgenda',
@@ -97,9 +120,15 @@ const router: Router = createRouter({
       meta: { requiresAuth: true, role: 4 },
     },
     {
-      path: '/empleado/registrar-cliente',
+      path: '/recepcionista/registrar-cliente',
       name: 'RegisterCliente',
       component: RegistrarCliente,
+      meta: { requiresAuth: true, role: 2 },
+    },
+    {
+      path: '/recepcionista/mascotas/:id/historial',
+      name: 'recepcionista.historial',
+      component: RHistorialView,
       meta: { requiresAuth: true, role: 2 },
     },
     {
@@ -109,7 +138,7 @@ const router: Router = createRouter({
       meta: { requiresAuth: true, role: 3 },
     },
     {
-      path: '/empleado/consultas',
+      path: '/recepcionista/consultas',
       name: 'EmpleadoConsultas',
       component: () => import('../views/empleado/ConsultaView.vue'),
       meta: { requiresAuth: true, role: 2 },
@@ -161,10 +190,10 @@ const router: Router = createRouter({
       meta: { requiresAuth: true, role: 1 },
     },
     {
-      path: '/admin/walk-in',
-      name: 'admin.walkin',
+      path: '/recepcionista/walk-in',
+      name: 'recepcionista.walkin',
       component: () => import('../views/admin/WalkInView.vue'),
-      meta: { requiresAuth: true, role: 1 },
+      meta: { requiresAuth: true, role: 2 },
     },
   ],
 })
@@ -188,7 +217,7 @@ router.beforeEach((to: any) => {
 
 function redirigirPorRol(roleId?: number) {
   if (roleId === 1) return { path: '/admin/dashboard' }
-  if (roleId === 2) return { path: '/recepcionista/citas' }
+  if (roleId === 2) return { path: '/recepcionista/dashboard' }
   if (roleId === 4) return { path: '/veterinario/agenda' }
   if (roleId === 3) return { path: '/client/dashboard' }
   return { path: '/' }
