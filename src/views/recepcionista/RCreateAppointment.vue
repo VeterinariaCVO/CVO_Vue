@@ -47,8 +47,7 @@ async function cargarMascotas() {
   mascotas.value = []
   mascotaId.value = null
 
-  // ✅ Ruta corregida: /pets?owner_id= (accesible para role:1,2,4)
-  const { data, execute } = ApiUseFetch(`/pets?owner_id=${clienteId.value}`).get().json()
+  const { data, execute } = ApiUseFetch(`/admin/pets?owner_id=${clienteId.value}`).get().json()
   await execute()
   mascotas.value = data.value?.data ?? []
   cargandoMascotas.value = false
