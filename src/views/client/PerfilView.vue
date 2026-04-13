@@ -393,13 +393,6 @@ import { useAuthStore } from '@/stores/authStore'
 const router = useRouter()
 const auth = useAuthStore()
 
-function fotoUrl(path: string | null | undefined): string | null {
-  if (!path) return null
-  if (path.startsWith('http')) return path
-  // Si ya viene con /storage/ solo agrega el dominio base
-  return `${import.meta.env.VITE_API_URL.replace('/api', '')}${path}`
-}
-
 const formulario = ref({
   name: '',
   email: '',
@@ -422,6 +415,14 @@ const mensajeExito = ref('')
 const errorGeneral = ref('')
 const errores = ref<Record<string, string>>({})
 const hoy = new Date().toISOString().split('T')[0]
+
+function fotoUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  const base = (import.meta.env.VITE_API_URL as string).replace('/api', '')
+  if (path.startsWith('/storage/')) return `${base}${path}`
+  return `${base}/storage/${path}`
+}
 
 const edad = computed(() => {
   if (!formulario.value.birth_date) return null
@@ -518,7 +519,6 @@ function validar(): boolean {
 function onFotoChange(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file) return
-
   const tiposPermitidos = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp']
   if (!tiposPermitidos.includes(file.type)) {
     errores.value.photo = 'Solo jpeg, png, jpg o webp.'
@@ -528,10 +528,8 @@ function onFotoChange(e: Event) {
     errores.value.photo = 'Máximo 2 MB.'
     return
   }
-
   fotoArchivo.value = file
   formulario.value.remove_photo = false
-
   const reader = new FileReader()
   reader.onload = (ev) => {
     fotoPreview.value = ev.target?.result as string
@@ -547,7 +545,6 @@ function eliminarFoto() {
 
 async function actualizar() {
   if (!validar()) return
-
   mensajeExito.value = ''
   errorGeneral.value = ''
   cargando.value = true
@@ -587,6 +584,11 @@ async function actualizar() {
       errorGeneral.value = json.message || 'Error al actualizar el perfil.'
     }
     return
+  }
+
+  // Normalizar profile_photo antes de guardar en el store
+  if (json.data?.profile_photo) {
+    json.data.profile_photo = fotoUrl(json.data.profile_photo)
   }
 
   if (auth.user && json.data) {
