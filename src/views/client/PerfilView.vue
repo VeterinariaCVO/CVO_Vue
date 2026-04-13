@@ -416,12 +416,12 @@ const errorGeneral = ref('')
 const errores = ref<Record<string, string>>({})
 const hoy = new Date().toISOString().split('T')[0]
 
-function fotoUrl(path: string | null | undefined): string | null {
+function fotoPerfilUrl(path: string | null | undefined): string | null {
   if (!path) return null
   if (path.startsWith('http')) return path
-  const base = (import.meta.env.VITE_API_URL as string).replace('/api', '')
-  if (path.startsWith('/storage/')) return `${base}${path}`
-  return `${base}/storage/${path}`
+  const storageBase = import.meta.env.VITE_STORAGE_URL as string
+  const pathLimpio = path.startsWith('/storage/') ? path.replace('/storage/', '') : path
+  return `${storageBase}${pathLimpio}`
 }
 
 const edad = computed(() => {
@@ -473,7 +473,7 @@ onMounted(() => {
   formulario.value.address = u?.address ?? ''
   formulario.value.gender = u?.gender ?? ''
   formulario.value.birth_date = u?.birth_date ?? ''
-  fotoPreview.value = fotoUrl(u?.profile_photo)
+  fotoPreview.value = fotoPerfilUrl(u?.profile_photo)
 })
 
 function validar(): boolean {
@@ -586,7 +586,7 @@ async function actualizar() {
     return
   }
   if (json.data?.profile_photo) {
-    json.data.profile_photo = fotoUrl(json.data.profile_photo)
+    json.data.profile_photo = fotoPerfilUrl(json.data.profile_photo)
   }
 
   if (auth.user && json.data) {
@@ -594,7 +594,7 @@ async function actualizar() {
     localStorage.setItem('user', JSON.stringify(auth.user))
   }
 
-  fotoPreview.value = fotoUrl(json.data?.profile_photo) ?? fotoPreview.value
+  fotoPreview.value = fotoPerfilUrl(json.data?.profile_photo) ?? fotoPreview.value
 
   mensajeExito.value = '¡Perfil actualizado correctamente!'
   formulario.value.current_password = ''

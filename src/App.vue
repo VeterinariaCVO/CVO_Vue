@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
 import NotificationBell from '@/components/notifications/NotificationBell.vue'
 
-const auth   = useAuthStore()
+const auth = useAuthStore()
 const router = useRouter()
 
 async function cerrarSesion() {
@@ -14,9 +14,9 @@ async function cerrarSesion() {
 function fotoPerfilUrl(path: string | null | undefined): string | null {
   if (!path) return null
   if (path.startsWith('http')) return path
-  const base = (import.meta.env.VITE_API_URL as string).replace('/api', '')
-  if (path.startsWith('/storage/')) return `${base}${path}`
-  return `${base}/storage/${path}`
+  const storageBase = import.meta.env.VITE_STORAGE_URL as string
+  const pathLimpio = path.startsWith('/storage/') ? path.replace('/storage/', '') : path
+  return `${storageBase}${pathLimpio}`
 }
 </script>
 
