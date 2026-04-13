@@ -585,8 +585,6 @@ async function actualizar() {
     }
     return
   }
-
-  // Normalizar profile_photo antes de guardar en el store
   if (json.data?.profile_photo) {
     json.data.profile_photo = fotoUrl(json.data.profile_photo)
   }
