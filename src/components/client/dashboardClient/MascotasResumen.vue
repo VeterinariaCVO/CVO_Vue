@@ -11,7 +11,7 @@
     >
       <img
         v-if="mascota.photo_url"
-        :src="mascota.photo_url"
+        :src="petPhotoUrl(mascota.photo_url)"
         class="w-9 h-9 rounded-full object-cover border-2 border-[#dce6f0] shrink-0"
       />
       <div
@@ -32,9 +32,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
+import { getStorageUrl } from '@/utils/storageUrl'
 
 const mascotas = ref<any[]>([])
 const cargando = ref(true)
+
+function petPhotoUrl(path?: string | null) {
+  return getStorageUrl(path)
+}
 
 async function cargar() {
   const { data, execute } = ApiUseFetch('mis-mascotas').get().json()

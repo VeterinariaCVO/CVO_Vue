@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 import { useAuthStore } from '@/stores/authStore'
 import MedicalRecordModal from '@/components/admin/MedicalRecordModal.vue'
+import { getStorageUrl } from '@/utils/storageUrl'
 
 const auth = useAuthStore()
 const mascotas = ref<any[]>([])
@@ -20,6 +21,10 @@ const esVeterinario = computed(() => auth.user?.role_id === 4)
 const esAdmin = computed(() => auth.user?.role_id === 1)
 const esCliente = computed(() => auth.user?.role_id === 3)
 const puedeEscribir = computed(() => esVeterinario.value || esAdmin.value)
+
+function petPhotoUrl(path?: string | null) {
+  return getStorageUrl(path)
+}
 
 async function cargarMascotas() {
   cargandoMascotas.value = true
@@ -129,7 +134,7 @@ onMounted(cargarMascotas)
               :class="mascotaSeleccionada?.id === mascota.id ? 'bg-blue-50' : 'bg-white hover:bg-slate-50'"
             >
               <div class="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
-                <img v-if="mascota.photo_url" :src="mascota.photo_url" class="w-9 h-9 rounded-full object-cover" />
+                <img v-if="mascota.photo_url" :src="petPhotoUrl(mascota.photo_url)" class="w-9 h-9 rounded-full object-cover" />
                 <svg v-else class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 0 0 1.946-.806 3.42 3.42 0 0 1 4.438 0 3.42 3.42 0 0 0 1.946.806 3.42 3.42 0 0 1 3.138 3.138 3.42 3.42 0 0 0 .806 1.946 3.42 3.42 0 0 1 0 4.438 3.42 3.42 0 0 0-.806 1.946 3.42 3.42 0 0 1-3.138 3.138 3.42 3.42 0 0 0-1.946.806 3.42 3.42 0 0 1-4.438 0 3.42 3.42 0 0 0-1.946-.806 3.42 3.42 0 0 1-3.138-3.138 3.42 3.42 0 0 0-.806-1.946 3.42 3.42 0 0 1 0-4.438 3.42 3.42 0 0 0 .806-1.946 3.42 3.42 0 0 1 3.138-3.138z" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -164,7 +169,7 @@ onMounted(cargarMascotas)
           <div class="bg-white rounded-xl border border-slate-200 p-5 mb-4">
             <div class="flex items-center gap-4">
               <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
-                <img v-if="mascotaSeleccionada.photo_url" :src="mascotaSeleccionada.photo_url" class="w-12 h-12 rounded-full object-cover" />
+                <img v-if="mascotaSeleccionada.photo_url" :src="petPhotoUrl(mascotaSeleccionada.photo_url)" class="w-12 h-12 rounded-full object-cover" />
                 <svg v-else class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01" stroke-linecap="round"/>
                 </svg>

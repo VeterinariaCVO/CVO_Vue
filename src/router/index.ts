@@ -17,6 +17,8 @@ import AdminDashboard from '@/views/admin/AdminDashboard.vue'
 import CalendarManagementView from '@/views/admin/CalendarManagementView.vue'
 import RecepcionistaDashboard from '@/views/recepcionista/Recepcionistadashboard.vue'
 import RClientesView from '@/views/recepcionista/RClientesView.vue'
+import RHistorialView from '@/views/recepcionista/RHistorialView.vue'
+import RMascotaDetalle from '@/views/recepcionista/RMascotaDetalle.vue'
 
 
 const router: Router = createRouter({
@@ -95,6 +97,13 @@ const router: Router = createRouter({
       meta: { requiresAuth: true, role: 2 },
     },
     {
+      path: '/recepcionista/mascotas/:id',
+      name: 'recepcionista.mascota.detalle',
+      component: RMascotaDetalle,
+      meta: { requiresAuth: true, role: 2 },
+    },
+
+    {
       path: '/veterinario/agenda',
       name: 'VetAgenda',
       component: Agenda,
@@ -116,6 +125,12 @@ const router: Router = createRouter({
       path: '/empleado/registrar-cliente',
       name: 'RegisterCliente',
       component: RegistrarCliente,
+      meta: { requiresAuth: true, role: 2 },
+    },
+    {
+      path: '/recepcionista/mascotas/:id/historial',
+      name: 'recepcionista.historial',
+      component: RHistorialView,
       meta: { requiresAuth: true, role: 2 },
     },
     {

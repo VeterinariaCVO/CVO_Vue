@@ -74,7 +74,7 @@
           <div class="flex items-center gap-4">
             <img
               v-if="mascota.photo_url"
-              :src="mascota.photo_url"
+              :src="petPhotoUrl(mascota.photo_url)"
               class="w-16 h-16 rounded-2xl object-cover shadow-sm"
             />
             <div
@@ -147,7 +147,7 @@
           <div class="flex items-center gap-6">
             <img
               v-if="mascotaSeleccionada.photo_url"
-              :src="mascotaSeleccionada.photo_url"
+              :src="petPhotoUrl(mascotaSeleccionada.photo_url)"
               class="w-28 h-28 rounded-2xl object-cover shadow-xl border-4 border-white/30"
             />
             <div
@@ -373,6 +373,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
 import type { Pet } from '@/types/pet'
+import { getStorageUrl } from '@/utils/storageUrl'
 import RegisterPetModal from '@/components/client/RegisterPetModal.vue'
 import EditPetModal from '@/components/client/EditPetModal.vue'
 
@@ -394,6 +395,10 @@ const registroSeleccionado = ref<any>(null)
 
 const LIMITE_MASCOTAS = 8
 const limiteAlcanzado = computed(() => mascotas.value.length >= LIMITE_MASCOTAS)
+
+function petPhotoUrl(path?: string | null) {
+  return getStorageUrl(path)
+}
 
 const datosPerfil = computed(() => {
   const m = mascotaSeleccionada.value
