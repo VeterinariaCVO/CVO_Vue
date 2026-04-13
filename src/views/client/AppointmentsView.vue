@@ -11,6 +11,7 @@ const mostrarAgendar = ref(false)
 
 const mostrarConfirmCancelar = ref(false)
 const citaACancelar = ref<any | null>(null)
+const cancelando = ref(false)
 
 const mostrarReagendar = ref(false)
 const citaReagendar = ref<any | null>(null)
@@ -52,14 +53,31 @@ function confirmarCancelar(cita: any) {
 }
 
 async function ejecutarCancelar() {
-  if (!citaACancelar.value) return
-  const { execute } = ApiUseFetch(`/cliente/appointments/${citaACancelar.value.id}`).delete().json()
-  await execute()
-  mostrarConfirmCancelar.value = false
-  citaACancelar.value = null
-  mensajeExito.value = 'Cita cancelada'
-  setTimeout(() => (mensajeExito.value = ''), 3000)
-  obtenerCitas()
+  if (!citaACancelar.value || cancelando.value) return
+
+  cancelando.value = true
+  try {
+    const { data, statusCode, execute } = ApiUseFetch(
+
+      `/cliente/appointments/${citaACancelar.value.id}`
+    ).delete().json()
+
+    await execute()
+
+    if (statusCode.value && statusCode.value >= 400) {
+      alert((data.value as any)?.message ?? 'Error al cancelar')
+      return
+    }
+
+    mostrarConfirmCancelar.value = false
+    citaACancelar.value = null
+    mensajeExito.value = 'Cita cancelada'
+    setTimeout(() => (mensajeExito.value = ''), 3000)
+    obtenerCitas()
+
+  } finally {
+    cancelando.value = false
+  }
 }
 
 function abrirReagendar(cita: any) {
@@ -77,73 +95,81 @@ async function cargarSlots() {
   slots.value = []
   slotId.value = null
 
-  const fecha = fechaSeleccionada.value
-  const year = Number(fecha.slice(0, 4))
-  const month = Number(fecha.slice(5, 7))
+  const fecha  = fechaSeleccionada.value
+  const year   = Number(fecha.slice(0, 4))
+  const month  = Number(fecha.slice(5, 7))
 
   const { data, execute } = ApiUseFetch(`working-days?year=${year}&month=${month}`).get().json()
-
   await execute()
 
   const days = Array.isArray(data.value) ? data.value : (data.value?.data ?? [])
-  const wd = days.find((d: any) => d.date === fecha)
+  const wd   = days.find((d: any) => d.date === fecha)
 
   if (!wd || !wd.is_open) {
     cargandoSlots.value = false
     return
   }
 
-  slots.value = (wd.time_slots ?? []).filter((s: any) => s.status === 'available' && s.is_open)
-
+  slots.value       = (wd.time_slots ?? []).filter((s: any) => s.status === 'available' && s.is_open)
   cargandoSlots.value = false
 }
 
 async function ejecutarReagendar() {
+  if (enviandoReagendar.value) return
+
   errorReagendar.value = ''
+
   if (!slotId.value) {
     errorReagendar.value = 'Selecciona un horario.'
     return
   }
+
   enviandoReagendar.value = true
 
-  const { data, statusCode, execute } = ApiUseFetch(
-    `/cliente/appointments/${citaReagendar.value.id}`,
-  )
-    .put({ time_slot_id: slotId.value })
-    .json() // ← solo time_slot_id, sin status
+  try {
+    const { data, statusCode, execute } = ApiUseFetch(
+      `/cliente/appointments/${citaReagendar.value.id}`
+    )
+      .put({ time_slot_id: slotId.value })
+      .json()
 
-  await execute()
-  enviandoReagendar.value = false
+    await execute()
 
-  if (statusCode.value && statusCode.value >= 400) {
-    errorReagendar.value = (data.value as any)?.message ?? 'Error al reagendar.'
-    return
+    if (statusCode.value && statusCode.value >= 400) {
+      errorReagendar.value = (data.value as any)?.message ?? 'Error al reagendar.'
+      return
+    }
+
+    mostrarReagendar.value = false
+    mensajeExito.value = 'Cita reagendada correctamente'
+    setTimeout(() => (mensajeExito.value = ''), 3000)
+    obtenerCitas()
+
+  } catch {
+    errorReagendar.value = 'Ocurrió un error inesperado.'
+  } finally {
+    enviandoReagendar.value = false
   }
-
-  mostrarReagendar.value = false
-  mensajeExito.value = 'Cita reagendada correctamente'
-  setTimeout(() => (mensajeExito.value = ''), 3000)
-  obtenerCitas()
 }
 
 function labelEstado(status: string) {
   const map: Record<string, string> = {
-    pending: 'Pendiente',
-    confirmed: 'Confirmada',
+    pending:     'Pendiente',
+    confirmed:   'Confirmada',
     in_progress: 'En progreso',
-    completed: 'Completada',
-    cancelled: 'Cancelada',
+    completed:   'Completada',
+    cancelled:   'Cancelada',
   }
   return map[status] ?? status
 }
 
 const filtros = [
-  { value: '', label: 'Todas' },
-  { value: 'pending', label: 'Pendientes' },
-  { value: 'confirmed', label: 'Confirmadas' },
+  { value: '',            label: 'Todas' },
+  { value: 'pending',     label: 'Pendientes' },
+  { value: 'confirmed',   label: 'Confirmadas' },
   { value: 'in_progress', label: 'En progreso' },
-  { value: 'completed', label: 'Completadas' },
-  { value: 'cancelled', label: 'Canceladas' },
+  { value: 'completed',   label: 'Completadas' },
+  { value: 'cancelled',   label: 'Canceladas' },
 ]
 
 onMounted(obtenerCitas)

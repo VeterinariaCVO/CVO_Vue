@@ -72,7 +72,9 @@ function isPastDay(dateStr: string): boolean {
 
 function isPastSlot(dateStr: string, startTime: string): boolean {
   const now = new Date()
-  const [h, m] = startTime.split(':').map(Number)
+  const [rawH, rawM] = startTime.split(':')
+  const h = Number(rawH ?? 0)
+  const m = Number(rawM ?? 0)
   const slotDateTime = new Date(dateStr + 'T00:00:00')
   slotDateTime.setHours(h, m, 0, 0)
   return slotDateTime <= now

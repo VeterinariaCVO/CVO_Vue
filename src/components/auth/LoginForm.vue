@@ -21,7 +21,7 @@ async function login() {
   isLoading.value = true
 
   try {
-    const { data, error } = await useFetch(`${import.meta.env.VITE_API_URL}/login`, {
+    const { data, error, statusCode } = await useFetch(`${import.meta.env.VITE_API_URL}/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -34,6 +34,10 @@ async function login() {
     isLoading.value = false
 
     if (error.value) {
+      if (statusCode.value === 401 || statusCode.value === 422) {
+        message.value = 'Credenciales incorrectas'
+        return
+      }
       message.value = 'Error al conectar con el servidor'
       return
     }

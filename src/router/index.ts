@@ -5,14 +5,13 @@ import Agenda from '@/views/empleado/Agenda.vue'
 import LoginView from '@/components/auth/LoginForm.vue'
 import RegisterView from '@/components/auth/RegisterForm.vue'
 import WelcomeView from '@/components/auth/WelcomeView.vue'
-import RegistrarCliente from '@/views/client/RegisterClient.vue'
 import VetMascotas from '@/components/employee/VetMascotas.vue'
 import VetExpediente from '@/components/employee/VetExpediente.vue'
 import AppointmentsView from '@/views/client/AppointmentsView.vue'
 import CreateAppointmentView from '@/views/client/CreateAppointmentView.vue'
 import AAppointmentsView from '@/views/admin/AAppointmentsView.vue'
 import RAppointmentsView from '@/views/recepcionista/RAppointmentsView.vue'
-import RCreateAppointmentView from '@/views/recepcionista/RCreateAppointment.vue'
+import RAgendarPage from '@/views/recepcionista/RAgendarPage.vue'
 import AdminDashboard from '@/views/admin/AdminDashboard.vue'
 import CalendarManagementView from '@/views/admin/CalendarManagementView.vue'
 import RDashboard from '@/views/recepcionista/RDashboard.vue'
@@ -91,7 +90,7 @@ const router: Router = createRouter({
     {
       path: '/recepcionista/agendar',
       name: 'recepcionista.agendar.cita',
-      component: RCreateAppointmentView,
+      component: RAgendarPage,
       meta: { requiresAuth: true, role: 2 },
     },
     {
@@ -118,12 +117,6 @@ const router: Router = createRouter({
       name: 'VetHistorial',
       component: VetExpediente,
       meta: { requiresAuth: true, role: 4 },
-    },
-    {
-      path: '/recepcionista/registrar-cliente',
-      name: 'RegisterCliente',
-      component: RegistrarCliente,
-      meta: { requiresAuth: true, role: 2 },
     },
     {
       path: '/recepcionista/mascotas/:id/historial',

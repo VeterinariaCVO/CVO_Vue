@@ -9,6 +9,7 @@ import type { NotificationData,  NotificationsResponse } from '@/types/notificat
 export const useNotificationStore = defineStore('notifications', () => {
   const notifications = ref<NotificationData[]>([])
   const loading = ref(false)
+  const subscribedChannel = ref<string | null>(null)
 
   const unreadCount = computed(
     () => notifications.value.filter(n => !n.read).length
@@ -72,8 +73,22 @@ export const useNotificationStore = defineStore('notifications', () => {
     const auth = useAuthStore()
     if (!auth.user?.id) return
 
-    echo.private(`App.Models.User.${auth.user.id}`)
+    const channelName = `App.Models.User.${auth.user.id}`
+
+    // Prevent duplicate listeners if the bell mounts more than once.
+    if (subscribedChannel.value === channelName) return
+
+    // Ensure previous subscription is released before creating a new one.
+    if (subscribedChannel.value) {
+      echo.leave(subscribedChannel.value)
+    }
+
+    subscribedChannel.value = channelName
+
+    echo.private(channelName)
       .notification((notification: NotificationData) => {
+        const exists = notifications.value.some(n => n.id === notification.id)
+        if (exists) return
         notifications.value.unshift({
           ...notification,
           read: false
@@ -82,10 +97,9 @@ export const useNotificationStore = defineStore('notifications', () => {
   }
 
   function unsubscribeFromChannel() {
-    const auth = useAuthStore()
-    if (!auth.user?.id) return
-
-    echo.leave(`App.Models.User.${auth.user.id}`)
+    if (!subscribedChannel.value) return
+    echo.leave(subscribedChannel.value)
+    subscribedChannel.value = null
   }
 
   return {

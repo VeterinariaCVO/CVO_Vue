@@ -14,6 +14,7 @@ const mensajeExito = ref('')
 
 const mostrarConfirmCancelar = ref(false)
 const citaACancelar = ref<any | null>(null)
+const cancelando = ref(false)
 
 const citasFiltradas = computed(() => {
   if (!filtroEstado.value) return citas.value
@@ -52,10 +53,10 @@ function cambiarFiltro(estado: string) {
 }
 
 async function cambiarEstado(id: number, status: string) {
-  const cita = citas.value.find((c: any) => c.id === id)
-  const { data, statusCode, execute } = ApiUseFetch(`/recep/appointments/${id}`)
-    .put(buildPayload(cita, status))
+  const { data, statusCode, execute } = ApiUseFetch(`/appointments/${id}`)
+    .put({ status })
     .json()
+
   await execute()
 
   if (statusCode.value && statusCode.value >= 400) {
@@ -64,10 +65,11 @@ async function cambiarEstado(id: number, status: string) {
   }
 
   const labels: Record<string, string> = {
-    confirmed: 'Cita confirmada',
-    completed: 'Cita completada',
+    confirmed:   'Cita confirmada',
+    completed:   'Cita completada',
     in_progress: 'Cita en progreso',
   }
+
   mensajeExito.value = labels[status] ?? 'Estado actualizado'
   setTimeout(() => (mensajeExito.value = ''), 3000)
   obtenerCitas()
@@ -79,48 +81,53 @@ function confirmarCancelar(id: number) {
   mostrarConfirmCancelar.value = true
 }
 
-function buildPayload(_cita: any, status: string) {
-  return { status }
-}
-
 async function ejecutarCancelar() {
-  if (!citaACancelar.value) return
-  const { data, statusCode, execute } = ApiUseFetch(`/recep/appointments/${citaACancelar.value.id}`)
-    .delete()
-    .json()
-  await execute()
+  if (!citaACancelar.value || cancelando.value) return
 
-  mostrarConfirmCancelar.value = false
-  citaACancelar.value = null
+  cancelando.value = true
 
-  if (statusCode.value && statusCode.value >= 400) {
-    alert((data.value as any)?.message ?? 'Error al cancelar')
-    return
+  try {
+    const { data, statusCode, execute } = ApiUseFetch(`/appointments/${citaACancelar.value.id}`)
+      .delete()
+      .json()
+
+    await execute()
+
+    mostrarConfirmCancelar.value = false
+    citaACancelar.value = null
+
+    if (statusCode.value && statusCode.value >= 400) {
+      alert((data.value as any)?.message ?? 'Error al cancelar')
+      return
+    }
+
+    mensajeExito.value = 'Cita cancelada'
+    setTimeout(() => (mensajeExito.value = ''), 3000)
+    obtenerCitas()
+
+  } finally {
+    cancelando.value = false
   }
-
-  mensajeExito.value = 'Cita cancelada'
-  setTimeout(() => (mensajeExito.value = ''), 3000)
-  obtenerCitas()
 }
 
 function labelEstado(status: string) {
   const map: Record<string, string> = {
-    pending: 'Pendiente',
-    confirmed: 'Confirmada',
+    pending:     'Pendiente',
+    confirmed:   'Confirmada',
     in_progress: 'En progreso',
-    completed: 'Completada',
-    cancelled: 'Cancelada',
+    completed:   'Completada',
+    cancelled:   'Cancelada',
   }
   return map[status] ?? status
 }
 
 const filtros = [
-  { value: '', label: 'Todas' },
-  { value: 'pending', label: 'Pendientes' },
-  { value: 'confirmed', label: 'Confirmadas' },
+  { value: '',            label: 'Todas' },
+  { value: 'pending',     label: 'Pendientes' },
+  { value: 'confirmed',   label: 'Confirmadas' },
   { value: 'in_progress', label: 'En progreso' },
-  { value: 'completed', label: 'Completadas' },
-  { value: 'cancelled', label: 'Canceladas' },
+  { value: 'completed',   label: 'Completadas' },
+  { value: 'cancelled',   label: 'Canceladas' },
 ]
 
 onMounted(obtenerCitas)
