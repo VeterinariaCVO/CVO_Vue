@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
 
 const emit = defineEmits<{
   (e: 'cerrar'): void
   (e: 'guardado'): void
 }>()
+
+const router = useRouter()
 
 const nombre = ref('')
 const correo = ref('')
@@ -14,6 +17,15 @@ const direccion = ref('')
 const cargando = ref(false)
 const exitoso = ref(false)
 const errores = ref<Record<string, string>>({})
+
+function cerrarVista() {
+  emit('cerrar')
+  if (window.history.length > 1) {
+    router.back()
+    return
+  }
+  router.push('/recepcionista/clientes')
+}
 
 async function registrar() {
   errores.value = {}
@@ -41,14 +53,21 @@ async function registrar() {
   }
 
   exitoso.value = true
-  setTimeout(() => emit('guardado'), 1500)
+  setTimeout(() => {
+    emit('guardado')
+    if (window.history.length > 1) {
+      router.back()
+      return
+    }
+    router.push('/recepcionista/clientes')
+  }, 1500)
 }
 </script>
 
 <template>
   <div
     class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
-    @click.self="emit('cerrar')"
+    @click.self="cerrarVista"
   >
     <div class="bg-white rounded-3xl w-full max-w-md shadow-xl overflow-hidden">
 
@@ -58,7 +77,7 @@ async function registrar() {
           <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Alta de nuevo propietario</p>
         </div>
         <button
-          @click="emit('cerrar')"
+          @click="cerrarVista"
           class="text-slate-300 hover:text-slate-500 bg-transparent border-none cursor-pointer transition-colors text-lg leading-none"
         >
           ✕
@@ -126,7 +145,7 @@ async function registrar() {
 
         <div class="flex gap-3 pt-2">
           <button
-            @click="emit('cerrar')"
+            @click="cerrarVista"
             class="flex-1 border border-slate-200 text-slate-500 text-[10px] font-black uppercase tracking-widest py-3 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors bg-transparent"
           >
             Cancelar
