@@ -13,7 +13,9 @@ async function cerrarSesion() {
 
 function fotoPerfilUrl(path: string | null | undefined): string | null {
   if (!path) return null
-  if (path.startsWith('http')) return path
+  if (path.startsWith('http')) {
+    return path.replace('api.natita.me/storage/', 'natita.me/storage/')
+  }
   const storageBase = (import.meta.env.VITE_STORAGE_URL as string).replace(/\/$/, '')
   const pathLimpio = path.replace(/^\/storage\//, '').replace(/^storage\//, '')
   return `${storageBase}/${pathLimpio}`

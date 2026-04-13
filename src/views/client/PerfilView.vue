@@ -418,7 +418,9 @@ const hoy = new Date().toISOString().split('T')[0]
 
 function fotoPerfilUrl(path: string | null | undefined): string | null {
   if (!path) return null
-  if (path.startsWith('http')) return path
+  if (path.startsWith('http')) {
+    return path.replace('api.natita.me/storage/', 'natita.me/storage/')
+  }
   const storageBase = (import.meta.env.VITE_STORAGE_URL as string).replace(/\/$/, '')
   const pathLimpio = path.replace(/^\/storage\//, '').replace(/^storage\//, '')
   return `${storageBase}/${pathLimpio}`
@@ -585,8 +587,6 @@ async function actualizar() {
     }
     return
   }
-
-  // Normalizar profile_photo antes de guardar en el store
   if (json.data?.profile_photo) {
     json.data.profile_photo = fotoPerfilUrl(json.data.profile_photo)
   }
