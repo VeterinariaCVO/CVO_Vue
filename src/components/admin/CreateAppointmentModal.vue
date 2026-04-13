@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
+const manana = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
 
 const emit = defineEmits<{
   (e: 'cerrar'): void
@@ -41,7 +42,7 @@ async function cargarMascotas() {
   cargandoMascotas.value = true
   mascotas.value = []
   mascotaId.value = null
-  const { data, execute } = ApiUseFetch(`/admin/pets?owner_id=${clienteId.value}`).get().json()
+  const { data, execute } = ApiUseFetch(`/admin1/pets?owner_id=${clienteId.value}`).get().json()
   await execute()
   mascotas.value = data.value?.data ?? []
   cargandoMascotas.value = false
@@ -53,16 +54,26 @@ async function cargarSlots() {
   slots.value = []
   slotId.value = null
 
-  const { data: wdData, execute: wdExecute } = ApiUseFetch('/working-days').get().json()
-  await wdExecute()
-  const workingDays = wdData.value?.data ?? []
-  const workingDay = workingDays.find((wd: any) => wd.date?.slice(0, 10) === fechaSeleccionada.value)
+  const fecha = fechaSeleccionada.value
+  const year = Number(fecha.slice(0, 4))
+  const month = Number(fecha.slice(5, 7))
 
-  if (!workingDay) { cargandoSlots.value = false; return }
+  const { data, execute } = ApiUseFetch(`working-days?year=${year}&month=${month}`).get().json()
 
-  const { data, execute } = ApiUseFetch('/time-slots?working_day_id=' + workingDay.id + '&status=available').get().json()
   await execute()
-  slots.value = data.value?.data ?? []
+
+  const days = Array.isArray(data.value) ? data.value : (data.value?.data ?? [])
+  const workingDay = days.find((wd: any) => wd.date === fecha)
+
+  if (!workingDay || !workingDay.is_open) {
+    cargandoSlots.value = false
+    return
+  }
+
+  slots.value = (workingDay.time_slots ?? []).filter(
+    (s: any) => s.status === 'available' && s.is_open,
+  )
+
   cargandoSlots.value = false
 }
 
@@ -76,13 +87,18 @@ async function agendar() {
     return
   }
   enviando.value = true
-  const { data, error: fetchError, execute } = ApiUseFetch('/appointments')
+  const {
+    data,
+    error: fetchError,
+    execute,
+  } = ApiUseFetch('/appointments')
     .post({
       pet_id: mascotaId.value,
       service_id: servicioId.value,
       time_slot_id: slotId.value,
       notes: notas.value,
-    }).json()
+    })
+    .json()
   await execute()
   enviando.value = false
   if (fetchError.value || !data.value?.success) {
@@ -169,6 +185,7 @@ onMounted(() => {
           <input
             type="date"
             v-model="fechaSeleccionada"
+            :min="manana"
             class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors"
           />
         </div>
@@ -197,7 +214,9 @@ onMounted(() => {
         </div>
 
         <div class="flex flex-col gap-1">
-          <label class="text-xs text-slate-500">Notas <span class="text-slate-400">(opcional)</span></label>
+          <label class="text-xs text-slate-500"
+            >Notas <span class="text-slate-400">(opcional)</span></label
+          >
           <textarea
             v-model="notas"
             rows="2"

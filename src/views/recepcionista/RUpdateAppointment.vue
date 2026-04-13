@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
-const manana = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
 
 const props = defineProps<{ citaId: number }>()
 const emit = defineEmits<{
@@ -22,7 +21,7 @@ async function cargarSlots() {
   slots.value = []
   slotId.value = null
 
-  const fecha = fechaSeleccionada.value // 'YYYY-MM-DD'
+  const fecha = fechaSeleccionada.value
   const year = Number(fecha.slice(0, 4))
   const month = Number(fecha.slice(5, 7))
 
@@ -31,16 +30,14 @@ async function cargarSlots() {
   await execute()
 
   const days = Array.isArray(data.value) ? data.value : (data.value?.data ?? [])
-  const workingDay = days.find((wd: any) => wd.date === fecha)
+  const wd = days.find((d: any) => d.date === fecha)
 
-  if (!workingDay || !workingDay.is_open) {
+  if (!wd || !wd.is_open) {
     cargandoSlots.value = false
     return
   }
 
-  slots.value = (workingDay.time_slots ?? []).filter(
-    (s: any) => s.status === 'available' && s.is_open,
-  )
+  slots.value = (wd.time_slots ?? []).filter((s: any) => s.status === 'available' && s.is_open)
 
   cargandoSlots.value = false
 }
@@ -52,15 +49,19 @@ async function reagendar() {
   }
   errorMsg.value = ''
   enviando.value = true
-  const { data, execute } = ApiUseFetch('/appointments/' + props.citaId)
-    .put({ time_slot_id: slotId.value, status: 'confirmed' })
+
+  const { data, execute } = ApiUseFetch(`/recep/appointments/${props.citaId}`)
+    .put({ time_slot_id: slotId.value }) // ← sin status
     .json()
+
   await execute()
   enviando.value = false
+
   if (data.value?.errors || !data.value?.success) {
     errorMsg.value = data.value?.message ?? 'Error al reagendar.'
     return
   }
+
   emit('guardado')
 }
 
@@ -89,7 +90,7 @@ watch(fechaSeleccionada, () => cargarSlots())
           <input
             type="date"
             v-model="fechaSeleccionada"
-            :min="manana"
+            :min="new Date(Date.now() + 86400000).toISOString().slice(0, 10)"
             class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors"
           />
         </div>
@@ -116,7 +117,6 @@ watch(fechaSeleccionada, () => cargarSlots())
             </button>
           </div>
         </div>
-
         <div
           v-if="errorMsg"
           class="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2"
