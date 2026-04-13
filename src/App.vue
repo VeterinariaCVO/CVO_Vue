@@ -3,13 +3,17 @@ import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
 import NotificationBell from '@/components/notifications/NotificationBell.vue'
 
-const storageUrl = import.meta.env.VITE_STORAGE_URL as string
 const auth = useAuthStore()
 const router = useRouter()
 
 async function cerrarSesion() {
   await auth.logout()
   router.push('/login')
+}
+function fotoPerfilUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  return `${import.meta.env.VITE_API_URL.replace('/api', '')}${path}`
 }
 </script>
 
@@ -427,7 +431,7 @@ async function cerrarSesion() {
         >
           <img
             v-if="auth.user?.profile_photo"
-            :src="storageUrl + auth.user.profile_photo"
+            :src="fotoPerfilUrl(auth.user.profile_photo) ?? ''"
             class="w-6 h-6 rounded-full object-cover border border-white/30"
           />
           <svg

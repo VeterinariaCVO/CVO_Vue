@@ -31,6 +31,10 @@ function seleccionarFoto(event: Event) {
   fotoArchivo.value = file
   preview.value = URL.createObjectURL(file)
 }
+function eliminarFoto() {
+  preview.value = null
+  fotoArchivo.value = null
+}
 
 function validar(): boolean {
   errores.value = {}
@@ -129,6 +133,14 @@ function ic(campo: string) {
             class="hidden"
             @change="seleccionarFoto"
           />
+          <button
+            v-if="preview"
+            type="button"
+            @click="eliminarFoto"
+            class="text-xs text-red-400 hover:text-red-600 text-left mt-1 bg-transparent border-none cursor-pointer p-0"
+          >
+            Eliminar foto
+          </button>
         </div>
 
         <!-- Nombre -->
@@ -141,29 +153,28 @@ function ic(campo: string) {
         <!-- Especie -->
         <div class="flex flex-col gap-1">
           <label class="text-xs font-semibold text-slate-500">Especie *</label>
-          <input
-            v-model="form.species"
-            placeholder="Ej: Perro, Gato, Conejo..."
-            :class="ic('species')"
-            list="especies-list"
-          />
-          <datalist id="especies-list">
-            <option value="Perro" />
-            <option value="Gato" />
-            <option value="Conejo" />
-            <option value="Hámster" />
-            <option value="Cobaya" />
-            <option value="Pájaro" />
-            <option value="Tortuga" />
-            <option value="Pez" />
-            <option value="Caballo" />
-            <option value="Vaca" />
-            <option value="Cerdo" />
-            <option value="Cabra" />
-            <option value="Oveja" />
-            <option value="Gallina" />
-            <option value="Pato" />
-          </datalist>
+          <select v-model="form.species" :class="ic('species')">
+            <option value="">Seleccionar especie...</option>
+            <optgroup label="Domésticas">
+              <option value="Perro">Perro</option>
+              <option value="Gato">Gato</option>
+              <option value="Conejo">Conejo</option>
+              <option value="Hámster">Hámster</option>
+              <option value="Cobaya">Cobaya</option>
+              <option value="Pájaro">Pájaro</option>
+              <option value="Tortuga">Tortuga</option>
+              <option value="Pez">Pez</option>
+            </optgroup>
+            <optgroup label="Granja">
+              <option value="Caballo">Caballo</option>
+              <option value="Vaca">Vaca</option>
+              <option value="Cerdo">Cerdo</option>
+              <option value="Cabra">Cabra</option>
+              <option value="Oveja">Oveja</option>
+              <option value="Gallina">Gallina</option>
+              <option value="Pato">Pato</option>
+            </optgroup>
+          </select>
           <p v-if="errores.species" class="text-red-500 text-xs m-0">{{ errores.species }}</p>
         </div>
 
