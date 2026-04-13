@@ -313,7 +313,7 @@ onUnmounted(() => {
               </button>
 
               <button
-                @click="router.push('/recepcionista/registrar-cliente')"
+                @click="router.push('/recepcionista/clientes')"
                 class="w-full text-left p-5 rounded-xl bg-slate-50 border border-transparent hover:border-[#1d6bbf]/20 hover:bg-white transition-all group"
               >
                 <p class="text-xs font-black text-slate-700 uppercase tracking-widest group-hover:text-[#1d6bbf]">Registrar Paciente</p>

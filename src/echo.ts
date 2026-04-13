@@ -3,6 +3,10 @@ import Pusher from 'pusher-js'
 
 window.Pusher = Pusher
 
+function getToken(): string {
+  return localStorage.getItem('token') ?? ''
+}
+
 const echo = new Echo({
   broadcaster: 'reverb',
   key: import.meta.env.VITE_REVERB_APP_KEY,
@@ -18,7 +22,10 @@ const echo = new Echo({
 
   auth: {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
+      // Se lee dinámicamente en cada solicitud de auth
+      get Authorization() {
+        return `Bearer ${getToken()}`
+      },
       Accept: 'application/json',
     },
   },
