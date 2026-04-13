@@ -418,7 +418,10 @@ const hoy = new Date().toISOString().split('T')[0]
 
 function fotoPerfilUrl(path: string | null | undefined): string | null {
   if (!path) return null
-  if (path.startsWith('http')) return path
+  // Si ya es URL completa, corrige el dominio si es necesario
+  if (path.startsWith('http')) {
+    return path.replace('api.natita.me/storage/', 'natita.me/storage/')
+  }
   const storageBase = (import.meta.env.VITE_STORAGE_URL as string).replace(/\/$/, '')
   const pathLimpio = path.replace(/^\/storage\//, '').replace(/^storage\//, '')
   return `${storageBase}/${pathLimpio}`
