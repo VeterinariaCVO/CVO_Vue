@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
+import { getStorageUrl } from '@/utils/storageUrl'
 
 const clientes = ref<any[]>([])
 const mascotas = ref<any[]>([])
@@ -25,6 +26,10 @@ const errorMsg = ref('')
 
 const toastVisible = ref(false)
 const toastData = ref<{ mascota: string; servicio: string } | null>(null)
+
+function petPhotoUrl(path?: string | null) {
+  return getStorageUrl(path)
+}
 
 async function cargarClientes() {
   const { data, execute } = ApiUseFetch('/admin/users').get().json()
@@ -232,7 +237,7 @@ onMounted(() => { cargarClientes(); cargarServicios() })
                 :class="['walkin-pet-card', mascotaId === mascota.id ? 'walkin-pet-card--active' : '']"
               >
                 <div class="walkin-pet-avatar">
-                  <img v-if="mascota.photo_url" :src="mascota.photo_url" class="walkin-pet-img" />
+                  <img v-if="mascota.photo_url" :src="petPhotoUrl(mascota.photo_url)" class="walkin-pet-img" />
                   <span v-else>{{ initials(mascota.name) }}</span>
                 </div>
                 <div>

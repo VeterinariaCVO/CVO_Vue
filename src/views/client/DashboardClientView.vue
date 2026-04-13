@@ -82,7 +82,7 @@
               >
                 <img
                   v-if="mascota.photo_url"
-                  :src="mascota.photo_url"
+                  :src="petPhotoUrl(mascota.photo_url)"
                   class="w-20 h-20 rounded-full object-cover shadow-md ring-4 ring-white"
                 />
                 <div
@@ -368,6 +368,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { ApiUseFetch } from '@/composables/ApiUseFetch.ts'
+import { getStorageUrl } from '@/utils/storageUrl'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -381,6 +382,10 @@ const servicios = ref<any[]>([])
 const cargandoMascotas = ref(true)
 const cargandoServicios = ref(true)
 const mostrarModalServicios = ref(false)
+
+function petPhotoUrl(path?: string | null) {
+  return getStorageUrl(path)
+}
 
 const serviciosPreview = computed(() => servicios.value.slice(0, 3))
 
