@@ -38,6 +38,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
+  store.unsubscribeFromChannel()
 })
 </script>
 

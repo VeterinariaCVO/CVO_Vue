@@ -83,6 +83,7 @@ async function agendar() {
       notes: notas.value,
     })
     .json()
+
   await execute()
   enviando.value = false
 
