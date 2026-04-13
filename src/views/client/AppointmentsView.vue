@@ -58,7 +58,7 @@ async function ejecutarCancelar() {
   cancelando.value = true
   try {
     const { data, statusCode, execute } = ApiUseFetch(
-      // ✅ Ruta correcta para cliente
+
       `/cliente/appointments/${citaACancelar.value.id}`
     ).delete().json()
 
