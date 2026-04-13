@@ -3,7 +3,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
 import NotificationBell from '@/components/notifications/NotificationBell.vue'
 
-const storageUrl = (import.meta.env.VITE_API_URL as string).replace('/api', '') + '/storage/'
+const storageUrl = (import.meta.env.VITE_STORAGE_URL as string)
+  || (import.meta.env.VITE_API_URL as string).replace('/api', '') + '/storage/'
 const auth = useAuthStore()
 const router = useRouter()
 
@@ -247,6 +248,16 @@ async function cerrarSesion() {
       <!-- RECEPCIONISTA -->
       <template v-if="auth.isRecepcionista">
         <router-link
+          to="/recepcionista/dashboard"
+          class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
+          active-class="!text-white !bg-white/20"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path d="M3 12L12 3l9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Inicio
+        </router-link>
+        <router-link
           to="/recepcionista/citas"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
           active-class="!text-white !bg-white/20"
@@ -272,7 +283,7 @@ async function cerrarSesion() {
           Citas
         </router-link>
         <router-link
-          to="/empleado/registrar-cliente"
+          to="/recepcionista/clientes"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
           active-class="!text-white !bg-white/20"
         >
@@ -284,12 +295,22 @@ async function cerrarSesion() {
             viewBox="0 0 24 24"
           >
             <path
-              d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8zM19 8v6M22 11h-6"
+              d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"
               stroke-linecap="round"
               stroke-linejoin="round"
             />
           </svg>
-          Registrar Cliente
+          Clientes
+        </router-link>
+        <router-link
+          to="/recepcionista/walk-in"
+          class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
+          active-class="!text-white !bg-white/20"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Walk-in
         </router-link>
       </template>
 

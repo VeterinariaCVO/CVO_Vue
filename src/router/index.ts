@@ -15,7 +15,7 @@ import RAppointmentsView from '@/views/recepcionista/RAppointmentsView.vue'
 import RCreateAppointmentView from '@/views/recepcionista/RCreateAppointment.vue'
 import AdminDashboard from '@/views/admin/AdminDashboard.vue'
 import CalendarManagementView from '@/views/admin/CalendarManagementView.vue'
-import RecepcionistaDashboard from '@/views/recepcionista/Recepcionistadashboard.vue'
+import RDashboard from '@/views/recepcionista/RDashboard.vue'
 import RClientesView from '@/views/recepcionista/RClientesView.vue'
 import RHistorialView from '@/views/recepcionista/RHistorialView.vue'
 import RMascotaDetalle from '@/views/recepcionista/RMascotaDetalle.vue'
@@ -74,7 +74,7 @@ const router: Router = createRouter({
 {
        path: '/recepcionista/dashboard',
        name: 'recepcionista.dashboard',
-       component: RecepcionistaDashboard,
+  component: RDashboard,
        meta: { requiresAuth: true, role: 2 },
 },
     {
@@ -190,6 +190,12 @@ const router: Router = createRouter({
       name: 'admin.servicios',
       component: () => import('../views/ServicesView.vue'),
       meta: { requiresAuth: true, role: 1 },
+    },
+    {
+      path: '/recepcionista/walk-in',
+      name: 'recepcionista.walkin',
+      component: () => import('../views/admin/WalkInView.vue'),
+      meta: { requiresAuth: true, role: 2 },
     },
     {
       path: '/admin/walk-in',
