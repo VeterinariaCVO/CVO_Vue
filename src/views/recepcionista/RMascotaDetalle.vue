@@ -2,7 +2,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
-import { getStorageUrl } from '@/utils/storageUrl'
 import type { PetVet } from '@/types/pet'
 
 const route = useRoute()
@@ -13,7 +12,9 @@ const isLoading = ref(true)
 const isError = ref(false)
 
 const fotoUrl = computed(() => {
-  return getStorageUrl(pet.value?.photo_url)
+  if (!pet.value?.photo_url) return null
+  const storageUrl = import.meta.env.VITE_STORAGE_URL as string
+  return `${storageUrl}${pet.value.photo_url}`
 })
 
 const petId = Number(route.params.id)
