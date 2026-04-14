@@ -106,9 +106,7 @@ function entrarAlPanel() {
 }
 
 onMounted(() => {
-  if (!sessionStorage.getItem(WELCOME_KEY)) {
-    mostrarBienvenida.value = true
-  }
+  if (!sessionStorage.getItem(WELCOME_KEY)) mostrarBienvenida.value = true
 
   relojTimer = setInterval(() => {
     ahora.value = new Date()
@@ -116,19 +114,21 @@ onMounted(() => {
 
   cargarDatos()
 
-  // 🔥 WEBSOCKET LISTENER
-  echo.private(`App.Models.User.${auth.user?.id}`)
-    .notification((notification: any) => {
-      console.log('🔔 Notificación recibida:', notification)
+  // ESCUCHAR NOTIFICACIONES
+  if (auth.user?.id) {
+    echo.private(`App.Models.User.${auth.user.id}`)
+      .notification((notification: any) => {
+        console.log('🔔 Notificación recibida:', notification)
 
-      if (
-        notification.type === 'appointment_pending_alert' ||
-        notification.type === 'appointment_created' ||
-        notification.type === 'appointment_status_changed'
-      ) {
-        cargarDatos() // 🔥 actualiza en tiempo real
-      }
-    })
+        // 👇 IMPORTANTE: SOLO CUANDO SEA DE CITAS
+        if (
+          notification.type.includes('Appointment')
+        ) {
+          console.log('🔄 Actualizando dashboard...')
+          cargarDatos()
+        }
+      })
+  }
 })
 
 onUnmounted(() => {
