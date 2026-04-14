@@ -3,19 +3,19 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
+import echo from '@/echo'
 import type { Appointment } from '@/types/appointment'
 
 const router = useRouter()
 const auth = useAuthStore()
 
 const WELCOME_KEY = 'cvo_welcome_shown_recep'
-const mostrarBienvenida = ref<boolean>(false)
-const cargando = ref<boolean>(true)
+const mostrarBienvenida = ref(false)
+const cargando = ref(true)
 const citas = ref<Appointment[]>([])
-const ahora = ref<Date>(new Date())
+const ahora = ref(new Date())
 
 let relojTimer: ReturnType<typeof setInterval> | null = null
-let refreshTimer: ReturnType<typeof setInterval> | null = null
 
 function getHoraClase(cita: Appointment): string {
   if (cita.is_walk_in || !cita.time_slot) {
@@ -26,31 +26,27 @@ function getHoraClase(cita: Appointment): string {
 
 function estadoClase(status: string): string {
   const map: Record<string, string> = {
-    pending:     'bg-amber-50 text-amber-700 border-amber-100',
-    confirmed:   'bg-emerald-50 text-emerald-700 border-emerald-100',
+    pending: 'bg-amber-50 text-amber-700 border-amber-100',
+    confirmed: 'bg-emerald-50 text-emerald-700 border-emerald-100',
     in_progress: 'bg-purple-50 text-purple-700 border-purple-100',
-    completed:   'bg-slate-50 text-slate-700 border-slate-200',
-    cancelled:   'bg-red-50 text-red-700 border-red-100',
+    completed: 'bg-slate-50 text-slate-700 border-slate-200',
+    cancelled: 'bg-red-50 text-red-700 border-red-100',
   }
   return map[status] ?? 'bg-slate-50 text-slate-500 border-slate-200'
 }
 
 const hoy = computed(() => new Date().toISOString().slice(0, 10))
 
-// ✅ FIX citasHoy robusto
+// ✅ citas de hoy (robusto)
 const citasHoy = computed(() =>
   citas.value.filter(c => {
-    if (c.is_walk_in) {
-      return c.created_at?.slice(0, 10) === hoy.value
-    }
-    if (c.time_slot?.date) {
-      return c.time_slot.date.slice(0, 10) === hoy.value
-    }
+    if (c.is_walk_in) return c.created_at?.slice(0, 10) === hoy.value
+    if (c.time_slot?.date) return c.time_slot.date.slice(0, 10) === hoy.value
     return c.created_at?.slice(0, 10) === hoy.value
   })
 )
 
-// ✅ STATS CORREGIDOS
+// ✅ stats
 const statsData = computed(() => [
   {
     label: 'Citas de Hoy',
@@ -93,11 +89,10 @@ const horaEnVivo = computed(() =>
 )
 
 async function cargarDatos() {
-  cargando.value = true
   try {
     const { data, execute } = ApiUseFetch('appointments').get().json()
     await execute()
-    citas.value = data.value?.data as Appointment[] ?? []
+    citas.value = data.value?.data ?? []
   } catch (error) {
     console.error('Error al cargar citas:', error)
   } finally {
@@ -121,15 +116,24 @@ onMounted(() => {
 
   cargarDatos()
 
-  // ✅ AUTO REFRESH
-  refreshTimer = setInterval(() => {
-    cargarDatos()
-  }, 5000)
+  // 🔥 WEBSOCKET LISTENER
+  echo.private(`App.Models.User.${auth.user?.id}`)
+    .notification((notification: any) => {
+      console.log('🔔 Notificación recibida:', notification)
+
+      if (
+        notification.type === 'appointment_pending_alert' ||
+        notification.type === 'appointment_created' ||
+        notification.type === 'appointment_status_changed'
+      ) {
+        cargarDatos() // 🔥 actualiza en tiempo real
+      }
+    })
 })
 
 onUnmounted(() => {
   if (relojTimer) clearInterval(relojTimer)
-  if (refreshTimer) clearInterval(refreshTimer)
+  echo.leave(`App.Models.User.${auth.user?.id}`)
 })
 </script>
 
