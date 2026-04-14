@@ -7,13 +7,15 @@ import RegisterView from '@/components/auth/RegisterForm.vue'
 import WelcomeView from '@/components/auth/WelcomeView.vue'
 
 // ── Cliente ───────────────────────────────────────────────────────────────────
-import AppointmentsView from '@/views/client/AppointmentsView.vue'
-import CreateAppointmentView from '@/views/client/CreateAppointmentView.vue'
+import ClientAppointmentsView from '@/views/client/AppointmentsView.vue'
+import ClientCreateAppointmentView from '@/view2/cliente/ClientCreateAppointmentView.vue'
+import ClientMisMascotasView from '@/view2/cliente/ClientMisMascotasView.vue'
 
 // ── Empleado / Recepcionista ──────────────────────────────────────────────────
-import RDashboard from '@/views/recepcionista/RDashboard.vue'
-import RAppointmentsView from '@/views/recepcionista/RAppointmentsView.vue'
-import RCreateAppointment from '@/views/recepcionista/RCreateAppointment.vue'
+import EmpleadoDashboardView from '@/view2/empleado/EmpleadoDashboardView.vue'
+import EmpleadoAgendaView from '@/view2/empleado/EmpleadoAgendaView.vue'
+import RCreateAppointment from '@/view2/empleado/RCreateAppointment.vue'
+import RUpdateAppointment from '@/view2/empleado/RUpdateAppointment.vue'
 import RClientesView from '@/views/recepcionista/RClientesView.vue'
 import RMascotaDetalle from '@/views/recepcionista/RMascotaDetalle.vue'
 import RHistorialView from '@/views/recepcionista/RHistorialView.vue'
@@ -26,7 +28,9 @@ import VetHistorialView from '@/view2/empleado/vet/VetHistorialView.vue'
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 import AdminDashboard from '@/views/admin/AdminDashboard.vue'
-import AAppointmentsView from '@/views/admin/AAppointmentsView.vue'
+import AdminAAppointmentsView from '@/view2/admin/AdminAApointmentsView.vue'
+import AdminPetsManagementView from '@/view2/admin/AdminPetsManagementView.vue'
+import AdminMedicalHistoryView from '@/view2/admin/AdminMedicalHistoryView.vue'
 import CalendarManagementView from '@/views/admin/CalendarManagementView.vue'
 
 const router: Router = createRouter({
@@ -55,19 +59,19 @@ const router: Router = createRouter({
     {
       path: '/client/citas',
       name: 'client.citas',
-      component: AppointmentsView,
+      component: ClientAppointmentsView,
       meta: { requiresAuth: true, role: 3 },
     },
     {
       path: '/client/agendar',
       name: 'client.agendar.cita',
-      component: CreateAppointmentView,
+      component: ClientCreateAppointmentView,
       meta: { requiresAuth: true, role: 3 },
     },
     {
       path: '/client/mascotas',
       name: 'ClientMascotas',
-      component: () => import('../views/client/ClientsView.vue'),
+      component: ClientMisMascotasView,
       meta: { requiresAuth: true, role: 3 },
     },
     {
@@ -81,13 +85,13 @@ const router: Router = createRouter({
     {
       path: '/recepcionista/dashboard',
       name: 'recepcionista.dashboard',
-      component: RDashboard,
+      component: EmpleadoDashboardView,
       meta: { requiresAuth: true, role: 2 },
     },
     {
       path: '/recepcionista/citas',
       name: 'recepcionista.citas',
-      component: RAppointmentsView,
+      component: EmpleadoAgendaView,
       meta: { requiresAuth: true, role: 2 },
     },
     {
@@ -163,7 +167,7 @@ const router: Router = createRouter({
     {
       path: '/admin/citas',
       name: 'admin.citas',
-      component: AAppointmentsView,
+      component: AdminAAppointmentsView,
       meta: { requiresAuth: true, role: 1 },
     },
     {
@@ -185,13 +189,13 @@ const router: Router = createRouter({
     {
       path: '/admin/mascotas',
       name: 'admin.mascotas',
-      component: () => import('../views/admin/PetsManagementView.vue'),
+      component: AdminPetsManagementView,
       meta: { requiresAuth: true, role: 1 },
     },
     {
       path: '/admin/historial',
       name: 'admin.historial',
-      component: () => import('../views/admin/MedicalHistoryView.vue'),
+      component: AdminMedicalHistoryView,
       meta: { requiresAuth: true, role: 1 },
     },
     {

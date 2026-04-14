@@ -74,7 +74,7 @@ function isPastSlot(dateStr: string, startTime: string): boolean {
   const now = new Date()
   const [h, m] = startTime.split(':').map(Number)
   const slotDateTime = new Date(dateStr + 'T00:00:00')
-  slotDateTime.setHours(h, m, 0, 0)
+  //slotDateTime.setHours(h, m, 0, 0)
   return slotDateTime <= now
 }
 
