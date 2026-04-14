@@ -13,7 +13,9 @@ const mostrarBienvenida = ref<boolean>(false)
 const cargando = ref<boolean>(true)
 const citas = ref<Appointment[]>([])
 const ahora = ref<Date>(new Date())
+
 let relojTimer: ReturnType<typeof setInterval> | null = null
+let refreshTimer: ReturnType<typeof setInterval> | null = null
 
 function getHoraClase(cita: Appointment): string {
   if (cita.is_walk_in || !cita.time_slot) {
@@ -35,24 +37,25 @@ function estadoClase(status: string): string {
 
 const hoy = computed(() => new Date().toISOString().slice(0, 10))
 
-// Solo citas de hoy (con time_slot o walk-in de hoy)
+// ✅ FIX citasHoy robusto
 const citasHoy = computed(() =>
   citas.value.filter(c => {
-    if (c.is_walk_in) return c.created_at?.slice(0, 10) === hoy.value
-    return c.time_slot?.date === hoy.value
+    if (c.is_walk_in) {
+      return c.created_at?.slice(0, 10) === hoy.value
+    }
+    if (c.time_slot?.date) {
+      return c.time_slot.date.slice(0, 10) === hoy.value
+    }
+    return c.created_at?.slice(0, 10) === hoy.value
   })
 )
 
+// ✅ STATS CORREGIDOS
 const statsData = computed(() => [
   {
     label: 'Citas de Hoy',
     val: citasHoy.value.length,
     color: 'bg-[#1d6bbf]'
-  },
-  {
-    label: 'En Clínica',
-    val: citasHoy.value.filter(c => c.status === 'confirmed' || c.status === 'in_progress').length,
-    color: 'bg-emerald-500'
   },
   {
     label: 'Walk-ins Hoy',
@@ -61,9 +64,9 @@ const statsData = computed(() => [
   },
   {
     label: 'Pendientes',
-    val: citasHoy.value.filter(c => c.status === 'pending').length,
+    val: citas.value.filter(c => c.status === 'pending').length, // GLOBAL
     color: 'bg-amber-500'
-  },
+  }
 ])
 
 const horaActual = computed(() => {
@@ -108,15 +111,25 @@ function entrarAlPanel() {
 }
 
 onMounted(() => {
-  if (!sessionStorage.getItem(WELCOME_KEY)) mostrarBienvenida.value = true
+  if (!sessionStorage.getItem(WELCOME_KEY)) {
+    mostrarBienvenida.value = true
+  }
+
   relojTimer = setInterval(() => {
     ahora.value = new Date()
   }, 1000)
+
   cargarDatos()
+
+  // ✅ AUTO REFRESH
+  refreshTimer = setInterval(() => {
+    cargarDatos()
+  }, 5000)
 })
 
 onUnmounted(() => {
   if (relojTimer) clearInterval(relojTimer)
+  if (refreshTimer) clearInterval(refreshTimer)
 })
 </script>
 
@@ -141,23 +154,28 @@ onUnmounted(() => {
 
     <main class="p-8 max-w-[1600px] mx-auto space-y-8">
 
-      <!-- Header -->
+       <!-- Header -->
       <header>
-        <h1 class="text-3xl font-black text-slate-900 tracking-tighter">{{ horaActual }}, {{ auth.user?.name }}</h1>
+        <h1 class="text-3xl font-black text-slate-900 tracking-tighter">
+          {{ horaActual }}, {{ auth.user?.name }}
+        </h1>
         <p class="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
-          Panel de Recepción · {{ new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }) }}
+          Panel de Recepción ·
+          {{ new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }) }}
         </p>
       </header>
 
       <!-- Stats -->
-      <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <section class="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <div
           v-for="(item, key) in statsData"
           :key="key"
           class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"
         >
           <div :class="`absolute top-0 left-0 w-1 h-full ${item.color}`"></div>
-          <p class="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1">{{ item.label }}</p>
+          <p class="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1">
+            {{ item.label }}
+          </p>
           <p class="text-3xl font-black text-slate-800 tracking-tighter">
             {{ cargando ? '...' : item.val }}
           </p>
@@ -343,7 +361,14 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
-.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-20px) scale(0.95); }
-main { font-family: 'Inter', system-ui, sans-serif; }
+.fade-enter-active, .fade-leave-active {
+  transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.95);
+}
+main {
+  font-family: 'Inter', system-ui, sans-serif;
+}
 </style>
