@@ -184,7 +184,7 @@ onMounted(obtenerCitas)
       </div>
 
       <p v-else-if="citasFiltradas.length === 0" class="text-center text-sm text-slate-400 py-12">
-        No hay citas registradas.
+        No hay citas registradas aún.
       </p>
 
       <table v-else class="w-full border-collapse">
