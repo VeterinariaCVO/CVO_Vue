@@ -65,6 +65,7 @@ async function cerrarSesion() {
           </svg>
           Inicio
         </router-link>
+
         <router-link
           to="/admin/empleados"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -85,6 +86,7 @@ async function cerrarSesion() {
           </svg>
           Usuarios
         </router-link>
+
         <router-link
           to="/admin/mascotas"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -109,6 +111,7 @@ async function cerrarSesion() {
           </svg>
           Mascotas
         </router-link>
+
         <router-link
           to="/admin/citas"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -134,6 +137,33 @@ async function cerrarSesion() {
           </svg>
           Citas
         </router-link>
+
+        <router-link
+          to="/admin/herramientas-bd"
+          class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
+          active-class="!text-white !bg-white/20"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M4 6a2 2 0 012-2h12a2 2 0 012 2v3H4V6zM4 9h16v4H4V9zM4 13h16v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5z"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M8 17h.01M12 17h.01M16 17h.01"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          Herramientas BD
+        </router-link>
+
         <router-link
           to="/admin/servicios"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -154,6 +184,7 @@ async function cerrarSesion() {
           </svg>
           Servicios
         </router-link>
+
         <router-link
           to="/admin/calendario"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -183,6 +214,7 @@ async function cerrarSesion() {
           </svg>
           Calendario
         </router-link>
+
         <router-link
           to="/admin/historial"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -203,6 +235,7 @@ async function cerrarSesion() {
           </svg>
           Historial
         </router-link>
+
         <router-link
           to="/admin/walk-in"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -223,6 +256,7 @@ async function cerrarSesion() {
           </svg>
           Walk-in
         </router-link>
+
         <router-link
           to="/perfil"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -257,6 +291,7 @@ async function cerrarSesion() {
           </svg>
           Inicio
         </router-link>
+
         <router-link
           to="/recepcionista/citas"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -282,6 +317,7 @@ async function cerrarSesion() {
           </svg>
           Citas
         </router-link>
+
         <router-link
           to="/recepcionista/clientes"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -302,6 +338,7 @@ async function cerrarSesion() {
           </svg>
           Clientes
         </router-link>
+
         <router-link
           to="/recepcionista/walk-in"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -341,6 +378,7 @@ async function cerrarSesion() {
           </svg>
           Mi Agenda
         </router-link>
+
         <router-link
           to="/veterinario/mascotas"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -496,6 +534,7 @@ async function cerrarSesion() {
         </svg>
         Cerrar sesión
       </button>
+
       <router-link
         v-if="!auth.isAuthenticated"
         to="/login"

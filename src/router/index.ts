@@ -19,6 +19,7 @@ import RDashboard from '@/views/recepcionista/RDashboard.vue'
 import RClientesView from '@/views/recepcionista/RClientesView.vue'
 import RHistorialView from '@/views/recepcionista/RHistorialView.vue'
 import RMascotaDetalle from '@/views/recepcionista/RMascotaDetalle.vue'
+import DatabaseToolsView from '@/views/admin/DatabaseToolsView.vue'
 
 const router: Router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -68,6 +69,12 @@ const router: Router = createRouter({
       path: '/admin/calendario',
       name: 'admin.calendario',
       component: CalendarManagementView,
+      meta: { requiresAuth: true, role: 1 },
+    },
+    {
+      path: '/admin/herramientas-bd',
+      name: 'admin.herramientas-bd',
+      component: DatabaseToolsView,
       meta: { requiresAuth: true, role: 1 },
     },
     {
