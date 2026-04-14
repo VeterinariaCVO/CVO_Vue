@@ -210,13 +210,25 @@ onMounted(obtenerCitas)
             <td class="px-5 py-3">
               <p class="text-sm text-slate-800 m-0">{{ cita.pet?.name }}</p>
               <p class="text-xs text-slate-400 m-0">{{ cita.service?.name }}</p>
+              <p v-if="cita.is_walk_in" class="text-xs text-orange-500 m-0">Walk-in</p>
             </td>
+
             <td class="px-5 py-3 text-sm text-slate-500">
-              {{ cita.time_slot?.date?.slice(0, 10) ?? '—' }}
+              {{
+                cita.is_walk_in
+                  ? new Date(cita.created_at).toISOString().slice(0, 10)
+                  : (cita.time_slot?.date?.slice(0, 10) ?? '—')
+              }}
             </td>
+
             <td class="px-5 py-3 text-sm text-slate-500">
-              {{ cita.time_slot?.start_time?.slice(0, 5) ?? '—' }}
+              {{
+                cita.is_walk_in
+                  ? new Date(cita.created_at).toTimeString().slice(0, 5)
+                  : (cita.time_slot?.start_time?.slice(0, 5) ?? '—')
+              }}
             </td>
+
             <td class="px-5 py-3">
               <span
                 class="text-xs px-2 py-1 rounded-md font-medium"
