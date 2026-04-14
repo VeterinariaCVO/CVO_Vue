@@ -9,10 +9,10 @@ const router = useRouter()
 const auth = useAuthStore()
 
 const WELCOME_KEY = 'cvo_welcome_shown_recep'
-const mostrarBienvenida = ref<boolean>(false)
-const cargando = ref<boolean>(true)
+const mostrarBienvenida = ref(false)
+const cargando = ref(true)
 const citas = ref<Appointment[]>([])
-const ahora = ref<Date>(new Date())
+const ahora = ref(new Date())
 let relojTimer: ReturnType<typeof setInterval> | null = null
 
 function getHoraClase(cita: Appointment): string {
@@ -35,24 +35,21 @@ function estadoClase(status: string): string {
 
 const hoy = computed(() => new Date().toISOString().slice(0, 10))
 
-// Solo citas de hoy (con time_slot o walk-in de hoy)
+// ✅ FIX citasHoy (robusto)
 const citasHoy = computed(() =>
   citas.value.filter(c => {
     if (c.is_walk_in) return c.created_at?.slice(0, 10) === hoy.value
-    return c.time_slot?.date === hoy.value
+    if (c.time_slot?.date) return c.time_slot.date.slice(0, 10) === hoy.value
+    return c.created_at?.slice(0, 10) === hoy.value
   })
 )
 
+// ✅ STATS CORREGIDOS
 const statsData = computed(() => [
   {
     label: 'Citas de Hoy',
     val: citasHoy.value.length,
     color: 'bg-[#1d6bbf]'
-  },
-  {
-    label: 'En Clínica',
-    val: citasHoy.value.filter(c => c.status === 'confirmed' || c.status === 'in_progress').length,
-    color: 'bg-emerald-500'
   },
   {
     label: 'Walk-ins Hoy',
@@ -61,7 +58,8 @@ const statsData = computed(() => [
   },
   {
     label: 'Pendientes',
-    val: citasHoy.value.filter(c => c.status === 'pending').length,
+    // 🔥 GLOBAL (NO solo hoy)
+    val: citas.value.filter(c => c.status === 'pending').length,
     color: 'bg-amber-500'
   },
 ])
@@ -92,9 +90,9 @@ const horaEnVivo = computed(() =>
 async function cargarDatos() {
   cargando.value = true
   try {
-    const { data, execute } = ApiUseFetch('appointments').get().json()
+    const { data, execute } = ApiUseFetch('/appointments').get().json()
     await execute()
-    citas.value = data.value?.data as Appointment[] ?? []
+    citas.value = data.value?.data ?? []
   } catch (error) {
     console.error('Error al cargar citas:', error)
   } finally {
@@ -109,17 +107,23 @@ function entrarAlPanel() {
 
 onMounted(() => {
   if (!sessionStorage.getItem(WELCOME_KEY)) mostrarBienvenida.value = true
+
   relojTimer = setInterval(() => {
     ahora.value = new Date()
   }, 1000)
+
   cargarDatos()
+
+  // 🔥 AUTO-REFRESH cada 10s
+  setInterval(() => {
+    cargarDatos()
+  }, 10000)
 })
 
 onUnmounted(() => {
   if (relojTimer) clearInterval(relojTimer)
 })
 </script>
-
 <template>
   <div class="min-h-screen bg-slate-50">
 
