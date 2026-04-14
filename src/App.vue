@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
-import NotificationBell from '@/components/notifications/NotificationBell.vue'
+// ✅ NotificationBell eliminado — no usamos notificaciones
 
-const auth   = useAuthStore()
+const auth = useAuthStore()
 const router = useRouter()
 
 async function cerrarSesion() {
@@ -202,7 +202,7 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
             viewBox="0 0 24 24"
           >
             <path
-              d="M9 12h6M9 16h6M9 8h6M5 20h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z"
+              d="M9 12h6M9 16h6M9 8h6M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"
               stroke-linecap="round"
               stroke-linejoin="round"
             />
@@ -415,7 +415,6 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
           </svg>
           Inicio
         </router-link>
-
         <router-link
           to="/client/citas"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -441,7 +440,6 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
           </svg>
           Mis Citas
         </router-link>
-
         <router-link
           to="/client/mascotas"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -466,7 +464,6 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
           </svg>
           Mis Mascotas
         </router-link>
-
         <router-link
           to="/cliente/perfil"
           class="text-white/80 hover:text-white hover:bg-white/15 text-sm font-medium px-3 py-2 rounded-lg transition-all no-underline flex items-center gap-1.5"
@@ -501,7 +498,7 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
         {{ auth.user.name }} · {{ auth.roleName }}
       </span>
       <div v-if="auth.isAuthenticated" class="w-px h-5 bg-white/20 mx-1"></div>
-      <NotificationBell v-if="auth.isAuthenticated" />
+      <!-- ✅ NotificationBell eliminado -->
       <button
         v-if="auth.isAuthenticated"
         @click="cerrarSesion"
