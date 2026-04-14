@@ -37,16 +37,20 @@ function estadoClase(status: string): string {
 
 const hoy = computed(() => new Date().toISOString().slice(0, 10))
 
-// ✅ citas de hoy (robusto)
+// citas de hoy (robusto)
 const citasHoy = computed(() =>
   citas.value.filter(c => {
-    if (c.is_walk_in) return c.created_at?.slice(0, 10) === hoy.value
-    if (c.time_slot?.date) return c.time_slot.date.slice(0, 10) === hoy.value
-    return c.created_at?.slice(0, 10) === hoy.value
+    const fechaCita =
+      c.is_walk_in
+        ? c.created_at
+        : c.time_slot?.date ?? c.created_at
+
+    if (!fechaCita) return false
+
+    return fechaCita.slice(0, 10) === hoy.value
   })
 )
 
-// ✅ stats
 const statsData = computed(() => [
   {
     label: 'Citas de Hoy',
@@ -55,13 +59,22 @@ const statsData = computed(() => [
   },
   {
     label: 'Walk-ins Hoy',
-    val: citasHoy.value.filter(c => c.is_walk_in && c.status !== 'cancelled').length,
+    val: citasHoy.value.filter(c =>
+      c.is_walk_in && c.status !== 'cancelled'
+    ).length,
     color: 'bg-purple-500'
   },
   {
-    label: 'Pendientes',
-    val: citas.value.filter(c => c.status === 'pending').length, // GLOBAL
+    label: 'Pendientes (Global)',
+    val: citas.value.filter(c => c.status === 'pending').length,
     color: 'bg-amber-500'
+  },
+  {
+    label: 'Confirmadas Hoy',
+    val: citasHoy.value.filter(c =>
+      c.status === 'confirmed'
+    ).length,
+    color: 'bg-emerald-500'
   }
 ])
 
@@ -118,9 +131,9 @@ onMounted(() => {
   if (auth.user?.id) {
     echo.private(`App.Models.User.${auth.user.id}`)
       .notification((notification: any) => {
-        console.log('🔔 Notificación recibida:', notification)
+        console.log(' Notificación recibida:', notification)
 
-        // 👇 IMPORTANTE: SOLO CUANDO SEA DE CITAS
+        //  IMPORTANTE: SOLO CUANDO SEA DE CITAS
         if (
           notification.type.includes('Appointment')
         ) {
