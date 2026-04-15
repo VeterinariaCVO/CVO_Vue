@@ -16,9 +16,7 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('token'))
   const user = ref<User | null>(getStoredUser())
 
-
   const isAuthenticated = computed(() => !!token.value)
-
 
   const isAdmin = computed(() => user.value?.role_id === 1)
   const isRecepcionista = computed(() => user.value?.role_id === 2)
@@ -27,11 +25,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   const roleName = computed(() => user.value?.role ?? '')
 
-
   function hasRole(roleId: number) {
     return user.value?.role_id === roleId
   }
-
 
   function clearAuth() {
     token.value = null
@@ -40,11 +36,18 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('user')
   }
 
-
+  // 🔥 LOGIN CORREGIDO
   async function login(email: string, password: string) {
-    const { data, error } = await ApiUseFetch('/login')
+    const request = ApiUseFetch('/login')
       .post({ email, password })
       .json<{ data: { token: string; user: User } }>()
+
+    await request.execute() // 👈 ESTO SOLUCIONA EL CONGELAMIENTO
+
+    const { data, error } = request
+
+    console.log('LOGIN DATA:', data.value)
+    console.log('LOGIN ERROR:', error.value)
 
     if (error.value) {
       throw new Error(error.value?.message || 'Credenciales incorrectas')
@@ -63,18 +66,17 @@ export const useAuthStore = defineStore('auth', () => {
     return data.value.data
   }
 
-
   async function logout() {
     try {
-      const { execute } = ApiUseFetch('/logout').post().json()
-      await execute()
+      const request = ApiUseFetch('/logout').post().json()
+      await request.execute()
     } catch (error) {
       console.warn('Error al hacer logout:', error)
     } finally {
       clearAuth()
       router.push('/login')
     }
-}
+  }
 
   return {
     token,
