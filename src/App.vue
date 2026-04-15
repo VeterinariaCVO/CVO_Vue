@@ -2,6 +2,9 @@
 import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
 import NotificationBell from '@/components/notifications/NotificationBell.vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -68,15 +71,13 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
       </template>
     </div>
 
-    <template v-if="!auth.isAuthenticated">
-  <div class="ml-auto">
-    <router-link
-      to="/"
-      class="text-white font-black text-[10px] uppercase tracking-[0.15em] px-2 py-1 hover:text-blue-200 transition"
-    >
-      Inicio
-    </router-link>
-  </div>
+    <template v-if="!auth.isAuthenticated && (route.path === '/login' || route.path === '/register')">
+  <router-link
+    to="/"
+    class="text-white font-black text-[10px] uppercase tracking-[0.15em] px-2 py-1 hover:text-blue-200 transition"
+  >
+    Inicio
+  </router-link>
 </template>
 
 
