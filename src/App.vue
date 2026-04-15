@@ -68,6 +68,18 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
       </template>
     </div>
 
+    <template v-if="!auth.isAuthenticated">
+  <div class="ml-auto">
+    <router-link
+      to="/"
+      class="text-white font-black text-[10px] uppercase tracking-[0.15em] px-2 py-1 hover:text-blue-200 transition"
+    >
+      Inicio
+    </router-link>
+  </div>
+</template>
+
+
     <div class="flex items-center gap-3 shrink-0">
 
       <div v-if="auth.isAuthenticated" class="hidden lg:flex flex-col items-end leading-none gap-1 mr-2">
@@ -93,13 +105,6 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
           Salir
         </button>
 
-
-  <router-link
-    to="/"
-    class="text-white font-black text-[10px] uppercase px-3 py-2 hover:text-blue-200 transition"
-  >
-    Inicio
-  </router-link>
 </div>
     </div>
   </nav>

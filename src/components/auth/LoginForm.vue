@@ -42,6 +42,7 @@ const login = async () => {
 </script>
 
 <template>
+
   <div class="min-h-screen relative overflow-hidden bg-slate-900 font-sans italic selection:bg-blue-100">
 
     <div class="absolute inset-0 z-0">
