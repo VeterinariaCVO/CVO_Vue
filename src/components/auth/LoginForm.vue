@@ -1,38 +1,43 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
 
+const auth = useAuthStore()
 const router = useRouter()
 const isLoading = ref(false)
 const message = ref('')
 
-const form = reactive({
-  email: '',
-  password: ''
-})
+const form = reactive({ email: '', password: '' })
 
 const login = async () => {
   isLoading.value = true
   message.value = ''
 
-  setTimeout(() => {
+  try {
+    await auth.login(form.email, form.password)
+
+    if (auth.isAdmin) router.push('/admin/dashboard')
+    else if (auth.isRecepcionista) router.push('/recepcionista/dashboard')
+    else if (auth.isVeterinario) router.push('/veterinario/agenda')
+    else router.push('/client/dashboard')
+
+  } catch (error: any) {
+    message.value = error.message || 'Error al iniciar sesión'
+  } finally {
     isLoading.value = false
-    // message.value = 'Credenciales no válidas'
-  }, 1500)
+  }
 }
 </script>
 
 <template>
   <div class="min-h-screen relative overflow-hidden bg-slate-900 font-sans italic selection:bg-blue-100">
 
-
-    <!-- BACKGROUND -->
     <div class="absolute inset-0 z-0">
       <img src="/loginfoto.jpg" class="w-full h-full object-cover opacity-50 animate-slow-zoom" />
       <div class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/40 to-transparent"></div>
     </div>
 
-    <!-- TEXTO IZQUIERDA -->
     <div class="hidden lg:block absolute left-24 top-1/2 -translate-y-1/2 z-10 text-white max-w-xl">
       <h1 class="text-8xl font-black leading-[0.9] uppercase tracking-tighter drop-shadow-2xl">
         HOLA DE <br> <span class="text-[#3f98ff]">NUEVO.</span>
@@ -42,86 +47,37 @@ const login = async () => {
       </p>
     </div>
 
-    <!-- FORM -->
     <div class="relative z-20 flex items-center justify-center lg:justify-end min-h-screen p-6 lg:p-20">
-      <div class="w-full max-w-md">
-        <div class="bg-white/90 backdrop-blur-2xl rounded-[3.5rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.6)] border border-white/40 p-10 md:p-14">
+      <div class="w-full max-w-md bg-white/95 backdrop-blur-2xl rounded-[3.5rem] shadow-2xl p-10 md:p-14 border border-white/40">
+        <div class="text-center mb-10">
+          <img src="/logo.jpg" width="65" class="mx-auto rounded-xl shadow-xl mb-6 rotate-3" />
+          <h4 class="text-5xl font-black text-slate-800 uppercase italic tracking-tighter">Acceso</h4>
+          <p class="text-[#3f98ff] font-bold text-[10px] tracking-[0.4em] uppercase mt-4">Panel de Control</p>
+        </div>
 
-          <div class="text-center mb-10">
-            <div class="bg-white inline-block p-2 rounded-2xl shadow-xl mb-6 rotate-3 hover:rotate-0 transition-transform duration-500">
-              <img src="/logo.jpg" width="65" class="rounded-xl" alt="Logo" />
-            </div>
-            <h4 class="text-5xl font-black text-slate-800 uppercase tracking-tighter leading-none italic">
-              Acceso
-            </h4>
-            <p class="text-[#3f98ff] font-bold text-[10px] tracking-[0.4em] uppercase mt-4">
-              Panel de Control
-            </p>
-          </div>
+        <div v-if="message" class="bg-red-50 text-red-700 p-4 rounded-2xl mb-8 text-[11px] font-bold italic animate-pulse border border-red-100">
+          ⚠️ {{ message }}
+        </div>
 
-          <transition name="fade">
-            <div v-if="message" class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-2xl mb-8 text-xs font-bold animate-pulse">
-              ⚠️ {{ message }}
-            </div>
-          </transition>
+        <form @submit.prevent="login" class="space-y-6">
+          <input v-model="form.email" type="email" placeholder="usuario@cvo.com" required
+                 class="w-full px-6 py-4 rounded-2xl text-sm font-semibold border-2 border-slate-100 focus:border-[#3f98ff] bg-slate-50/50 outline-none transition-all shadow-inner" />
 
-          <form @submit.prevent="login" class="space-y-6">
-            <div class="space-y-2">
-              <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">
-                Correo Electrónico
-              </label>
-              <input
-                v-model="form.email"
-                type="email"
-                placeholder="usuario@cvo.com"
-                required
-                class="w-full px-6 py-4 rounded-2xl text-sm font-semibold outline-none border-2 border-slate-100 focus:border-[#3f98ff] bg-slate-50/50 text-slate-700 shadow-inner"
-              />
-            </div>
+          <input v-model="form.password" type="password" placeholder="••••••••" required
+                 class="w-full px-6 py-4 rounded-2xl text-sm font-semibold border-2 border-slate-100 focus:border-[#3f98ff] bg-slate-50/50 outline-none transition-all shadow-inner" />
 
-            <div class="space-y-2">
-              <div class="flex justify-between items-center ml-2">
-                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  Contraseña
-                </label>
-                <a href="#" class="text-[9px] font-bold text-[#3f98ff] uppercase hover:underline">
-                  ¿La olvidaste?
-                </a>
-              </div>
-              <input
-                v-model="form.password"
-                type="password"
-                placeholder="••••••••"
-                required
-                class="w-full px-6 py-4 rounded-2xl text-sm font-semibold outline-none border-2 border-slate-100 focus:border-[#3f98ff] bg-slate-50/50 text-slate-700 shadow-inner"
-              />
-            </div>
+          <button type="submit" :disabled="isLoading" class="group relative w-full bg-slate-900 text-white py-5 rounded-2xl overflow-hidden font-black text-xl uppercase italic shadow-xl active:scale-95">
+            <div class="absolute inset-0 bg-[#3f98ff] -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
+            <span class="relative z-10">{{ isLoading ? 'Verificando...' : 'Entrar' }}</span>
+          </button>
+        </form>
 
-            <button
-              type="submit"
-              :disabled="isLoading"
-              class="group relative w-full bg-slate-900 py-5 rounded-2xl overflow-hidden hover:shadow-[0_20px_40px_-10px_rgba(63,152,255,0.4)] active:scale-[0.98] mt-6"
-            >
-              <div class="absolute inset-0 bg-[#3f98ff] -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
+        <div class="mt-12 text-center border-t border-slate-100 pt-8">
+          <p class="text-slate-400 text-xs font-bold italic">
+            ¿Aún no tienes cuenta?
 
-              <span class="relative z-10 text-white font-black text-xl uppercase">
-                {{ isLoading ? 'Verificando...' : 'Entrar' }}
-              </span>
-            </button>
-          </form>
-
-          <div class="mt-12 text-center border-t border-slate-100 pt-8">
-            <p class="text-slate-400 text-xs font-bold">
-              ¿Aún no tienes cuenta?
-              <button
-                @click="router.push('/register')"
-                class="text-[#3f98ff] font-black hover:underline ml-1 uppercase text-[11px]"
-              >
-                Regístrate aquí
-              </button>
-            </p>
-          </div>
-
+           <button @click="router.push('/register')" class="text-[#3f98ff] font-black hover:underline ml-1 uppercase text-[11px]">Regístrate aquí</button>
+          </p>
         </div>
       </div>
     </div>
@@ -129,19 +85,6 @@ const login = async () => {
 </template>
 
 <style scoped>
-@keyframes slow-zoom {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
-.animate-slow-zoom {
-  animation: slow-zoom 30s ease-in-out infinite;
-}
-
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-}
+@keyframes slow-zoom { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+.animate-slow-zoom { animation: slow-zoom 30s ease-in-out infinite; }
 </style>
