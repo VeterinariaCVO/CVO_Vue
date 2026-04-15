@@ -1,175 +1,147 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { type Credentials } from '@/types/auth'
-import { useFetch } from '@vueuse/core'
-import { useAuthStore } from '@/stores/authStore'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 
-const authStore = useAuthStore()
 const router = useRouter()
+const isLoading = ref(false)
+const message = ref('')
 
-const form = ref<Credentials>({
+const form = reactive({
   email: '',
-  password: '',
+  password: ''
 })
 
-const message = ref('')
-const isLoading = ref(false)
-
-async function login() {
-  message.value = ''
+const login = async () => {
   isLoading.value = true
+  message.value = ''
 
-  try {
-    const { data, error, statusCode } = await useFetch(`${import.meta.env.VITE_API_URL}/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-      },
-      body: JSON.stringify(form.value),
-    }).json()
-
+  setTimeout(() => {
     isLoading.value = false
-
-    if (error.value) {
-      if (statusCode.value === 401 || statusCode.value === 422) {
-        message.value = 'Credenciales incorrectas'
-        return
-      }
-      message.value = 'Error al conectar con el servidor'
-      return
-    }
-
-    const loginData = data.value?.data || data.value
-
-    if (loginData?.token) {
-      authStore.token = loginData.token
-      authStore.user = loginData.user
-
-      localStorage.setItem('token', loginData.token)
-      localStorage.setItem('user', JSON.stringify(loginData.user))
-
-      const roleId = loginData.user?.role_id
-      if (roleId === 1) router.push('/admin/dashboard')
-      else if (roleId === 2) router.push('/recepcionista/dashboard')
-      else if (roleId === 3) router.push('/client/dashboard')
-      else if (roleId === 4) router.push('/veterinario/agenda')
-      else router.push('/')
-    } else {
-      message.value = 'Credenciales incorrectas'
-    }
-  } catch (err) {
-    isLoading.value = false
-    message.value = 'Ocurrió un error inesperado'
-    console.error(err)
-  }
+    // message.value = 'Credenciales no válidas'
+  }, 1500)
 }
 </script>
 
 <template>
-  <div
-    class="fixed inset-0 flex items-center justify-center"
-    style="
-      background: linear-gradient(135deg, #e8f4ff 0%, #f4f9ff 50%, #e0eeff 100%);
-      font-family: 'Poppins', sans-serif;
-    "
-  >
-    <nav
-      class="fixed top-0 left-0 right-0 z-50 py-4 shadow-md text-center"
-      style="background-color: #3f98ff"
-    >
-      <h3 class="text-white font-semibold text-xl tracking-wide">Veterinaria del Oriente</h3>
-    </nav>
+  <div class="min-h-screen relative overflow-hidden bg-slate-900 font-sans italic selection:bg-blue-100">
 
-    <div
-      class="bg-white rounded-3xl p-10 w-full max-w-md"
-      style="
-        box-shadow:
-          0 20px 60px rgba(63, 152, 255, 0.15),
-          0 4px 20px rgba(0, 0, 0, 0.08);
-      "
-    >
-      <!-- Header -->
-      <div class="text-center mb-8">
-        <img
-          src="/logo.jpg"
-          width="75"
-          class="rounded-full mx-auto mb-4 border-2 border-blue-100"
-          alt="Logo"
-          style="box-shadow: 0 4px 12px rgba(63, 152, 255, 0.2)"
-        />
-        <h4 class="text-2xl font-bold mb-1" style="color: #1a6fd4">Acceso al Sistema</h4>
-        <p class="text-sm" style="color: #8a9bb0">Ingresa tus credenciales para continuar</p>
-      </div>
 
-      <!-- Error -->
-      <div
-        v-if="message"
-        class="rounded-xl px-4 py-3 text-sm mb-5 flex items-center gap-2"
-        style="background: #fff0f0; border: 1px solid #ffcdd2; color: #c62828"
-      >
-        <span>⚠</span> {{ message }}
-      </div>
+    <!-- BACKGROUND -->
+    <div class="absolute inset-0 z-0">
+      <img src="/loginfoto.jpg" class="w-full h-full object-cover opacity-50 animate-slow-zoom" />
+      <div class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/40 to-transparent"></div>
+    </div>
 
-      <form @submit.prevent="login" class="space-y-5">
-        <div>
-          <label class="block text-sm font-semibold mb-2" style="color: #4a5568">
-            Correo electrónico
-          </label>
-          <input
-            v-model="form.email"
-            type="email"
-            placeholder="ejemplo@veterinaria.com"
-            required
-            class="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-            style="border: 1.5px solid #e2e8f0; color: #2d3748; background: #f8faff"
-            @focus="($event.target as HTMLInputElement).style.border = '1.5px solid #3f98ff'"
-            @blur="($event.target as HTMLInputElement).style.border = '1.5px solid #e2e8f0'"
-          />
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold mb-2" style="color: #4a5568">
-            Contraseña
-          </label>
-          <input
-            v-model="form.password"
-            type="password"
-            placeholder="••••••••"
-            required
-            class="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-            style="border: 1.5px solid #e2e8f0; color: #2d3748; background: #f8faff"
-            @focus="($event.target as HTMLInputElement).style.border = '1.5px solid #3f98ff'"
-            @blur="($event.target as HTMLInputElement).style.border = '1.5px solid #e2e8f0'"
-          />
-        </div>
-
-        <button
-          type="submit"
-          :disabled="isLoading"
-          class="w-full text-white font-semibold py-3 rounded-xl text-base transition-all duration-200 disabled:opacity-70 mt-2"
-          style="
-            background: linear-gradient(135deg, #3f98ff, #1a6fd4);
-            box-shadow: 0 4px 15px rgba(63, 152, 255, 0.4);
-            letter-spacing: 0.3px;
-          "
-        >
-          {{ isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión' }}
-        </button>
-      </form>
-
-      <p class="text-center text-sm mt-6" style="color: #8a9bb0">
-        ¿No tienes cuenta?
-        <a
-          @click="router.push('/register')"
-          class="font-semibold cursor-pointer hover:underline"
-          style="color: #3f98ff"
-        >
-          Regístrate aquí
-        </a>
+    <!-- TEXTO IZQUIERDA -->
+    <div class="hidden lg:block absolute left-24 top-1/2 -translate-y-1/2 z-10 text-white max-w-xl">
+      <h1 class="text-8xl font-black leading-[0.9] uppercase tracking-tighter drop-shadow-2xl">
+        HOLA DE <br> <span class="text-[#3f98ff]">NUEVO.</span>
+      </h1>
+      <p class="mt-8 text-xl font-medium text-slate-300 leading-relaxed max-w-md">
+        Accede al sistema de gestión de <span class="text-white font-bold">Veterinaria del Oriente</span> para continuar cuidando a tus pacientes.
       </p>
+    </div>
+
+    <!-- FORM -->
+    <div class="relative z-20 flex items-center justify-center lg:justify-end min-h-screen p-6 lg:p-20">
+      <div class="w-full max-w-md">
+        <div class="bg-white/90 backdrop-blur-2xl rounded-[3.5rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.6)] border border-white/40 p-10 md:p-14">
+
+          <div class="text-center mb-10">
+            <div class="bg-white inline-block p-2 rounded-2xl shadow-xl mb-6 rotate-3 hover:rotate-0 transition-transform duration-500">
+              <img src="/logo.jpg" width="65" class="rounded-xl" alt="Logo" />
+            </div>
+            <h4 class="text-5xl font-black text-slate-800 uppercase tracking-tighter leading-none italic">
+              Acceso
+            </h4>
+            <p class="text-[#3f98ff] font-bold text-[10px] tracking-[0.4em] uppercase mt-4">
+              Panel de Control
+            </p>
+          </div>
+
+          <transition name="fade">
+            <div v-if="message" class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-2xl mb-8 text-xs font-bold animate-pulse">
+              ⚠️ {{ message }}
+            </div>
+          </transition>
+
+          <form @submit.prevent="login" class="space-y-6">
+            <div class="space-y-2">
+              <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">
+                Correo Electrónico
+              </label>
+              <input
+                v-model="form.email"
+                type="email"
+                placeholder="usuario@cvo.com"
+                required
+                class="w-full px-6 py-4 rounded-2xl text-sm font-semibold outline-none border-2 border-slate-100 focus:border-[#3f98ff] bg-slate-50/50 text-slate-700 shadow-inner"
+              />
+            </div>
+
+            <div class="space-y-2">
+              <div class="flex justify-between items-center ml-2">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  Contraseña
+                </label>
+                <a href="#" class="text-[9px] font-bold text-[#3f98ff] uppercase hover:underline">
+                  ¿La olvidaste?
+                </a>
+              </div>
+              <input
+                v-model="form.password"
+                type="password"
+                placeholder="••••••••"
+                required
+                class="w-full px-6 py-4 rounded-2xl text-sm font-semibold outline-none border-2 border-slate-100 focus:border-[#3f98ff] bg-slate-50/50 text-slate-700 shadow-inner"
+              />
+            </div>
+
+            <button
+              type="submit"
+              :disabled="isLoading"
+              class="group relative w-full bg-slate-900 py-5 rounded-2xl overflow-hidden hover:shadow-[0_20px_40px_-10px_rgba(63,152,255,0.4)] active:scale-[0.98] mt-6"
+            >
+              <div class="absolute inset-0 bg-[#3f98ff] -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
+
+              <span class="relative z-10 text-white font-black text-xl uppercase">
+                {{ isLoading ? 'Verificando...' : 'Entrar' }}
+              </span>
+            </button>
+          </form>
+
+          <div class="mt-12 text-center border-t border-slate-100 pt-8">
+            <p class="text-slate-400 text-xs font-bold">
+              ¿Aún no tienes cuenta?
+              <button
+                @click="router.push('/register')"
+                class="text-[#3f98ff] font-black hover:underline ml-1 uppercase text-[11px]"
+              >
+                Regístrate aquí
+              </button>
+            </p>
+          </div>
+
+        </div>
+      </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+@keyframes slow-zoom {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+.animate-slow-zoom {
+  animation: slow-zoom 30s ease-in-out infinite;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+</style>
