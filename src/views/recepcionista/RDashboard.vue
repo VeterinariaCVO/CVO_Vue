@@ -69,13 +69,6 @@ const statsData = computed(() => [
     val: citas.value.filter(c => c.status === 'pending').length,
     color: 'bg-amber-500'
   },
-  {
-    label: 'Confirmadas Hoy',
-    val: citasHoy.value.filter(c =>
-      c.status === 'confirmed'
-    ).length,
-    color: 'bg-emerald-500'
-  }
 ])
 
 const horaActual = computed(() => {
