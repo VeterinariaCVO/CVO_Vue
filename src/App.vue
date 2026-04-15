@@ -70,18 +70,17 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
         <router-link to="/client/mascotas" :class="linkBase" :active-class="linkActive">Mascotas</router-link>
       </template>
     </div>
-
-    <template v-if="!auth.isAuthenticated && (route.path === '/login' || route.path === '/register')">
-  <router-link
-    to="/"
-    class="text-white font-black text-[10px] uppercase tracking-[0.15em] px-2 py-1 hover:text-blue-200 transition"
-  >
-    Inicio
-  </router-link>
-</template>
-
-
     <div class="flex items-center gap-3 shrink-0">
+
+  <!-- 👇 BOTÓN A LA ORILLA -->
+  <template v-if="!auth.isAuthenticated && (route.path === '/login' || route.path === '/register')">
+    <router-link
+      to="/"
+      class="text-white font-black text-[10px] uppercase tracking-[0.15em] hover:text-blue-200 transition"
+    >
+      Inicio
+    </router-link>
+  </template>
 
       <div v-if="auth.isAuthenticated" class="hidden lg:flex flex-col items-end leading-none gap-1 mr-2">
         <span class="text-white font-black text-xs uppercase tracking-tighter">{{ auth.user?.name }}</span>
