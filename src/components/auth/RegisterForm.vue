@@ -62,6 +62,16 @@ const register = async () => {
 <template>
   <div class="min-h-[calc(100vh-64px)] flex items-center justify-center lg:justify-end relative overflow-hidden bg-slate-900 p-6 lg:p-20 font-sans italic selection:bg-blue-100">
 
+    <button
+      @click="router.push('/')"
+      class="absolute top-8 left-8 md:left-12 z-50 flex items-center gap-3 px-5 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-2xl text-white font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg"
+    >
+      <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      Volver al Inicio
+    </button>
+
     <div class="absolute inset-0 z-0">
       <img src="/regfoto.jpg" class="w-full h-full object-cover opacity-40 animate-slow-zoom" />
       <div class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/40 to-transparent"></div>

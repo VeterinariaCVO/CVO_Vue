@@ -42,8 +42,17 @@ const login = async () => {
 </script>
 
 <template>
-
   <div class="min-h-screen relative overflow-hidden bg-slate-900 font-sans italic selection:bg-blue-100">
+
+    <button
+      @click="router.push('/')"
+      class="absolute top-8 left-8 md:left-12 z-50 flex items-center gap-3 px-5 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-2xl text-white font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg"
+    >
+      <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      Volver al Inicio
+    </button>
 
     <div class="absolute inset-0 z-0">
       <img src="/loginfoto.jpg" class="w-full h-full object-cover opacity-50 animate-slow-zoom" />
@@ -61,6 +70,7 @@ const login = async () => {
 
     <div class="relative z-20 flex items-center justify-center lg:justify-end min-h-screen p-6 lg:p-20">
       <div class="w-full max-w-md bg-white/95 backdrop-blur-2xl rounded-[3.5rem] shadow-2xl p-10 md:p-14 border border-white/40">
+
         <div class="text-center mb-10">
           <img src="/logo.jpg" width="65" class="mx-auto rounded-xl shadow-xl mb-6 rotate-3" />
           <h4 class="text-5xl font-black text-slate-800 uppercase italic tracking-tighter">Acceso</h4>
@@ -85,7 +95,7 @@ const login = async () => {
           </div>
 
           <button type="submit" :disabled="isLoading"
-                  class="group relative w-full bg-slate-900 text-white py-5 rounded-2xl overflow-hidden font-black text-xl uppercase italic shadow-xl active:scale-95 disabled:opacity-50">
+                  class="group relative w-full bg-slate-900 text-white py-5 rounded-2xl overflow-hidden font-black text-xl uppercase italic shadow-xl active:scale-95 disabled:opacity-50 transition-all">
             <div class="absolute inset-0 bg-[#3f98ff] -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
             <span class="relative z-10">{{ isLoading ? 'Verificando...' : 'Entrar' }}</span>
           </button>
@@ -94,7 +104,7 @@ const login = async () => {
         <div class="mt-12 text-center border-t border-slate-100 pt-8">
           <p class="text-slate-400 text-xs font-bold italic">
             ¿Aún no tienes cuenta?
-            <button @click="router.push('/register')" class="text-[#3f98ff] font-black hover:underline ml-1 uppercase text-[11px]">Regístrate aquí</button>
+            <button @click="router.push('/register')" class="text-[#3f98ff] font-black hover:underline ml-1 uppercase text-[11px] tracking-widest transition-all">Regístrate aquí</button>
           </p>
         </div>
       </div>
