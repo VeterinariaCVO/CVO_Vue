@@ -123,6 +123,26 @@ const filtros = [
   { value: 'cancelled', label: 'Canceladas' },
 ]
 
+const vistaActual = ref<'citas' | 'reporte'>('citas')
+const reporte = ref<any[]>([])
+const cargandoReporte = ref(false)
+
+async function obtenerReporte() {
+  cargandoReporte.value = true
+  reporte.value = []
+  const { data, execute } = ApiUseFetch('admin/reporte-citas').get().json()
+  await execute()
+  reporte.value = data.value?.data ?? []
+  cargandoReporte.value = false
+}
+
+function cambiarVista(vista: 'citas' | 'reporte') {
+  vistaActual.value = vista
+  if (vista === 'reporte' && reporte.value.length === 0) {
+    obtenerReporte()
+  }
+}
+
 onMounted(obtenerCitas)
 </script>
 
@@ -133,21 +153,48 @@ onMounted(obtenerCitas)
         <h1 class="text-xl font-semibold text-slate-800 m-0">Citas</h1>
         <p class="text-sm text-slate-400 mt-0.5 mb-0">Supervisa y administra todas las citas</p>
       </div>
-      <button
-        @click="mostrarAgendar = true"
-        class="bg-green-500 hover:bg-green-600 text-white text-sm px-4 py-2 border-none rounded-lg cursor-pointer transition-colors flex items-center gap-1.5"
-      >
-        <svg
-          class="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.2"
-          viewBox="0 0 24 24"
+      <div class="flex items-center gap-2">
+        <div class="flex rounded-lg border border-slate-200 overflow-hidden">
+          <button
+            @click="cambiarVista('citas')"
+            :class="
+              vistaActual === 'citas'
+                ? 'bg-[#1d6bbf] text-white'
+                : 'bg-white text-slate-500 hover:bg-slate-50'
+            "
+            class="px-3 py-1.5 text-xs font-medium transition-colors border-none cursor-pointer"
+          >
+            Citas
+          </button>
+          <button
+            @click="cambiarVista('reporte')"
+            :class="
+              vistaActual === 'reporte'
+                ? 'bg-[#1d6bbf] text-white'
+                : 'bg-white text-slate-500 hover:bg-slate-50'
+            "
+            class="px-3 py-1.5 text-xs font-medium transition-colors border-none cursor-pointer border-l border-slate-200"
+          >
+            Reporte
+          </button>
+        </div>
+        <button
+          v-if="vistaActual === 'citas'"
+          @click="mostrarAgendar = true"
+          class="bg-green-500 hover:bg-green-600 text-white text-sm px-4 py-2 border-none rounded-lg cursor-pointer transition-colors flex items-center gap-1.5"
         >
-          <path d="M12 5v14M5 12h14" stroke-linecap="round" />
-        </svg>
-        Agendar cita
-      </button>
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+          Agendar cita
+        </button>
+      </div>
     </div>
 
     <div
@@ -157,7 +204,11 @@ onMounted(obtenerCitas)
       {{ mensajeExito }}
     </div>
 
-    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <!-- Vista: Citas -->
+    <div
+      v-if="vistaActual === 'citas'"
+      class="bg-white rounded-xl border border-slate-200 overflow-hidden"
+    >
       <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100">
         <div class="flex flex-wrap gap-1.5">
           <button
@@ -180,7 +231,7 @@ onMounted(obtenerCitas)
       <div v-if="cargando" class="flex justify-center py-14">
         <div
           class="animate-spin rounded-full h-6 w-6 border-2 border-slate-200 border-t-[#1d6bbf]"
-        ></div>
+        />
       </div>
 
       <p v-else-if="citasFiltradas.length === 0" class="text-center text-sm text-slate-400 py-12">
@@ -212,7 +263,6 @@ onMounted(obtenerCitas)
               <p class="text-xs text-slate-400 m-0">{{ cita.service?.name }}</p>
               <p v-if="cita.is_walk_in" class="text-xs text-orange-500 m-0">Walk-in</p>
             </td>
-
             <td class="px-5 py-3 text-sm text-slate-500">
               {{
                 cita.is_walk_in
@@ -220,7 +270,6 @@ onMounted(obtenerCitas)
                   : (cita.time_slot?.date?.slice(0, 10) ?? '—')
               }}
             </td>
-
             <td class="px-5 py-3 text-sm text-slate-500">
               {{
                 cita.is_walk_in
@@ -228,7 +277,6 @@ onMounted(obtenerCitas)
                   : (cita.time_slot?.start_time?.slice(0, 5) ?? '—')
               }}
             </td>
-
             <td class="px-5 py-3">
               <span
                 class="text-xs px-2 py-1 rounded-md font-medium"
@@ -343,6 +391,74 @@ onMounted(obtenerCitas)
                   </svg>
                 </button>
               </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Vista: Reporte -->
+    <div v-else class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+        <p class="text-sm font-medium text-slate-700 m-0">Reporte por día</p>
+        <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500">vw_reporte_citas</code>
+      </div>
+
+      <div v-if="cargandoReporte" class="flex justify-center py-14">
+        <div
+          class="animate-spin rounded-full h-6 w-6 border-2 border-slate-200 border-t-[#1d6bbf]"
+        />
+      </div>
+
+      <p v-else-if="reporte.length === 0" class="text-center text-sm text-slate-400 py-12">
+        No hay datos de reporte.
+      </p>
+
+      <table v-else class="w-full border-collapse">
+        <thead>
+          <tr class="border-b border-slate-100">
+            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Fecha</th>
+            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Total</th>
+            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Pendientes</th>
+            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Confirmadas</th>
+            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Completadas</th>
+            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Canceladas</th>
+            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Walk-ins</th>
+            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Ingreso real</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="row in reporte"
+            :key="row.fecha"
+            class="border-b border-slate-50 last:border-none hover:bg-slate-50 transition-colors"
+          >
+            <td class="px-5 py-3 text-sm font-medium text-slate-800">{{ row.fecha }}</td>
+            <td class="px-5 py-3 text-sm text-slate-600">{{ row.total_citas }}</td>
+            <td class="px-5 py-3">
+              <span
+                class="text-xs px-2 py-1 rounded-md bg-yellow-100 text-yellow-700 font-medium"
+                >{{ row.pendientes }}</span
+              >
+            </td>
+            <td class="px-5 py-3">
+              <span class="text-xs px-2 py-1 rounded-md bg-blue-100 text-blue-700 font-medium">{{
+                row.confirmadas
+              }}</span>
+            </td>
+            <td class="px-5 py-3">
+              <span class="text-xs px-2 py-1 rounded-md bg-green-100 text-green-700 font-medium">{{
+                row.completadas
+              }}</span>
+            </td>
+            <td class="px-5 py-3">
+              <span class="text-xs px-2 py-1 rounded-md bg-red-100 text-red-500 font-medium">{{
+                row.canceladas
+              }}</span>
+            </td>
+            <td class="px-5 py-3 text-sm text-slate-600">{{ row.walk_ins }}</td>
+            <td class="px-5 py-3 text-sm font-medium text-slate-800">
+              ${{ Number(row.ingreso_real).toFixed(2) }}
             </td>
           </tr>
         </tbody>

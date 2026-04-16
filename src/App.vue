@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import NotificationBell from '@/components/notifications/NotificationBell.vue'
 
 const auth   = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 
 const linkBase = "text-white/70 hover:text-white text-[10px] font-black uppercase tracking-[0.15em] px-3 py-2 rounded-xl transition-all no-underline whitespace-nowrap flex items-center gap-1.5"
 const linkActive = "!text-white bg-white/20 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]"
@@ -16,10 +18,12 @@ async function cerrarSesion() {
 
 function fotoPerfilUrl(path: string | null | undefined): string | null {
   if (!path) return null
-  if (path.startsWith('http')) return path
-  const base = (import.meta.env.VITE_API_URL as string).replace('/api', '')
-  if (path.startsWith('/storage/')) return `${base}${path}`
-  return `${base}/storage/${path}`
+  if (path.startsWith('http')) {
+    return path.replace('api.natita.me/storage/', 'natita.me/storage/')
+  }
+  const storageBase = (import.meta.env.VITE_STORAGE_URL as string).replace(/\/$/, '')
+  const pathLimpio = path.replace(/^\/storage\//, '').replace(/^storage\//, '')
+  return `${storageBase}/${pathLimpio}`
 }
 </script>
 
@@ -28,14 +32,19 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
 
     <!-- LOGO -->
     <div class="flex items-center gap-3 shrink-0 cursor-pointer group" @click="router.push('/')">
-      <div class="bg-white p-1 rounded-lg shadow-md rotate-2 group-hover:rotate-0 transition-transform duration-300">
+      <div
+        class="bg-white p-1 rounded-lg shadow-md rotate-2 group-hover:rotate-0 transition-transform duration-300"
+      >
         <img src="/logo.jpg" width="32" class="rounded-md" alt="Logo" />
       </div>
       <div class="hidden sm:block leading-none">
         <h3 class="text-white font-black text-xl tracking-tighter uppercase">
           {{ auth.isAdmin ? 'Panel Admin' : 'Veterinaria' }}
         </h3>
-        <p v-if="!auth.isAdmin" class="text-blue-100 text-[9px] font-bold tracking-[0.2em] uppercase mt-0.5">
+        <p
+          v-if="!auth.isAdmin"
+          class="text-blue-100 text-[9px] font-bold tracking-[0.2em] uppercase mt-0.5"
+        >
           Del Oriente
         </p>
       </div>
@@ -199,7 +208,10 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
       </div>
 
       <div class="flex items-center gap-2">
-        <NotificationBell v-if="auth.isAuthenticated" class="text-white hover:scale-110 transition-transform" />
+        <NotificationBell
+          v-if="auth.isAuthenticated"
+          class="text-white hover:scale-110 transition-transform"
+        />
 
         <router-link
           v-if="auth.isAuthenticated"
@@ -219,9 +231,16 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
         >
           Salir
         </button>
+        <router-link
+          v-if="!auth.isAuthenticated && (route.path === '/login' || route.path === '/register')"
+          to="/"
+          class="text-white font-black text-[10px] uppercase tracking-[0.15em] hover:text-blue-200 transition no-underline"
+        >
+          Inicio
+        </router-link>
 
         <router-link
-          v-if="!auth.isAuthenticated"
+          v-if="!auth.isAuthenticated && route.path !== '/login' && route.path !== '/register'"
           to="/login"
           class="text-white font-black text-[10px] uppercase tracking-[0.15em] hover:text-blue-200 transition no-underline"
         >
