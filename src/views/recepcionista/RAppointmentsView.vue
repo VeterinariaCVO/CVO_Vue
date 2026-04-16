@@ -53,9 +53,7 @@ function cambiarFiltro(estado: string) {
 }
 
 async function cambiarEstado(id: number, status: string) {
-  const { data, statusCode, execute } = ApiUseFetch(`/appointments/${id}`)
-    .put({ status })
-    .json()
+  const { data, statusCode, execute } = ApiUseFetch(`/appointments/${id}`).put({ status }).json()
 
   await execute()
 
@@ -65,8 +63,8 @@ async function cambiarEstado(id: number, status: string) {
   }
 
   const labels: Record<string, string> = {
-    confirmed:   'Cita confirmada',
-    completed:   'Cita completada',
+    confirmed: 'Cita confirmada',
+    completed: 'Cita completada',
     in_progress: 'Cita en progreso',
   }
 
@@ -104,7 +102,6 @@ async function ejecutarCancelar() {
     mensajeExito.value = 'Cita cancelada'
     setTimeout(() => (mensajeExito.value = ''), 3000)
     obtenerCitas()
-
   } finally {
     cancelando.value = false
   }
@@ -112,22 +109,22 @@ async function ejecutarCancelar() {
 
 function labelEstado(status: string) {
   const map: Record<string, string> = {
-    pending:     'Pendiente',
-    confirmed:   'Confirmada',
+    pending: 'Pendiente',
+    confirmed: 'Confirmada',
     in_progress: 'En progreso',
-    completed:   'Completada',
-    cancelled:   'Cancelada',
+    completed: 'Completada',
+    cancelled: 'Cancelada',
   }
   return map[status] ?? status
 }
 
 const filtros = [
-  { value: '',            label: 'Todas' },
-  { value: 'pending',     label: 'Pendientes' },
-  { value: 'confirmed',   label: 'Confirmadas' },
+  { value: '', label: 'Todas' },
+  { value: 'pending', label: 'Pendientes' },
+  { value: 'confirmed', label: 'Confirmadas' },
   { value: 'in_progress', label: 'En progreso' },
-  { value: 'completed',   label: 'Completadas' },
-  { value: 'cancelled',   label: 'Canceladas' },
+  { value: 'completed', label: 'Completadas' },
+  { value: 'cancelled', label: 'Canceladas' },
 ]
 
 onMounted(obtenerCitas)
@@ -217,12 +214,21 @@ onMounted(obtenerCitas)
             <td class="px-5 py-3">
               <p class="text-sm text-slate-800 m-0">{{ cita.pet?.name }}</p>
               <p class="text-xs text-slate-400 m-0">{{ cita.service?.name }}</p>
+              <p v-if="cita.is_walk_in" class="text-xs text-orange-500 m-0">Walk-in</p>
             </td>
             <td class="px-5 py-3 text-sm text-slate-500">
-              {{ cita.time_slot?.date?.slice(0, 10) ?? '—' }}
+              {{
+                cita.is_walk_in
+                  ? new Date(cita.created_at).toISOString().slice(0, 10)
+                  : (cita.time_slot?.date?.slice(0, 10) ?? '—')
+              }}
             </td>
             <td class="px-5 py-3 text-sm text-slate-500">
-              {{ cita.time_slot?.start_time?.slice(0, 5) ?? '—' }}
+              {{
+                cita.is_walk_in
+                  ? new Date(cita.created_at).toTimeString().slice(0, 5)
+                  : (cita.time_slot?.start_time?.slice(0, 5) ?? '—')
+              }}
             </td>
             <td class="px-5 py-3">
               <span

@@ -82,6 +82,12 @@ const router: Router = createRouter({
       meta: { requiresAuth: true, role: 2 },
     },
     {
+      path: '/recepcionista/walk-in',
+      name: 'recepcionista.walkin',
+      component: () => import('../views/recepcionista/WalkInViewRecep.vue'),
+      meta: { requiresAuth: true, role: 2 },
+    },
+    {
       path: '/recepcionista/clientes',
       name: 'recepcionista.clientes',
       component: RClientesView,
@@ -181,12 +187,6 @@ const router: Router = createRouter({
       name: 'admin.servicios',
       component: () => import('../views/ServicesView.vue'),
       meta: { requiresAuth: true, role: 1 },
-    },
-    {
-      path: '/recepcionista/walk-in',
-      name: 'recepcionista.walkin',
-      component: () => import('../views/admin/WalkInView.vue'),
-      meta: { requiresAuth: true, role: 2 },
     },
     {
       path: '/admin/walk-in',
