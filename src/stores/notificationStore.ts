@@ -3,8 +3,7 @@ import { ref, computed } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 import echo from '@/echo'
 import { useAuthStore } from '@/stores/authStore'
-import type { NotificationData,  NotificationsResponse } from '@/types/notification'
-
+import type { NotificationData, NotificationsResponse } from '@/types/notification'
 
 export const useNotificationStore = defineStore('notifications', () => {
   const notifications = ref<NotificationData[]>([])
@@ -75,10 +74,8 @@ export const useNotificationStore = defineStore('notifications', () => {
 
     const channelName = `App.Models.User.${auth.user.id}`
 
-    // Prevent duplicate listeners if the bell mounts more than once.
     if (subscribedChannel.value === channelName) return
 
-    // Ensure previous subscription is released before creating a new one.
     if (subscribedChannel.value) {
       echo.leave(subscribedChannel.value)
     }
@@ -86,13 +83,24 @@ export const useNotificationStore = defineStore('notifications', () => {
     subscribedChannel.value = channelName
 
     echo.private(channelName)
-      .notification((notification: NotificationData) => {
-        const exists = notifications.value.some(n => n.id === notification.id)
+      .notification((notification: any) => {
+        // Normaliza la estructura sin importar si Laravel manda
+        // los datos planos o anidados dentro de .data
+        const normalized: NotificationData = {
+          id:         notification.id,
+          type:       notification.type       ?? notification.data?.type       ?? null,
+          title:      notification.title      ?? notification.data?.title      ?? null,
+          message:    notification.message    ?? notification.data?.message    ?? null,
+          created_at: notification.created_at ?? notification.data?.created_at ?? new Date().toISOString(),
+          read:       false,
+          read_at:    null,
+          data:       notification.data ?? {},
+        }
+
+        const exists = notifications.value.some(n => n.id === normalized.id)
         if (exists) return
-        notifications.value.unshift({
-          ...notification,
-          read: false
-        })
+
+        notifications.value.unshift(normalized)
       })
   }
 
