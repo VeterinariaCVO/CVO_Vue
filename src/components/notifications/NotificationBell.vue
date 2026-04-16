@@ -94,7 +94,7 @@ onBeforeUnmount(() => {
                 {{ n.message }}
               </p>
               <p class="text-[8px] font-bold text-slate-300 uppercase mt-1">
-                {{ new Date(n.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}
+               {{ new Date(n.created_at?.replace(' ', 'T')).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}
               </p>
             </div>
 
