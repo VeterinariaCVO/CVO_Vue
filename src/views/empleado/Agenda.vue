@@ -235,10 +235,16 @@ defineOptions({ name: 'VetAgenda' })
               </p>
 
               <p class="text-sm text-slate-400 mt-1">
-                📅 {{ formatDate(apt.time_slot.date) }}
+                📅 {{ apt.time_slot ? formatDate(apt.time_slot.date) : 'Walk-in' }}
                 <span class="text-slate-300 mx-1">·</span>
-                🕐 {{ apt.time_slot.start_time.slice(0, 5) }} –
-                {{ apt.time_slot.end_time.slice(0, 5) }}
+                🕐
+                <template v-if="apt.time_slot">
+                  {{ apt.time_slot.start_time.slice(0, 5) }} –
+                  {{ apt.time_slot.end_time.slice(0, 5) }}
+                </template>
+                <template v-else>
+                  Ahora
+                </template>
               </p>
 
               <p v-if="apt.notes" class="text-xs text-slate-400 mt-1 italic">"{{ apt.notes }}"</p>

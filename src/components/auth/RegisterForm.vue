@@ -1,228 +1,173 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { type RegisterCredentials } from '@/types/auth'
-import { useFetch } from '@vueuse/core'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { ApiUseFetch } from '@/composables/ApiUseFetch'
 
 const router = useRouter()
-
-const form = ref<RegisterCredentials>({
-  name: '',
-  email: '',
-  password: '',
-  password_confirmation: '',
-  phone: '',
-  address: '',
-   role_id: 3,
-})
-
+const paso = ref(1)
+const isLoading = ref(false)
 const message = ref('')
 const isError = ref(false)
-const isLoading = ref(false)
 
-function register() {
-  message.value = ''
-  isError.value = false
+const form = reactive({
+  name: '',
+  email: '',
+  phone: '',
+  address: '',
+  password: '',
+  password_confirmation: '',
+  role_id: 3
+})
 
-  if (form.value.password !== form.value.password_confirmation) {
+const irAlPaso2 = () => {
+  if (form.name && form.email && form.phone) {
+    message.value = ''
+    paso.value = 2
+  } else {
     isError.value = true
-    message.value = 'Las contraseñas no coinciden'
+    message.value = 'Completa nombre, email y teléfono'
+  }
+}
+
+const register = async () => {
+  if (form.password.length < 4) {
+    isError.value = true
+    message.value = 'La contraseña debe tener al menos 4 caracteres'
     return
   }
 
   isLoading.value = true
+  message.value = ''
+  isError.value = false
 
-  // Aquí disparamos la petición directa, sin intermediarios
-  const { data, onFetchResponse, onFetchError } = useFetch(
-    import.meta.env.VITE_API_URL + '/register',
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'ngrok-skip-browser-warning': 'true', // Súper importante si usas ngrok
-      },
-    }
-  ).post(form.value).json()
+  const { data, error, execute } = ApiUseFetch('/register')
+    .post(form)
+    .json<{ message?: string }>()
 
-  // Si Laravel responde con éxito (Código 200 o 201)
-  onFetchResponse(() => {
-    isLoading.value = false
-    isError.value = false
-    message.value = data.value?.message ?? 'Usuario registrado correctamente'
+  await execute()
 
-    setTimeout(() => {
-      router.push('/login')
-    }, 1500)
-  })
-
-  // Si Laravel manda un error o la petición choca
-  onFetchError((error) => {
+  if (error.value) {
     isLoading.value = false
     isError.value = true
-    message.value = 'Error al registrar. Verifica los datos e intenta de nuevo.'
-    console.error('El chisme del error:', error) // Esto te dirá en consola qué falló exactamente
-  })
+    message.value = data.value?.message || 'Error en el registro. Revisa los datos.'
+  } else {
+    isLoading.value = false
+    isError.value = false
+    message.value = '¡Registro exitoso! Redirigiendo...'
+    setTimeout(() => router.push('/login'), 2000)
+  }
 }
 </script>
+
 <template>
-  <div
-    class="fixed inset-0 flex items-center justify-center"
-    style="
-      background: linear-gradient(135deg, #e8f4ff 0%, #f4f9ff 50%, #e0eeff 100%);
-      font-family: 'Poppins', sans-serif;
-    "
-  >
-    <!-- Navbar -->
-    <nav
-      class="fixed top-0 left-0 right-0 z-50 py-4 shadow-md text-center"
-      style="background-color: #3f98ff"
-    >
-      <h3 class="text-white font-semibold text-xl tracking-wide">Veterinaria del Oriente</h3>
-    </nav>
+  <div class="min-h-[calc(100vh-64px)] flex items-center justify-center lg:justify-end relative overflow-hidden bg-slate-900 p-6 lg:p-20 font-sans italic selection:bg-blue-100">
 
-    <!-- Card -->
-    <div
-      class="bg-white rounded-3xl p-10 w-full max-w-4xl"
-      style="
-        box-shadow:
-          0 20px 60px rgba(63, 152, 255, 0.15),
-          0 4px 20px rgba(0, 0, 0, 0.08);
-      "
-    >
-      <!-- Header -->
-      <div class="text-center mb-8">
-        <h2 class="text-2xl font-bold mb-1" style="color: #2d8a4e">Crea tu Cuenta de Cliente</h2>
-        <p class="text-sm" style="color: #8a9bb0">
-          ¡Solo unos datos y estarás listo para agendar citas!
-        </p>
-      </div>
+    <div class="absolute inset-0 z-0">
+      <img src="/regfoto.jpg" class="w-full h-full object-cover opacity-40 animate-slow-zoom" />
+      <div class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/40 to-transparent"></div>
+    </div>
 
-      <!-- Alerta -->
-      <div
-        v-if="message"
-        class="rounded-xl px-4 py-3 text-sm mb-5 flex items-center gap-2"
-        :style="
-          isError
-            ? 'background: #fff0f0; border: 1px solid #ffcdd2; color: #c62828;'
-            : 'background: #f0fff4; border: 1px solid #c3e6cb; color: #1a7a3c;'
-        "
-      >
-        <span>{{ isError ? '⚠' : '✓' }}</span> {{ message }}
-      </div>
+    <div class="hidden lg:block absolute left-24 top-1/2 -translate-y-1/2 z-10 text-white max-w-xl">
+      <h1 class="text-7xl font-black leading-[0.9] uppercase tracking-tighter drop-shadow-2xl">
+        CREA TU <br> <span class="text-[#3f98ff]">CUENTA.</span>
+      </h1>
+      <p class="mt-8 text-xl font-medium text-slate-300 leading-relaxed max-w-md">
+        Únete a nuestra comunidad y comienza a gestionar la salud de tus mascotas de forma profesional.
+      </p>
+    </div>
 
-      <form @submit.prevent="register">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-1">
-          <!-- Columna izquierda -->
-          <div class="space-y-5">
-            <div>
-              <label class="block text-sm font-semibold mb-2" style="color: #4a5568"
-                >Nombre Completo</label
-              >
-              <input
-                v-model="form.name"
-                type="text"
-                placeholder="Nombre y Apellidos"
-                required
-                class="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all focus:ring-2 focus:ring-blue-400"
-                style="border: 1.5px solid #e2e8f0; color: #2d3748; background: #f8faff"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-semibold mb-2" style="color: #4a5568"
-                >Teléfono</label
-              >
-              <input
-                v-model="form.phone"
-                type="tel"
-                placeholder="Ej: 555-123-4567"
-                class="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all focus:ring-2 focus:ring-blue-400"
-                style="border: 1.5px solid #e2e8f0; color: #2d3748; background: #f8faff"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-semibold mb-2" style="color: #4a5568">Email</label>
-              <input
-                v-model="form.email"
-                type="email"
-                placeholder="correo@ejemplo.com"
-                required
-                class="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all focus:ring-2 focus:ring-blue-400"
-                style="border: 1.5px solid #e2e8f0; color: #2d3748; background: #f8faff"
-              />
-            </div>
-          </div>
+    <div class="relative z-20 w-full max-w-md">
+      <div class="bg-white/95 backdrop-blur-2xl rounded-[3.5rem] shadow-2xl p-10 md:p-14 border border-white/40">
 
-          <!-- Columna derecha -->
-          <div class="space-y-5">
-            <div>
-              <label class="block text-sm font-semibold mb-2" style="color: #4a5568"
-                >Contraseña</label
-              >
-              <input
-                v-model="form.password"
-                type="password"
-                placeholder="Mínimo 4 caracteres"
-                required
-                class="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all focus:ring-2 focus:ring-blue-400"
-                style="border: 1.5px solid #e2e8f0; color: #2d3748; background: #f8faff"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-semibold mb-2" style="color: #4a5568"
-                >Confirmar Contraseña</label
-              >
-              <input
-                v-model="form.password_confirmation"
-                type="password"
-                placeholder="Repite tu contraseña"
-                required
-                class="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all focus:ring-2 focus:ring-blue-400"
-                style="border: 1.5px solid #e2e8f0; color: #2d3748; background: #f8faff"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-semibold mb-2" style="color: #4a5568"
-                >Domicilio</label
-              >
-              <input
-                v-model="form.address"
-                type="text"
-                placeholder="Calle, número, colonia"
-                class="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all focus:ring-2 focus:ring-blue-400"
-                style="border: 1.5px solid #e2e8f0; color: #2d3748; background: #f8faff"
-              />
-            </div>
-          </div>
+        <div class="flex justify-center gap-2 mb-8">
+          <div :class="paso === 1 ? 'w-12 bg-[#3f98ff]' : 'w-4 bg-slate-200'" class="h-1.5 rounded-full transition-all duration-500"></div>
+          <div :class="paso === 2 ? 'w-12 bg-[#3f98ff]' : 'w-4 bg-slate-200'" class="h-1.5 rounded-full transition-all duration-500"></div>
         </div>
 
-        <!-- Botón -->
-        <div class="text-center mt-8">
-          <button
-            type="submit"
-            :disabled="isLoading"
-            class="text-white font-semibold px-12 py-3 rounded-xl transition-all duration-200 disabled:opacity-70"
-            style="
-              background: linear-gradient(135deg, #28a745, #1e7e34);
-              box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
-            "
-          >
-            {{ isLoading ? 'Registrando...' : 'Confirmar Registro' }}
+        <div class="text-center mb-8">
+          <h4 class="text-4xl font-black text-slate-800 uppercase italic tracking-tighter">{{ paso === 1 ? 'Tus Datos' : 'Seguridad' }}</h4>
+          <p class="text-[#3f98ff] font-bold text-[9px] tracking-[0.4em] uppercase mt-2">Paso {{ paso }} de 2</p>
+        </div>
+
+        <div v-if="message"
+             :class="isError ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'"
+             class="p-4 rounded-2xl mb-6 text-[11px] font-bold text-center border transition-all italic">
+          {{ message }}
+        </div>
+
+        <form @submit.prevent="register" class="space-y-5">
+          <div v-if="paso === 1" class="space-y-5 animate-slide-in">
+            <div class="space-y-1">
+               <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nombre Completo</label>
+               <input v-model="form.name" type="text" placeholder="Juan Pérez" required
+                   class="w-full px-5 py-4 rounded-2xl text-sm font-semibold border-2 border-slate-100 focus:border-[#3f98ff] bg-slate-50/50 outline-none transition-all shadow-inner" />
+            </div>
+
+            <div class="space-y-1">
+               <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Correo Electrónico</label>
+               <input v-model="form.email" type="email" placeholder="correo@ejemplo.com" required
+                   class="w-full px-5 py-4 rounded-2xl text-sm font-semibold border-2 border-slate-100 focus:border-[#3f98ff] bg-slate-50/50 outline-none transition-all shadow-inner" />
+            </div>
+
+            <div class="space-y-1">
+               <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Teléfono</label>
+               <input v-model="form.phone" type="tel" placeholder="871 000 0000" required
+                   class="w-full px-5 py-4 rounded-2xl text-sm font-semibold border-2 border-slate-100 focus:border-[#3f98ff] bg-slate-50/50 outline-none transition-all shadow-inner" />
+            </div>
+
+            <button type="button" @click="irAlPaso2"
+                    class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase hover:bg-[#3f98ff] transition-all shadow-xl mt-2 active:scale-95">
+              Siguiente Paso →
+            </button>
+          </div>
+
+          <div v-if="paso === 2" class="space-y-5 animate-slide-in">
+            <div class="space-y-1">
+               <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Domicilio</label>
+               <input v-model="form.address" type="text" placeholder="Domicilio"
+                   class="w-full px-5 py-4 rounded-2xl text-sm font-semibold border-2 border-slate-100 focus:border-[#3f98ff] bg-slate-50/50 outline-none transition-all shadow-inner" />
+            </div>
+
+            <div class="space-y-1">
+               <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Contraseña</label>
+               <input v-model="form.password" type="password" placeholder="Mín. 4 caracteres" required
+                   class="w-full px-5 py-4 rounded-2xl text-sm font-semibold border-2 border-slate-100 focus:border-[#3f98ff] bg-slate-50/50 outline-none transition-all shadow-inner" />
+            </div>
+
+            <div class="space-y-1">
+               <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Confirmar</label>
+               <input v-model="form.password_confirmation" type="password" placeholder="Confirmar Contraseña" required
+                   class="w-full px-5 py-4 rounded-2xl text-sm font-semibold border-2 border-slate-100 focus:border-[#3f98ff] bg-slate-50/50 outline-none transition-all shadow-inner" />
+            </div>
+
+            <div class="flex gap-3 pt-2">
+              <button type="button" @click="paso = 1"
+                      class="w-1/3 border-2 border-slate-100 text-slate-400 py-4 rounded-2xl font-black text-[10px] uppercase hover:bg-slate-50 transition-all">
+                Atrás
+              </button>
+              <button type="submit" :disabled="isLoading"
+                      class="w-2/3 bg-[#22c55e] text-white py-4 rounded-2xl font-black uppercase hover:bg-green-600 transition-all shadow-lg active:scale-95 disabled:opacity-50">
+                {{ isLoading ? 'Registrando...' : 'Finalizar ✓' }}
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div class="mt-10 text-center border-t border-slate-100 pt-8">
+          <button @click="router.push('/login')" class="text-slate-400 text-xs font-bold hover:text-[#3f98ff] transition-colors italic">
+            ¿Ya tienes cuenta?
+            <span class="font-black uppercase text-[11px] ml-1">Inicia sesión</span>
           </button>
         </div>
-      </form>
 
-      <div class="text-center mt-6 pt-5" style="border-top: 1px solid #e2e8f0">
-        <p class="text-sm" style="color: #8a9bb0">
-          ¿Ya tienes una cuenta?
-          <a
-            @click="router.push('/login')"
-            class="font-semibold cursor-pointer hover:underline"
-            style="color: #3f98ff"
-          >
-            Inicia Sesión aquí
-          </a>
-        </p>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+@keyframes slideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+.animate-slide-in { animation: slideIn 0.3s ease-out; }
+@keyframes slow-zoom { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+.animate-slow-zoom { animation: slow-zoom 30s ease-in-out infinite; }
+</style>

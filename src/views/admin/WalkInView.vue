@@ -1,18 +1,15 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 import { getStorageUrl } from '@/utils/storageUrl'
 
 const clientes = ref<any[]>([])
 const mascotas = ref<any[]>([])
 const servicios = ref<any[]>([])
-const slots = ref<any[]>([])
 
 const clienteId = ref<number | null>(null)
 const mascotaId = ref<number | null>(null)
 const servicioId = ref<number | null>(null)
-const slotId = ref<number | null>(null)
-const fechaSeleccionada = ref('')
 const notas = ref('')
 
 const busquedaCliente = ref('')
@@ -20,7 +17,6 @@ const clientesFiltrados = ref<any[]>([])
 const mostrarDropdown = ref(false)
 
 const cargandoMascotas = ref(false)
-const cargandoSlots = ref(false)
 const enviando = ref(false)
 const errorMsg = ref('')
 
@@ -64,28 +60,11 @@ function seleccionarCliente(cliente: any) {
 async function cargarMascotas(ownerId: number) {
   cargandoMascotas.value = true
   mascotas.value = []
-  const { data, execute } = ApiUseFetch(`/admin/pets?owner_id=${ownerId}`).get().json()
+  const { data, execute } = ApiUseFetch(`/admin1/pets?owner_id=${ownerId}`).get().json()
   await execute()
   mascotas.value = data.value?.data ?? []
   cargandoMascotas.value = false
 }
-
-async function cargarSlots() {
-  if (!fechaSeleccionada.value) return
-  cargandoSlots.value = true
-  slots.value = []
-  slotId.value = null
-  const { data: wdData, execute: wdExecute } = ApiUseFetch(`/working-days?date=${fechaSeleccionada.value}`).get().json()
-  await wdExecute()
-  const wds = wdData.value?.data ?? []
-  if (wds.length === 0) { cargandoSlots.value = false; return }
-  const { data, execute } = ApiUseFetch(`/time-slots?working_day_id=${wds[0].id}&status=available`).get().json()
-  await execute()
-  slots.value = data.value?.data ?? []
-  cargandoSlots.value = false
-}
-
-watch(fechaSeleccionada, () => cargarSlots())
 
 function initials(name: string) {
   return name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
@@ -95,12 +74,9 @@ function resetForm() {
   clienteId.value = null
   mascotaId.value = null
   servicioId.value = null
-  slotId.value = null
-  fechaSeleccionada.value = ''
   notas.value = ''
   busquedaCliente.value = ''
   mascotas.value = []
-  slots.value = []
   errorMsg.value = ''
 }
 
@@ -124,7 +100,6 @@ async function registrar() {
   const { data, execute } = ApiUseFetch('/walk-in').post({
     pet_id: mascotaId.value,
     service_id: servicioId.value,
-    time_slot_id: slotId.value ?? undefined,
     notes: notas.value || null,
   }).json()
   await execute()
@@ -270,38 +245,8 @@ onMounted(() => { cargarClientes(); cargarServicios() })
 
         <!-- Columna derecha -->
         <div class="walkin-col">
-          <p class="walkin-section-label">Horario & notas <span class="walkin-optional">(opcionales)</span></p>
+          <p class="walkin-section-label">Notas <span class="walkin-optional">(opcional)</span></p>
 
-          <!-- Fecha -->
-          <div class="walkin-field">
-            <label class="walkin-label">Fecha</label>
-            <input
-              type="date"
-              v-model="fechaSeleccionada"
-              :min="new Date().toISOString().slice(0, 10)"
-              class="walkin-input walkin-input--date"
-            />
-          </div>
-
-          <!-- Slots -->
-          <div class="walkin-field">
-            <label class="walkin-label">Horario</label>
-            <p v-if="!fechaSeleccionada" class="walkin-hint">Selecciona una fecha primero</p>
-            <p v-else-if="cargandoSlots" class="walkin-hint">Cargando horarios...</p>
-            <p v-else-if="slots.length === 0" class="walkin-hint">Sin horarios disponibles.</p>
-            <div v-else class="walkin-slots">
-              <button
-                v-for="slot in slots"
-                :key="slot.id"
-                @click="slotId = slotId === slot.id ? null : slot.id"
-                :class="['walkin-slot', slotId === slot.id ? 'walkin-slot--active' : '']"
-              >
-                {{ slot.start_time.slice(0, 5) }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Notas -->
           <div class="walkin-field walkin-field--grow">
             <label class="walkin-label">Notas</label>
             <textarea
@@ -533,9 +478,6 @@ onMounted(() => { cargarClientes(); cargarServicios() })
   transition: border-color 0.15s, background 0.15s;
   box-sizing: border-box;
 }
-.walkin-input--date {
-  padding-left: 14px;
-}
 .walkin-input:focus {
   border-color: #1d6bbf;
   background: #fff;
@@ -698,34 +640,6 @@ onMounted(() => { cargarClientes(); cargarServicios() })
   align-items: center;
   justify-content: center;
   color: #fff;
-}
-
-/* Slots */
-.walkin-slots {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.walkin-slot {
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  padding: 6px 12px;
-  border: 1.5px solid #e8eaed;
-  border-radius: 8px;
-  background: #fafbfc;
-  color: #5a6473;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.walkin-slot:hover {
-  border-color: #1d6bbf;
-  color: #1d6bbf;
-  background: #f0f6ff;
-}
-.walkin-slot--active {
-  background: #1d6bbf !important;
-  border-color: #1d6bbf !important;
-  color: #fff !important;
 }
 
 /* Textarea */

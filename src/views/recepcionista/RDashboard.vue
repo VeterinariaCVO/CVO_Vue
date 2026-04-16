@@ -3,16 +3,18 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
+import echo from '@/echo'
 import type { Appointment } from '@/types/appointment'
 
 const router = useRouter()
 const auth = useAuthStore()
 
 const WELCOME_KEY = 'cvo_welcome_shown_recep'
-const mostrarBienvenida = ref<boolean>(false)
-const cargando = ref<boolean>(true)
+const mostrarBienvenida = ref(false)
+const cargando = ref(true)
 const citas = ref<Appointment[]>([])
-const ahora = ref<Date>(new Date())
+const ahora = ref(new Date())
+
 let relojTimer: ReturnType<typeof setInterval> | null = null
 
 function getHoraClase(cita: Appointment): string {
@@ -24,22 +26,28 @@ function getHoraClase(cita: Appointment): string {
 
 function estadoClase(status: string): string {
   const map: Record<string, string> = {
-    pending:     'bg-amber-50 text-amber-700 border-amber-100',
-    confirmed:   'bg-emerald-50 text-emerald-700 border-emerald-100',
+    pending: 'bg-amber-50 text-amber-700 border-amber-100',
+    confirmed: 'bg-emerald-50 text-emerald-700 border-emerald-100',
     in_progress: 'bg-purple-50 text-purple-700 border-purple-100',
-    completed:   'bg-slate-50 text-slate-700 border-slate-200',
-    cancelled:   'bg-red-50 text-red-700 border-red-100',
+    completed: 'bg-slate-50 text-slate-700 border-slate-200',
+    cancelled: 'bg-red-50 text-red-700 border-red-100',
   }
   return map[status] ?? 'bg-slate-50 text-slate-500 border-slate-200'
 }
 
 const hoy = computed(() => new Date().toISOString().slice(0, 10))
 
-// Solo citas de hoy (con time_slot o walk-in de hoy)
+// citas de hoy (robusto)
 const citasHoy = computed(() =>
   citas.value.filter(c => {
-    if (c.is_walk_in) return c.created_at?.slice(0, 10) === hoy.value
-    return c.time_slot?.date === hoy.value
+    const fechaCita =
+      c.is_walk_in
+        ? c.created_at
+        : c.time_slot?.date ?? c.created_at
+
+    if (!fechaCita) return false
+
+    return fechaCita.slice(0, 10) === hoy.value
   })
 )
 
@@ -50,18 +58,15 @@ const statsData = computed(() => [
     color: 'bg-[#1d6bbf]'
   },
   {
-    label: 'En Clínica',
-    val: citasHoy.value.filter(c => c.status === 'confirmed' || c.status === 'in_progress').length,
-    color: 'bg-emerald-500'
-  },
-  {
     label: 'Walk-ins Hoy',
-    val: citasHoy.value.filter(c => c.is_walk_in && c.status !== 'cancelled').length,
+    val: citasHoy.value.filter(c =>
+      c.is_walk_in && c.status !== 'cancelled'
+    ).length,
     color: 'bg-purple-500'
   },
   {
-    label: 'Pendientes',
-    val: citasHoy.value.filter(c => c.status === 'pending').length,
+    label: 'Pendientes (Global)',
+    val: citas.value.filter(c => c.status === 'pending').length,
     color: 'bg-amber-500'
   },
 ])
@@ -90,11 +95,10 @@ const horaEnVivo = computed(() =>
 )
 
 async function cargarDatos() {
-  cargando.value = true
   try {
     const { data, execute } = ApiUseFetch('appointments').get().json()
     await execute()
-    citas.value = data.value?.data as Appointment[] ?? []
+    citas.value = data.value?.data ?? []
   } catch (error) {
     console.error('Error al cargar citas:', error)
   } finally {
@@ -109,14 +113,33 @@ function entrarAlPanel() {
 
 onMounted(() => {
   if (!sessionStorage.getItem(WELCOME_KEY)) mostrarBienvenida.value = true
+
   relojTimer = setInterval(() => {
     ahora.value = new Date()
   }, 1000)
+
   cargarDatos()
+
+  // ESCUCHAR NOTIFICACIONES
+  if (auth.user?.id) {
+    echo.private(`App.Models.User.${auth.user.id}`)
+      .notification((notification: any) => {
+        console.log(' Notificación recibida:', notification)
+
+        //  IMPORTANTE: SOLO CUANDO SEA DE CITAS
+        if (
+          notification.type.includes('Appointment')
+        ) {
+          console.log('🔄 Actualizando dashboard...')
+          cargarDatos()
+        }
+      })
+  }
 })
 
 onUnmounted(() => {
   if (relojTimer) clearInterval(relojTimer)
+  echo.leave(`App.Models.User.${auth.user?.id}`)
 })
 </script>
 
@@ -141,23 +164,28 @@ onUnmounted(() => {
 
     <main class="p-8 max-w-[1600px] mx-auto space-y-8">
 
-      <!-- Header -->
+       <!-- Header -->
       <header>
-        <h1 class="text-3xl font-black text-slate-900 tracking-tighter">{{ horaActual }}, {{ auth.user?.name }}</h1>
+        <h1 class="text-3xl font-black text-slate-900 tracking-tighter">
+          {{ horaActual }}, {{ auth.user?.name }}
+        </h1>
         <p class="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
-          Panel de Recepción · {{ new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }) }}
+          Panel de Recepción ·
+          {{ new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }) }}
         </p>
       </header>
 
       <!-- Stats -->
-      <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <section class="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <div
           v-for="(item, key) in statsData"
           :key="key"
           class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden"
         >
           <div :class="`absolute top-0 left-0 w-1 h-full ${item.color}`"></div>
-          <p class="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1">{{ item.label }}</p>
+          <p class="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1">
+            {{ item.label }}
+          </p>
           <p class="text-3xl font-black text-slate-800 tracking-tighter">
             {{ cargando ? '...' : item.val }}
           </p>
@@ -343,7 +371,14 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
-.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-20px) scale(0.95); }
-main { font-family: 'Inter', system-ui, sans-serif; }
+.fade-enter-active, .fade-leave-active {
+  transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.95);
+}
+main {
+  font-family: 'Inter', system-ui, sans-serif;
+}
 </style>
