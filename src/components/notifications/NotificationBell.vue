@@ -16,6 +16,13 @@ async function deleteNotif(id: string) {
   await store.remove(id)
 }
 
+function formatTime(value?: string): string {
+  if (!value) return ''
+  const date = new Date(value.replace(' ', 'T'))
+  if (isNaN(date.getTime())) return ''
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
 function handleClickOutside(event: MouseEvent) {
   const target = event.target as HTMLElement
   if (!target.closest('.notif-wrapper')) close()
@@ -93,8 +100,9 @@ onBeforeUnmount(() => {
               <p class="text-[10px] font-medium text-slate-500 leading-tight">
                 {{ n.message }}
               </p>
+              <!-- ✅ Reemplazado: ya no lanza INVALID DATE -->
               <p class="text-[8px] font-bold text-slate-300 uppercase mt-1">
-               {{ new Date(n.created_at?.replace(' ', 'T')).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}
+                {{ formatTime(n.created_at) }}
               </p>
             </div>
 
