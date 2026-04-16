@@ -26,6 +26,7 @@ const form = ref({
 const formInicial = ref<string>('')
 const preview = ref<string | null>(null)
 const fotoArchivo = ref<File | null>(null)
+const eliminarFoto = ref(false)
 const inputFoto = ref<HTMLInputElement | null>(null)
 
 function seleccionarFoto(event: Event) {
@@ -33,7 +34,14 @@ function seleccionarFoto(event: Event) {
   const file = input.files?.[0]
   if (!file) return
   fotoArchivo.value = file
+  eliminarFoto.value = false
   preview.value = URL.createObjectURL(file)
+}
+
+function quitarFoto() {
+  preview.value = null
+  fotoArchivo.value = null
+  eliminarFoto.value = true
 }
 
 async function cargarMascota() {
@@ -79,7 +87,6 @@ function validar(): boolean {
   errores.value = {}
 
   if (!form.value.name.trim()) errores.value.name = 'El nombre es obligatorio.'
-
   if (!form.value.species.trim()) errores.value.species = 'La especie es obligatoria.'
 
   const años = Number(form.value.age || 0)
@@ -97,7 +104,7 @@ function validar(): boolean {
 }
 
 function huboCambios(): boolean {
-  if (fotoArchivo.value) return true
+  if (fotoArchivo.value || eliminarFoto.value) return true
   const totalMeses = Number(form.value.age || 0) * 12 + Number(form.value.age_months || 0)
   const actual = JSON.stringify({
     name: form.value.name,
@@ -118,9 +125,7 @@ async function guardar() {
 
   if (!huboCambios()) {
     mensaje.value = 'No se realizaron cambios.'
-    setTimeout(() => {
-      mensaje.value = ''
-    }, 3000)
+    setTimeout(() => { mensaje.value = '' }, 3000)
     return
   }
 
@@ -139,6 +144,7 @@ async function guardar() {
   formData.append('age', String(totalMeses))
   formData.append('weight', form.value.weight)
   if (fotoArchivo.value) formData.append('photo', fotoArchivo.value)
+  if (eliminarFoto.value) formData.append('remove_photo', '1')
 
   await fetch(`${import.meta.env.VITE_API_URL}/mis-mascotas/${props.id}`, {
     method: 'POST',
@@ -154,10 +160,7 @@ const inputClass =
   'w-full border rounded-lg px-3 py-2 text-sm text-[#1e3a5f] bg-slate-50 outline-none transition-[border-color,box-shadow] duration-150 focus:bg-white focus:shadow-[0_0_0_3px_rgba(29,107,191,0.1)] box-border'
 
 function ic(campo: string) {
-  return (
-    inputClass +
-    (errores.value[campo] ? ' border-red-400' : ' border-[#dce6f0] focus:border-[#1d6bbf]')
-  )
+  return inputClass + (errores.value[campo] ? ' border-red-400' : ' border-[#dce6f0] focus:border-[#1d6bbf]')
 }
 
 onMounted(cargarMascota)
@@ -165,22 +168,18 @@ onMounted(cargarMascota)
 
 <template>
   <div class="fixed inset-0 bg-black/45 flex items-center justify-center z-[9999]">
-    <div
-      class="bg-white rounded-2xl p-7 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-[0_8px_40px_rgba(0,0,0,0.18)]"
-    >
+    <div class="bg-white rounded-2xl p-7 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-[0_8px_40px_rgba(0,0,0,0.18)]">
       <h2 class="text-lg font-bold text-[#1e3a5f] mt-0 mb-5">Editar Mascota</h2>
 
       <p v-if="cargando" class="text-center text-slate-400 py-6">Cargando...</p>
 
       <template v-else>
-        <div
-          v-if="mensaje"
-          class="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded-xl px-4 py-3 mb-4"
-        >
+        <div v-if="mensaje" class="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded-xl px-4 py-3 mb-4">
           {{ mensaje }}
         </div>
 
         <div class="flex flex-col gap-3">
+
           <!-- Foto -->
           <div class="flex flex-col gap-1">
             <label class="text-xs font-semibold text-slate-500">Foto</label>
@@ -193,13 +192,15 @@ onMounted(cargarMascota)
                 <p class="text-xs m-0">Click para cambiar foto</p>
               </div>
             </div>
-            <input
-              ref="inputFoto"
-              type="file"
-              accept="image/*"
-              class="hidden"
-              @change="seleccionarFoto"
-            />
+            <input ref="inputFoto" type="file" accept="image/*" class="hidden" @change="seleccionarFoto" />
+            <button
+              v-if="preview"
+              type="button"
+              @click="quitarFoto"
+              class="text-xs text-red-400 hover:text-red-600 text-left mt-1 bg-transparent border-none cursor-pointer p-0"
+            >
+              Eliminar foto
+            </button>
           </div>
 
           <!-- Nombre -->
@@ -240,11 +241,7 @@ onMounted(cargarMascota)
           <!-- Marcas -->
           <div class="flex flex-col gap-1">
             <label class="text-xs font-semibold text-slate-500">Marcas especiales</label>
-            <input
-              v-model="form.special_marks"
-              placeholder="Marcas especiales"
-              :class="ic('special_marks')"
-            />
+            <input v-model="form.special_marks" placeholder="Marcas especiales" :class="ic('special_marks')" />
           </div>
 
           <!-- Edad -->
@@ -252,47 +249,25 @@ onMounted(cargarMascota)
             <label class="text-xs font-semibold text-slate-500">Edad</label>
             <div class="flex gap-2">
               <div class="flex-1 flex flex-col gap-1">
-                <input
-                  v-model="form.age"
-                  type="number"
-                  min="0"
-                  max="30"
-                  placeholder="0"
-                  :class="ic('age')"
-                />
+                <input v-model="form.age" type="number" min="0" max="30" placeholder="0" :class="ic('age')" />
                 <span class="text-[10px] text-slate-400 text-center">Años</span>
               </div>
               <div class="flex-1 flex flex-col gap-1">
-                <input
-                  v-model="form.age_months"
-                  type="number"
-                  min="0"
-                  max="11"
-                  placeholder="0"
-                  :class="ic('age_months')"
-                />
+                <input v-model="form.age_months" type="number" min="0" max="11" placeholder="0" :class="ic('age_months')" />
                 <span class="text-[10px] text-slate-400 text-center">Meses</span>
               </div>
             </div>
             <p v-if="errores.age" class="text-red-500 text-xs m-0">{{ errores.age }}</p>
-            <p v-if="errores.age_months" class="text-red-500 text-xs m-0">
-              {{ errores.age_months }}
-            </p>
+            <p v-if="errores.age_months" class="text-red-500 text-xs m-0">{{ errores.age_months }}</p>
           </div>
 
           <!-- Peso -->
           <div class="flex flex-col gap-1">
             <label class="text-xs font-semibold text-slate-500">Peso (kg)</label>
-            <input
-              v-model="form.weight"
-              type="number"
-              min="0"
-              max="500"
-              step="0.1"
-              :class="ic('weight')"
-            />
+            <input v-model="form.weight" type="number" min="0" max="500" step="0.1" :class="ic('weight')" />
             <p v-if="errores.weight" class="text-red-500 text-xs m-0">{{ errores.weight }}</p>
           </div>
+
         </div>
 
         <div class="flex gap-2.5 mt-5">
@@ -306,11 +281,7 @@ onMounted(cargarMascota)
             @click="guardar"
             :disabled="guardando"
             class="flex-1 font-semibold text-sm py-2.5 border-none rounded-xl cursor-pointer transition-colors duration-200"
-            :class="
-              guardando
-                ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                : 'bg-[#1d6bbf] hover:bg-[#155fa8] text-white'
-            "
+            :class="guardando ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-[#1d6bbf] hover:bg-[#155fa8] text-white'"
           >
             {{ guardando ? 'Guardando...' : 'Actualizar' }}
           </button>
