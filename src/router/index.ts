@@ -105,7 +105,12 @@ const router: Router = createRouter({
       component: RMascotaDetalle,
       meta: { requiresAuth: true, role: 2 },
     },
-
+    {
+      path: '/veterinario/dashboard',
+      name: 'veterinario.dashboard',
+      component: Agenda,
+      meta: { requiresAuth: true, role: 4 },
+    },
     {
       path: '/veterinario/agenda',
       name: 'VetAgenda',

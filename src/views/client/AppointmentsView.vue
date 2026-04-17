@@ -3,12 +3,14 @@ import { ref, onMounted, computed } from 'vue'
 import { ApiUseFetch } from '@/composables/ApiUseFetch'
 import ClienteCreateAppointment from '@/views/client/CreateAppointmentView.vue'
 
+// --- ESTADOS ---
 const citas = ref<any[]>([])
 const cargando = ref(false)
 const filtroEstado = ref('')
 const mensajeExito = ref('')
 const mostrarAgendar = ref(false)
 
+// Modales
 const mostrarConfirmCancelar = ref(false)
 const citaACancelar = ref<any | null>(null)
 const cancelando = ref(false)
@@ -22,6 +24,7 @@ const cargandoSlots = ref(false)
 const enviandoReagendar = ref(false)
 const errorReagendar = ref('')
 
+// --- LÓGICA ---
 const citasFiltradas = computed(() => {
   if (!filtroEstado.value) return citas.value
   return citas.value.filter((c: any) => c.status === filtroEstado.value)
@@ -29,7 +32,6 @@ const citasFiltradas = computed(() => {
 
 async function obtenerCitas() {
   cargando.value = true
-  citas.value = []
   const { data, execute } = ApiUseFetch('/appointments').get().json()
   await execute()
   citas.value = data.value?.data ?? []
@@ -42,11 +44,12 @@ function cambiarFiltro(estado: string) {
 
 function cerrarAgendar() {
   mostrarAgendar.value = false
-  mensajeExito.value = 'Cita agendada correctamente'
-  setTimeout(() => (mensajeExito.value = ''), 3000)
+  mensajeExito.value = '¡Cita agendada! Te esperamos.'
+  setTimeout(() => (mensajeExito.value = ''), 4000)
   obtenerCitas()
 }
 
+// Cancelar
 function confirmarCancelar(cita: any) {
   citaACancelar.value = cita
   mostrarConfirmCancelar.value = true
@@ -54,32 +57,24 @@ function confirmarCancelar(cita: any) {
 
 async function ejecutarCancelar() {
   if (!citaACancelar.value || cancelando.value) return
-
   cancelando.value = true
   try {
-    const { data, statusCode, execute } = ApiUseFetch(
-      `/cliente/appointments/${citaACancelar.value.id}`,
-    )
+    const { statusCode, execute } = ApiUseFetch(`/cliente/appointments/${citaACancelar.value.id}`)
       .delete()
       .json()
-
     await execute()
-
-    if (statusCode.value && statusCode.value >= 400) {
-      alert((data.value as any)?.message ?? 'Error al cancelar')
-      return
+    if (statusCode.value && statusCode.value < 400) {
+      mostrarConfirmCancelar.value = false
+      mensajeExito.value = 'Cita cancelada correctamente.'
+      setTimeout(() => (mensajeExito.value = ''), 3000)
+      obtenerCitas()
     }
-
-    mostrarConfirmCancelar.value = false
-    citaACancelar.value = null
-    mensajeExito.value = 'Cita cancelada'
-    setTimeout(() => (mensajeExito.value = ''), 3000)
-    obtenerCitas()
   } finally {
     cancelando.value = false
   }
 }
 
+// Reagendar
 function abrirReagendar(cita: any) {
   citaReagendar.value = cita
   fechaSeleccionada.value = ''
@@ -92,74 +87,43 @@ function abrirReagendar(cita: any) {
 async function cargarSlots() {
   if (!fechaSeleccionada.value) return
   cargandoSlots.value = true
-  slots.value = []
-  slotId.value = null
-
-  const fecha = fechaSeleccionada.value
-  const year = Number(fecha.slice(0, 4))
-  const month = Number(fecha.slice(5, 7))
-
+  const [year, month] = fechaSeleccionada.value.split('-')
   const { data, execute } = ApiUseFetch(`working-days?year=${year}&month=${month}`).get().json()
   await execute()
-
-  const days = Array.isArray(data.value) ? data.value : (data.value?.data ?? [])
-  const wd = days.find((d: any) => d.date === fecha)
-
-  if (!wd || !wd.is_open) {
-    cargandoSlots.value = false
-    return
-  }
-
-  slots.value = (wd.time_slots ?? []).filter((s: any) => s.status === 'available' && s.is_open)
+  const days = data.value?.data ?? data.value ?? []
+  const wd = days.find((d: any) => d.date === fechaSeleccionada.value)
+  slots.value = wd?.time_slots?.filter((s: any) => s.status === 'available' && s.is_open) ?? []
   cargandoSlots.value = false
 }
 
 async function ejecutarReagendar() {
-  if (enviandoReagendar.value) return
-
-  errorReagendar.value = ''
-
-  if (!slotId.value) {
-    errorReagendar.value = 'Selecciona un horario.'
-    return
-  }
-
+  if (enviandoReagendar.value || !slotId.value) return
   enviandoReagendar.value = true
-
   try {
-    const { data, statusCode, execute } = ApiUseFetch(
-      `/cliente/appointments/${citaReagendar.value.id}`,
-    )
+    const { statusCode, execute } = ApiUseFetch(`/cliente/appointments/${citaReagendar.value.id}`)
       .put({ time_slot_id: slotId.value })
       .json()
-
     await execute()
-
-    if (statusCode.value && statusCode.value >= 400) {
-      errorReagendar.value = (data.value as any)?.message ?? 'Error al reagendar.'
-      return
+    if (statusCode.value && statusCode.value < 400) {
+      mostrarReagendar.value = false
+      mensajeExito.value = 'Cita movida con éxito.'
+      obtenerCitas()
     }
-
-    mostrarReagendar.value = false
-    mensajeExito.value = 'Cita reagendada correctamente'
-    setTimeout(() => (mensajeExito.value = ''), 3000)
-    obtenerCitas()
-  } catch {
-    errorReagendar.value = 'Ocurrió un error inesperado.'
   } finally {
     enviandoReagendar.value = false
   }
 }
 
-function labelEstado(status: string) {
-  const map: Record<string, string> = {
-    pending: 'Pendiente',
-    confirmed: 'Confirmada',
-    in_progress: 'En progreso',
-    completed: 'Completada',
-    cancelled: 'Cancelada',
+// Helpers Visuales
+const configEstado = (status: string) => {
+  const map: Record<string, { label: string; color: string }> = {
+    pending: { label: 'Pendiente', color: 'bg-amber-100 text-amber-700' },
+    confirmed: { label: 'Confirmada', color: 'bg-blue-100 text-blue-700' },
+    in_progress: { label: 'En progreso', color: 'bg-purple-100 text-purple-700' },
+    completed: { label: 'Completada', color: 'bg-emerald-100 text-emerald-700' },
+    cancelled: { label: 'Cancelada', color: 'bg-red-100 text-red-600' },
   }
-  return map[status] ?? status
+  return map[status] ?? { label: status, color: 'bg-slate-100' }
 }
 
 const filtros = [
@@ -175,311 +139,334 @@ onMounted(obtenerCitas)
 </script>
 
 <template>
-  <div class="p-8">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
+  <div class="max-w-6xl mx-auto p-4 md:p-8">
+    <header class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
       <div>
-        <h1 class="text-xl font-semibold text-slate-800 m-0">Mis Citas</h1>
-        <p class="text-sm text-slate-400 mt-0.5 mb-0">Historial y gestión de tus citas</p>
+        <h1 class="text-3xl font-black text-slate-900 tracking-tight m-0 uppercase italic">
+          Mis Citas
+        </h1>
+        <p class="text-slate-500 font-medium">Gestiona el bienestar de tus consentidos.</p>
       </div>
       <button
         @click="mostrarAgendar = true"
-        class="bg-green-500 hover:bg-green-600 text-white text-sm px-4 py-2 border-none rounded-lg cursor-pointer transition-colors flex items-center gap-1.5"
+        class="bg-[#0056c2] hover:bg-[#004299] text-white font-bold px-6 py-3 rounded-2xl border-none cursor-pointer transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 active:scale-95"
       >
-        <svg
-          class="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.2"
-          viewBox="0 0 24 24"
-        >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
           <path d="M12 5v14M5 12h14" stroke-linecap="round" />
         </svg>
-        Agendar cita
+        NUEVA CITA
+      </button>
+    </header>
+
+    <Transition name="fade">
+      <div
+        v-if="mensajeExito"
+        class="mb-6 bg-emerald-500 text-white font-bold rounded-2xl px-6 py-4 shadow-lg flex items-center gap-3"
+      >
+        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+          />
+        </svg>
+        {{ mensajeExito }}
+      </div>
+    </Transition>
+
+    <div class="flex flex-wrap gap-2 mb-8">
+      <button
+        v-for="f in filtros"
+        :key="f.value"
+        @click="cambiarFiltro(f.value)"
+        :class="
+          filtroEstado === f.value
+            ? 'bg-slate-900 text-white shadow-md'
+            : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200'
+        "
+        class="px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer border-none italic"
+      >
+        {{ f.label }}
       </button>
     </div>
 
-    <!-- Éxito -->
-    <div
-      v-if="mensajeExito"
-      class="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-2.5 text-sm"
-    >
-      {{ mensajeExito }}
-    </div>
-
-    <!-- Card -->
-    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <!-- Filtros -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100">
-        <div class="flex flex-wrap gap-1.5">
-          <button
-            v-for="f in filtros"
-            :key="f.value"
-            @click="cambiarFiltro(f.value)"
-            :class="
-              filtroEstado === f.value
-                ? 'bg-[#1d6bbf] text-white'
-                : 'bg-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-            "
-            class="px-3 py-1.5 rounded-lg text-xs border-none transition-colors cursor-pointer"
-          >
-            {{ f.label }}
-          </button>
-        </div>
-        <span class="text-xs text-slate-400">{{ citasFiltradas.length }} registros</span>
-      </div>
-
-      <!-- Loading -->
-      <div v-if="cargando" class="flex justify-center py-14">
-        <div
-          class="animate-spin rounded-full h-6 w-6 border-2 border-slate-200 border-t-[#1d6bbf]"
-        ></div>
-      </div>
-
-      <!-- Empty -->
-      <p v-else-if="citasFiltradas.length === 0" class="text-center text-sm text-slate-400 py-12">
-        No hay citas registradas.
+    <div v-if="cargando" class="flex flex-col items-center justify-center py-20">
+      <div
+        class="animate-spin rounded-full h-10 w-10 border-4 border-slate-100 border-t-[#0056c2] mb-4"
+      ></div>
+      <p class="text-slate-400 font-bold uppercase text-[10px] tracking-widest">
+        Cargando agenda...
       </p>
-
-      <!-- Tabla -->
-      <table v-else class="w-full border-collapse">
-        <thead>
-          <tr class="border-b border-slate-100">
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Mascota</th>
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Servicio</th>
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Fecha</th>
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Hora</th>
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Estado</th>
-            <th class="text-xs text-slate-400 font-medium px-5 py-3"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="cita in citasFiltradas"
-            :key="cita.id"
-            class="border-b border-slate-50 last:border-none hover:bg-slate-50 transition-colors"
-          >
-            <td class="px-5 py-3 text-sm text-slate-800">{{ cita.pet?.name }}</td>
-            <td class="px-5 py-3">
-              <p class="text-xs text-slate-400 m-0">{{ cita.service?.name }}</p>
-              <p v-if="cita.is_walk_in" class="text-xs text-orange-500 m-0">Walk-in</p>
-            </td>
-
-            <td class="px-5 py-3 text-sm text-slate-500">
-              {{
-                cita.is_walk_in
-                  ? new Date(cita.created_at).toISOString().slice(0, 10)
-                  : (cita.time_slot?.date?.slice(0, 10) ?? '—')
-              }}
-            </td>
-            <td class="px-5 py-3 text-sm text-slate-500">
-              {{
-                cita.is_walk_in
-                  ? new Date(cita.created_at).toTimeString().slice(0, 5)
-                  : (cita.time_slot?.start_time?.slice(0, 5) ?? '—')
-              }}
-            </td>
-            <td class="px-5 py-3">
-              <span
-                class="text-xs px-2 py-1 rounded-md font-medium"
-                :class="{
-                  'bg-yellow-100 text-yellow-700': cita.status === 'pending',
-                  'bg-blue-100 text-blue-700': cita.status === 'confirmed',
-                  'bg-purple-100 text-purple-700': cita.status === 'in_progress',
-                  'bg-green-100 text-green-700': cita.status === 'completed',
-                  'bg-red-100 text-red-500': cita.status === 'cancelled',
-                }"
-                >{{ labelEstado(cita.status) }}</span
-              >
-            </td>
-            <td class="px-5 py-3">
-              <div class="flex items-center justify-end gap-1">
-                <!-- Reagendar -->
-                <button
-                  v-if="cita.status === 'pending' || cita.status === 'confirmed'"
-                  @click="abrirReagendar(cita)"
-                  title="Reagendar"
-                  class="p-1.5 rounded-md text-amber-600 bg-amber-50 border border-amber-200 hover:bg-amber-100 cursor-pointer transition-colors flex items-center justify-center"
-                >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path d="M3 3v5h5" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M12 7v5l4 2" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </button>
-                <!-- Cancelar -->
-                <button
-                  v-if="cita.status === 'pending' || cita.status === 'confirmed'"
-                  @click="confirmarCancelar(cita)"
-                  title="Cancelar"
-                  class="p-1.5 rounded-md text-red-500 bg-red-50 border border-red-200 hover:bg-red-100 cursor-pointer transition-colors flex items-center justify-center"
-                >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M15 9l-6 6M9 9l6 6" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
     </div>
-  </div>
 
-  <ClienteCreateAppointment
-    v-if="mostrarAgendar"
-    @cerrar="mostrarAgendar = false"
-    @guardado="cerrarAgendar"
-  />
+    <div
+      v-else-if="citasFiltradas.length === 0"
+      class="bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem] p-20 text-center"
+    >
+      <p class="text-slate-400 font-bold italic">No encontramos ninguna cita con este filtro.</p>
+    </div>
 
-  <Teleport to="body">
-    <Transition name="modal">
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div
-        v-if="mostrarConfirmCancelar"
-        class="fixed inset-0 flex items-center justify-center z-50"
-        style="background: rgba(0, 0, 0, 0.25)"
-        @click.self="mostrarConfirmCancelar = false"
+        v-for="cita in citasFiltradas"
+        :key="cita.id"
+        class="bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group border-none"
       >
-        <div class="bg-white rounded-xl border border-slate-200 p-6 max-w-xs w-11/12">
-          <p class="text-sm font-semibold text-slate-800 m-0 mb-1">¿Cancelar esta cita?</p>
-          <p class="text-sm text-slate-400 m-0 mb-5 leading-relaxed">
-            Se cancelará la cita de
-            <span class="text-slate-600">{{ citaACancelar?.pet?.name }}</span>
-            — <span class="text-slate-600">{{ citaACancelar?.service?.name }}</span
-            >.
-          </p>
-          <div class="flex gap-2 justify-end">
-            <button
-              @click="mostrarConfirmCancelar = false"
-              class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 bg-transparent text-slate-500 cursor-pointer hover:bg-slate-50 transition-colors"
+        <div class="p-6">
+          <div class="flex items-center gap-4 mb-6">
+            <div
+              class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-[#0056c2] font-black text-xl shadow-inner"
             >
-              Volver
-            </button>
-            <button
-              @click="ejecutarCancelar"
-              class="text-sm px-3 py-1.5 rounded-lg border-none bg-red-500 text-white cursor-pointer hover:bg-red-600 transition-colors"
-            >
-              Sí, cancelar
-            </button>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
-
-  <Teleport to="body">
-    <Transition name="modal">
-      <div
-        v-if="mostrarReagendar"
-        class="fixed inset-0 flex items-center justify-center z-50"
-        style="background: rgba(0, 0, 0, 0.25)"
-        @click.self="mostrarReagendar = false"
-      >
-        <div class="bg-white rounded-xl border border-slate-200 p-6 max-w-sm w-11/12">
-          <div class="flex items-center justify-between mb-4">
-            <p class="text-sm font-semibold text-slate-800 m-0">Reagendar cita</p>
-            <button
-              @click="mostrarReagendar = false"
-              class="text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer text-lg leading-none"
-            >
-              ✕
-            </button>
-          </div>
-
-          <p class="text-xs text-slate-400 mb-4">
-            {{ citaReagendar?.pet?.name }} · {{ citaReagendar?.service?.name }}
-          </p>
-
-          <div class="flex flex-col gap-1 mb-3">
-            <label class="text-xs text-slate-500">Nueva fecha</label>
-            <input
-              type="date"
-              v-model="fechaSeleccionada"
-              @change="cargarSlots"
-              :min="new Date(Date.now() + 86400000).toISOString().slice(0, 10)"
-              class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-slate-400 transition-colors"
-            />
-          </div>
-
-          <!-- Slots -->
-          <div v-if="fechaSeleccionada" class="mb-4">
-            <label class="text-xs text-slate-500 block mb-2">Horario disponible</label>
-            <div v-if="cargandoSlots" class="text-xs text-slate-400">Cargando horarios...</div>
-            <div v-else-if="slots.length === 0" class="text-xs text-slate-400">
-              No hay horarios disponibles para esta fecha.
+              {{ cita.pet?.name?.charAt(0) }}
             </div>
-            <div v-else class="flex flex-wrap gap-2">
-              <button
-                v-for="slot in slots"
-                :key="slot.id"
-                @click="slotId = slot.id"
-                :class="
-                  slotId === slot.id
-                    ? 'bg-slate-800 text-white border-slate-800'
-                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
-                "
-                class="border rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer"
+            <div>
+              <h3 class="m-0 text-slate-900 font-black italic uppercase tracking-tight">
+                {{ cita.pet?.name }}
+              </h3>
+              <p class="m-0 text-xs font-bold text-[#0056c2] opacity-70 uppercase tracking-widest">
+                {{ cita.service?.name }}
+              </p>
+            </div>
+          </div>
+
+          <div class="space-y-3 mb-6">
+            <div class="flex items-center gap-3 text-slate-600 bg-slate-50 p-3 rounded-xl">
+              <svg
+                class="w-5 h-5 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                {{ slot.start_time.slice(0, 5) }}
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <span class="text-sm font-bold">
+                {{ cita.is_walk_in ? 'Hoy' : (cita.time_slot?.date?.slice(0, 10) ?? '—') }}
+              </span>
+            </div>
+            <div class="flex items-center gap-3 text-slate-600 bg-slate-50 p-3 rounded-xl">
+              <svg
+                class="w-5 h-5 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span class="text-sm font-bold">
+                {{
+                  cita.is_walk_in ? 'Inmediato' : (cita.time_slot?.start_time?.slice(0, 5) ?? '—')
+                }}
+              </span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between mt-auto pt-4 border-t border-slate-50">
+            <span
+              :class="configEstado(cita.status).color"
+              class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest italic"
+            >
+              {{ configEstado(cita.status).label }}
+            </span>
+
+            <div v-if="['pending', 'confirmed'].includes(cita.status)" class="flex gap-2">
+              <button
+                @click="abrirReagendar(cita)"
+                title="Mover fecha"
+                class="p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-[#0056c2] hover:text-white transition-all border-none cursor-pointer"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              </button>
+              <button
+                @click="confirmarCancelar(cita)"
+                title="Cancelar"
+                class="p-2 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all border-none cursor-pointer"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
           </div>
-
-          <!-- Error -->
-          <div
-            v-if="errorReagendar"
-            class="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3"
-          >
-            {{ errorReagendar }}
-          </div>
-
-          <div class="flex gap-2">
-            <button
-              @click="mostrarReagendar = false"
-              class="flex-1 border border-slate-200 text-slate-600 text-sm py-2 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors bg-transparent"
-            >
-              Cancelar
-            </button>
-            <button
-              @click="ejecutarReagendar"
-              :disabled="enviandoReagendar || !slotId"
-              class="flex-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white text-sm py-2 rounded-lg cursor-pointer border-none transition-colors"
-            >
-              {{ enviandoReagendar ? 'Guardando...' : 'Confirmar' }}
-            </button>
-          </div>
         </div>
       </div>
-    </Transition>
-  </Teleport>
+    </div>
+
+    <ClienteCreateAppointment
+      v-if="mostrarAgendar"
+      @cerrar="mostrarAgendar = false"
+      @guardado="cerrarAgendar"
+    />
+
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="mostrarConfirmCancelar"
+          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+        >
+          <div class="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl">
+            <div
+              class="w-16 h-16 bg-red-100 text-red-500 rounded-3xl flex items-center justify-center mb-6"
+            >
+              <svg
+                class="w-8 h-8"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+            <h3 class="text-xl font-black italic uppercase m-0 mb-2">
+              ¿Seguro que quieres cancelar?
+            </h3>
+            <p class="text-slate-500 mb-8 font-medium">
+              La cita para <b>{{ citaACancelar?.pet?.name }}</b> será eliminada del calendario.
+            </p>
+            <div class="flex gap-3">
+              <button
+                @click="mostrarConfirmCancelar = false"
+                class="flex-1 px-6 py-4 rounded-2xl font-bold bg-slate-100 text-slate-600 border-none cursor-pointer hover:bg-slate-200 transition-colors"
+              >
+                Volver
+              </button>
+              <button
+                @click="ejecutarCancelar"
+                class="flex-1 px-6 py-4 rounded-2xl font-bold bg-red-500 text-white border-none cursor-pointer hover:bg-red-600 transition-colors shadow-lg shadow-red-200"
+              >
+                Sí, cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+
+      <Transition name="modal">
+        <div
+          v-if="mostrarReagendar"
+          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+        >
+          <div class="bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-xl font-black italic uppercase m-0">Cambiar fecha</h3>
+              <button
+                @click="mostrarReagendar = false"
+                class="bg-transparent border-none text-slate-300 hover:text-slate-900 cursor-pointer text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div class="space-y-6">
+              <div class="flex flex-col gap-2">
+                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400"
+                  >Selecciona el día</label
+                >
+                <input
+                  type="date"
+                  v-model="fechaSeleccionada"
+                  @change="cargarSlots"
+                  :min="new Date().toISOString().split('T')[0]"
+                  class="p-4 rounded-2xl border-2 border-slate-100 font-bold outline-none focus:border-[#0056c2] transition-all bg-slate-50"
+                />
+              </div>
+
+              <div v-if="fechaSeleccionada">
+                <label
+                  class="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-3"
+                  >Horarios disponibles</label
+                >
+                <div v-if="cargandoSlots" class="animate-pulse flex gap-2">
+                  <div v-for="i in 3" :key="i" class="h-10 w-20 bg-slate-100 rounded-xl"></div>
+                </div>
+                <div v-else-if="slots.length === 0" class="text-amber-600 font-bold italic text-sm">
+                  No hay espacios para este día.
+                </div>
+                <div v-else class="flex flex-wrap gap-2">
+                  <button
+                    v-for="slot in slots"
+                    :key="slot.id"
+                    @click="slotId = slot.id"
+                    :class="
+                      slotId === slot.id
+                        ? 'bg-[#0056c2] text-white'
+                        : 'bg-white border-2 border-slate-100 text-slate-600 hover:border-slate-300'
+                    "
+                    class="px-4 py-2 rounded-xl text-xs font-black border-none cursor-pointer transition-all italic"
+                  >
+                    {{ slot.start_time.slice(0, 5) }}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                @click="ejecutarReagendar"
+                :disabled="!slotId || enviandoReagendar"
+                class="w-full py-4 rounded-2xl font-black bg-[#0056c2] text-white border-none cursor-pointer disabled:opacity-30 shadow-xl shadow-blue-100 hover:bg-[#004299] transition-all"
+              >
+                {{ enviandoReagendar ? 'GUARDANDO...' : 'CONFIRMAR CAMBIO' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+  </div>
 </template>
 
 <style scoped>
-.modal-enter-active {
-  transition: opacity 0.15s ease;
+/* Transiciones */
+.fade-enter-active,
+.fade-leave-active {
+  transition:
+    opacity 0.5s,
+    transform 0.5s;
 }
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.modal-enter-active,
 .modal-leave-active {
-  transition: opacity 0.1s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .modal-enter-from,
 .modal-leave-to {
   opacity: 0;
+  transform: scale(0.9) translateY(20px);
+}
+
+/* Personalización del input date */
+input[type='date']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.5);
 }
 </style>

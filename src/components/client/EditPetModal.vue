@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
+import { getStorageUrl } from '@/utils/storageUrl'
 
 const props = defineProps<{ id: number }>()
 const emit = defineEmits<{ cerrar: []; guardado: [] }>()
@@ -23,7 +24,6 @@ const form = ref({
   weight: '',
 })
 
-const formInicial = ref<string>('')
 const preview = ref<string | null>(null)
 const fotoArchivo = ref<File | null>(null)
 const eliminarFoto = ref(false)
@@ -45,94 +45,64 @@ function quitarFoto() {
 }
 
 async function cargarMascota() {
-  const response = await fetch(`${import.meta.env.VITE_API_URL}/mis-mascotas/${props.id}`, {
-    headers: { Authorization: `Bearer ${authStore.token}`, Accept: 'application/json' },
-  })
-  const json = await response.json()
-  const d = json.data
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/mis-mascotas/${props.id}`, {
+      headers: { Authorization: `Bearer ${authStore.token}`, Accept: 'application/json' },
+    })
+    const json = await response.json()
+    const d = json.data
 
-  const totalMeses = Number(d.age ?? 0)
-  const años = Math.floor(totalMeses / 12)
-  const meses = totalMeses % 12
+    const totalMeses = Number(d.age ?? 0)
+    const años = Math.floor(totalMeses / 12)
+    const meses = totalMeses % 12
 
-  form.value = {
-    name: d.name ?? '',
-    species: d.species ?? '',
-    sex: d.sex ?? 'male',
-    breed: d.breed ?? '',
-    color: d.color ?? '',
-    special_marks: d.special_marks ?? '',
-    age: String(años),
-    age_months: String(meses),
-    weight: String(d.weight ?? ''),
+    form.value = {
+      name: d.name ?? '',
+      species: d.species ?? '',
+      sex: d.sex ?? 'male',
+      breed: d.breed ?? '',
+      color: d.color ?? '',
+      special_marks: d.special_marks ?? '',
+      age: String(años),
+      age_months: String(meses),
+      weight: String(d.weight ?? ''),
+    }
+    preview.value = getStorageUrl(d.photo_url) ?? null
+  } catch {
+    mensaje.value = 'Error al obtener datos.'
+  } finally {
+    cargando.value = false
   }
-
-  preview.value = d.photo_url ?? null
-
-  formInicial.value = JSON.stringify({
-    name: d.name,
-    species: d.species,
-    sex: d.sex,
-    breed: d.breed,
-    color: d.color,
-    special_marks: d.special_marks,
-    age: totalMeses,
-    weight: d.weight,
-  })
-
-  cargando.value = false
 }
 
 function validar(): boolean {
   errores.value = {}
 
-  if (!form.value.name.trim()) errores.value.name = 'El nombre es obligatorio.'
-  if (!form.value.species.trim()) errores.value.species = 'La especie es obligatoria.'
+  if (!form.value.name.trim()) errores.value.name = 'Nombre requerido'
+  if (!form.value.species.trim()) errores.value.species = 'Especie requerida'
 
   const años = Number(form.value.age || 0)
   const meses = Number(form.value.age_months || 0)
   const total = años * 12 + meses
 
-  if (años < 0 || años > 30) errores.value.age = 'Los años deben ser entre 0 y 30.'
-  if (meses < 0 || meses > 11) errores.value.age_months = 'Los meses deben ser entre 0 y 11.'
-  if (total > 360) errores.value.age = 'La edad máxima es 30 años.'
+  if (años < 0 || años > 40) errores.value.age = 'Edad inválida (0-40 años)'
+  if (meses < 0 || meses > 11) errores.value.age_months = 'Meses inválidos (0-11)'
+  if (total > 480) errores.value.age = 'Edad máxima 40 años'
 
   const peso = Number(form.value.weight || 0)
-  if (peso < 0 || peso > 500) errores.value.weight = 'El peso debe ser entre 0 y 500 kg.'
+  if (peso < 0) errores.value.weight = 'El peso no puede ser negativo.'
+  else if (peso > 900) errores.value.weight = 'Peso máximo 900 kg.'
 
   return Object.keys(errores.value).length === 0
-}
-
-function huboCambios(): boolean {
-  if (fotoArchivo.value || eliminarFoto.value) return true
-  const totalMeses = Number(form.value.age || 0) * 12 + Number(form.value.age_months || 0)
-  const actual = JSON.stringify({
-    name: form.value.name,
-    species: form.value.species,
-    sex: form.value.sex,
-    breed: form.value.breed,
-    color: form.value.color,
-    special_marks: form.value.special_marks,
-    age: totalMeses,
-    weight: form.value.weight,
-  })
-  return actual !== formInicial.value
 }
 
 async function guardar() {
   if (guardando.value) return
   if (!validar()) return
 
-  if (!huboCambios()) {
-    mensaje.value = 'No se realizaron cambios.'
-    setTimeout(() => { mensaje.value = '' }, 3000)
-    return
-  }
-
   guardando.value = true
 
   const totalMeses = Number(form.value.age || 0) * 12 + Number(form.value.age_months || 0)
-
   const formData = new FormData()
   formData.append('_method', 'PUT')
   formData.append('name', form.value.name)
@@ -146,147 +116,277 @@ async function guardar() {
   if (fotoArchivo.value) formData.append('photo', fotoArchivo.value)
   if (eliminarFoto.value) formData.append('remove_photo', '1')
 
-  await fetch(`${import.meta.env.VITE_API_URL}/mis-mascotas/${props.id}`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${authStore.token}`, Accept: 'application/json' },
-    body: formData,
-  })
-
-  guardando.value = false
-  emit('cerrar')
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/mis-mascotas/${props.id}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${authStore.token}`, Accept: 'application/json' },
+      body: formData,
+    })
+    if (!res.ok) throw new Error()
+    emit('guardado')
+    emit('cerrar')
+  } catch {
+    mensaje.value = 'Error al intentar actualizar los datos.'
+  } finally {
+    guardando.value = false
+  }
 }
 
-const inputClass =
-  'w-full border rounded-lg px-3 py-2 text-sm text-[#1e3a5f] bg-slate-50 outline-none transition-[border-color,box-shadow] duration-150 focus:bg-white focus:shadow-[0_0_0_3px_rgba(29,107,191,0.1)] box-border'
+const labelClass = 'text-[9px] font-black uppercase tracking-[0.15em] text-slate-500 mb-2 italic'
+const inputBase =
+  'w-full bg-[#f8fafc] border border-slate-200 rounded-[1.2rem] px-4 py-3 text-[11px] font-bold text-slate-700 outline-none transition-all duration-300 italic'
 
-function ic(campo: string) {
-  return inputClass + (errores.value[campo] ? ' border-red-400' : ' border-[#dce6f0] focus:border-[#1d6bbf]')
+function getIc(campo: string) {
+  return `${inputBase} ${errores.value[campo] ? 'border-red-400 ring-4 ring-red-500/5' : 'focus:border-[#3f98ff] focus:ring-4 focus:ring-[#3f98ff]/10'}`
 }
 
 onMounted(cargarMascota)
 </script>
 
 <template>
-  <div class="fixed inset-0 bg-black/45 flex items-center justify-center z-[9999]">
-    <div class="bg-white rounded-2xl p-7 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-[0_8px_40px_rgba(0,0,0,0.18)]">
-      <h2 class="text-lg font-bold text-[#1e3a5f] mt-0 mb-5">Editar Mascota</h2>
+  <div
+    class="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-[9999] p-4 selection:bg-blue-100"
+  >
+    <div
+      class="bg-white rounded-[2.5rem] w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col border border-white/20"
+    >
+      <div
+        class="px-10 py-8 border-b border-slate-100 flex justify-between items-center bg-[#f8fafc]"
+      >
+        <div>
+          <h2
+            class="text-[#3f98ff] text-xl font-black italic uppercase tracking-tighter leading-none"
+          >
+            Expediente
+          </h2>
+          <p class="text-slate-400 text-[8px] font-bold uppercase tracking-[0.2em] mt-1">
+            Edición de paciente v2.0
+          </p>
+        </div>
+        <button
+          @click="$emit('cerrar')"
+          class="w-10 h-10 rounded-full bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-red-500 transition-all shadow-sm"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M6 18L18 6M6 6l12 12" stroke-width="3" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
 
-      <p v-if="cargando" class="text-center text-slate-400 py-6">Cargando...</p>
-
-      <template v-else>
-        <div v-if="mensaje" class="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded-xl px-4 py-3 mb-4">
-          {{ mensaje }}
+      <div class="flex-1 overflow-y-auto px-10 py-8 no-scrollbar">
+        <div v-if="cargando" class="flex flex-col items-center justify-center py-12">
+          <div
+            class="w-8 h-8 border-4 border-[#3f98ff] border-t-transparent rounded-full animate-spin"
+          ></div>
         </div>
 
-        <div class="flex flex-col gap-3">
+        <template v-else>
+          <div
+            v-if="mensaje"
+            class="bg-red-50 text-red-500 text-[9px] font-black uppercase tracking-widest rounded-2xl px-4 py-3 mb-6 border border-red-100 italic"
+          >
+            {{ mensaje }}
+          </div>
 
-          <!-- Foto -->
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-slate-500">Foto</label>
-            <div
-              @click="inputFoto?.click()"
-              class="w-full h-36 border-2 border-dashed border-[#dce6f0] rounded-xl cursor-pointer overflow-hidden flex items-center justify-center bg-slate-50 hover:border-[#1d6bbf] transition-colors"
-            >
-              <img v-if="preview" :src="preview" class="w-full h-full object-cover" />
-              <div v-else class="flex flex-col items-center gap-1.5 text-slate-400">
-                <p class="text-xs m-0">Click para cambiar foto</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="space-y-6">
+              <div class="flex flex-col">
+                <label :class="labelClass">Fotografía Actual</label>
+                <div
+                  @click="inputFoto?.click()"
+                  class="relative aspect-square w-full rounded-[2rem] bg-[#f8fafc] border-2 border-dashed border-slate-200 overflow-hidden cursor-pointer group hover:border-[#3f98ff] transition-all"
+                >
+                  <img
+                    v-if="preview"
+                    :src="preview"
+                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div
+                    v-else
+                    class="flex flex-col items-center justify-center h-full text-slate-400"
+                  >
+                    <span class="text-[8px] font-black uppercase tracking-widest italic"
+                      >Subir Imagen</span
+                    >
+                  </div>
+                </div>
+                <input
+                  ref="inputFoto"
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  @change="seleccionarFoto"
+                />
+                <button
+                  v-if="preview"
+                  @click.stop="quitarFoto"
+                  class="mt-3 text-[8px] font-black text-red-400 uppercase tracking-widest hover:text-red-600 transition-colors italic self-start px-2"
+                >
+                  [ Eliminar Foto ]
+                </button>
+              </div>
+
+              <div class="flex flex-col">
+                <label :class="labelClass">Nombre del Paciente</label>
+                <input v-model="form.name" placeholder="EJ. ROCKY" :class="getIc('name')" />
+                <p
+                  v-if="errores.name"
+                  class="text-red-500 text-[9px] font-black uppercase italic mt-1"
+                >
+                  {{ errores.name }}
+                </p>
               </div>
             </div>
-            <input ref="inputFoto" type="file" accept="image/*" class="hidden" @change="seleccionarFoto" />
-            <button
-              v-if="preview"
-              type="button"
-              @click="quitarFoto"
-              class="text-xs text-red-400 hover:text-red-600 text-left mt-1 bg-transparent border-none cursor-pointer p-0"
-            >
-              Eliminar foto
-            </button>
-          </div>
 
-          <!-- Nombre -->
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-slate-500">Nombre *</label>
-            <input v-model="form.name" placeholder="Nombre" :class="ic('name')" />
-            <p v-if="errores.name" class="text-red-500 text-xs m-0">{{ errores.name }}</p>
-          </div>
-
-          <!-- Especie -->
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-slate-500">Especie *</label>
-            <input v-model="form.species" placeholder="Especie" :class="ic('species')" />
-            <p v-if="errores.species" class="text-red-500 text-xs m-0">{{ errores.species }}</p>
-          </div>
-
-          <!-- Sexo -->
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-slate-500">Sexo *</label>
-            <select v-model="form.sex" :class="ic('sex')">
-              <option value="male">♂ Macho</option>
-              <option value="female">♀ Hembra</option>
-            </select>
-          </div>
-
-          <!-- Raza -->
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-slate-500">Raza</label>
-            <input v-model="form.breed" placeholder="Raza" :class="ic('breed')" />
-          </div>
-
-          <!-- Color -->
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-slate-500">Color</label>
-            <input v-model="form.color" placeholder="Color" :class="ic('color')" />
-          </div>
-
-          <!-- Marcas -->
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-slate-500">Marcas especiales</label>
-            <input v-model="form.special_marks" placeholder="Marcas especiales" :class="ic('special_marks')" />
-          </div>
-
-          <!-- Edad -->
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-slate-500">Edad</label>
-            <div class="flex gap-2">
-              <div class="flex-1 flex flex-col gap-1">
-                <input v-model="form.age" type="number" min="0" max="30" placeholder="0" :class="ic('age')" />
-                <span class="text-[10px] text-slate-400 text-center">Años</span>
+            <div class="space-y-6">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="flex flex-col">
+                  <label :class="labelClass">Especie</label>
+                  <input
+                    v-model="form.species"
+                    list="especies-list"
+                    placeholder="BUSCAR..."
+                    :class="getIc('species')"
+                  />
+                  <datalist id="especies-list">
+                    <option value="Perro">Doméstica</option>
+                    <option value="Gato">Doméstica</option>
+                    <option value="Caballo">Granja</option>
+                    <option value="Vaca">Granja</option>
+                  </datalist>
+                  <p
+                    v-if="errores.species"
+                    class="text-red-500 text-[9px] font-black uppercase italic mt-1"
+                  >
+                    {{ errores.species }}
+                  </p>
+                </div>
+                <div class="flex flex-col">
+                  <label :class="labelClass">Sexo</label>
+                  <select v-model="form.sex" :class="getIc('sex')">
+                    <option value="male">MACHO</option>
+                    <option value="female">HEMBRA</option>
+                  </select>
+                </div>
               </div>
-              <div class="flex-1 flex flex-col gap-1">
-                <input v-model="form.age_months" type="number" min="0" max="11" placeholder="0" :class="ic('age_months')" />
-                <span class="text-[10px] text-slate-400 text-center">Meses</span>
+
+              <div class="flex flex-col">
+                <label :class="labelClass">Raza / Variedad</label>
+                <input
+                  v-model="form.breed"
+                  placeholder="EJ. PASTOR ALEMÁN"
+                  :class="getIc('breed')"
+                />
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div class="flex flex-col">
+                  <label :class="labelClass">Color</label>
+                  <input v-model="form.color" placeholder="EJ. MIEL" :class="getIc('color')" />
+                </div>
+                <div class="flex flex-col">
+                  <label :class="labelClass">Peso (KG)</label>
+                  <input
+                    v-model="form.weight"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="900"
+                    :class="getIc('weight')"
+                  />
+                  <p
+                    v-if="errores.weight"
+                    class="text-red-500 text-[9px] font-black uppercase italic mt-1"
+                  >
+                    {{ errores.weight }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex flex-col">
+                <label :class="labelClass">Edad Estimada</label>
+                <div class="flex gap-3">
+                  <div class="relative flex-1">
+                    <input
+                      v-model="form.age"
+                      type="number"
+                      min="0"
+                      max="40"
+                      :class="getIc('age') + ' text-center'"
+                    />
+                    <span
+                      class="absolute -bottom-4 left-0 w-full text-center text-[7px] font-black text-slate-400 uppercase italic"
+                      >Años</span
+                    >
+                  </div>
+                  <div class="relative flex-1">
+                    <input
+                      v-model="form.age_months"
+                      type="number"
+                      min="0"
+                      max="11"
+                      :class="getIc('age_months') + ' text-center'"
+                    />
+                    <span
+                      class="absolute -bottom-4 left-0 w-full text-center text-[7px] font-black text-slate-400 uppercase italic"
+                      >Meses</span
+                    >
+                  </div>
+                </div>
+                <p
+                  v-if="errores.age || errores.age_months"
+                  class="text-red-500 text-[9px] font-black uppercase italic mt-5 text-center"
+                >
+                  {{ errores.age || errores.age_months }}
+                </p>
+              </div>
+
+              <div class="flex flex-col pt-2">
+                <label :class="labelClass">Señas Particulares</label>
+                <textarea
+                  v-model="form.special_marks"
+                  rows="2"
+                  :class="getIc('special_marks') + ' resize-none'"
+                  placeholder="NOTAS ADICIONALES..."
+                ></textarea>
               </div>
             </div>
-            <p v-if="errores.age" class="text-red-500 text-xs m-0">{{ errores.age }}</p>
-            <p v-if="errores.age_months" class="text-red-500 text-xs m-0">{{ errores.age_months }}</p>
           </div>
+        </template>
+      </div>
 
-          <!-- Peso -->
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-slate-500">Peso (kg)</label>
-            <input v-model="form.weight" type="number" min="0" max="500" step="0.1" :class="ic('weight')" />
-            <p v-if="errores.weight" class="text-red-500 text-xs m-0">{{ errores.weight }}</p>
-          </div>
-
-        </div>
-
-        <div class="flex gap-2.5 mt-5">
-          <button
-            @click="$emit('cerrar')"
-            class="flex-1 bg-[#e8f0fa] hover:bg-blue-100 text-[#1d6bbf] font-semibold text-sm py-2.5 border-none rounded-xl cursor-pointer transition-colors duration-200"
-          >
-            Cancelar
-          </button>
-          <button
-            @click="guardar"
-            :disabled="guardando"
-            class="flex-1 font-semibold text-sm py-2.5 border-none rounded-xl cursor-pointer transition-colors duration-200"
-            :class="guardando ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-[#1d6bbf] hover:bg-[#155fa8] text-white'"
-          >
-            {{ guardando ? 'Guardando...' : 'Actualizar' }}
-          </button>
-        </div>
-      </template>
+      <div class="p-10 border-t border-slate-100 bg-[#f8fafc] flex gap-4">
+        <button
+          @click="$emit('cerrar')"
+          class="flex-1 py-4 rounded-[1.5rem] text-slate-400 font-black uppercase text-[10px] tracking-[0.15em] hover:bg-slate-200/50 transition-all italic"
+        >
+          Cancelar
+        </button>
+        <button
+          @click="guardar"
+          :disabled="guardando"
+          class="flex-[2] py-4 rounded-[1.5rem] bg-[#3f98ff] text-white font-black uppercase text-[10px] tracking-[0.15em] shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all italic disabled:opacity-50"
+        >
+          {{ guardando ? 'Procesando...' : 'Actualizar Expediente' }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+input::placeholder,
+textarea::placeholder {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 9px;
+  opacity: 0.6;
+}
+</style>
