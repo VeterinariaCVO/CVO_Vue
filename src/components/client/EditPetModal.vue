@@ -29,7 +29,6 @@ const fotoArchivo = ref<File | null>(null)
 const eliminarFoto = ref(false)
 const inputFoto = ref<HTMLInputElement | null>(null)
 
-// --- Lógica de Negocio ---
 function seleccionarFoto(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -76,8 +75,31 @@ async function cargarMascota() {
   }
 }
 
+function validar(): boolean {
+  errores.value = {}
+
+  if (!form.value.name.trim()) errores.value.name = 'Nombre requerido'
+  if (!form.value.species.trim()) errores.value.species = 'Especie requerida'
+
+  const años = Number(form.value.age || 0)
+  const meses = Number(form.value.age_months || 0)
+  const total = años * 12 + meses
+
+  if (años < 0 || años > 40) errores.value.age = 'Edad inválida (0-40 años)'
+  if (meses < 0 || meses > 11) errores.value.age_months = 'Meses inválidos (0-11)'
+  if (total > 480) errores.value.age = 'Edad máxima 40 años'
+
+  const peso = Number(form.value.weight || 0)
+  if (peso < 0) errores.value.weight = 'El peso no puede ser negativo.'
+  else if (peso > 900) errores.value.weight = 'Peso máximo 900 kg.'
+
+  return Object.keys(errores.value).length === 0
+}
+
 async function guardar() {
   if (guardando.value) return
+  if (!validar()) return
+
   guardando.value = true
 
   const totalMeses = Number(form.value.age || 0) * 12 + Number(form.value.age_months || 0)
@@ -110,7 +132,6 @@ async function guardar() {
   }
 }
 
-// Estilos basados en tu Sidebar
 const labelClass = 'text-[9px] font-black uppercase tracking-[0.15em] text-slate-500 mb-2 italic'
 const inputBase =
   'w-full bg-[#f8fafc] border border-slate-200 rounded-[1.2rem] px-4 py-3 text-[11px] font-bold text-slate-700 outline-none transition-all duration-300 italic'
@@ -198,7 +219,7 @@ onMounted(cargarMascota)
                 />
                 <button
                   v-if="preview"
-                  @click="quitarFoto"
+                  @click.stop="quitarFoto"
                   class="mt-3 text-[8px] font-black text-red-400 uppercase tracking-widest hover:text-red-600 transition-colors italic self-start px-2"
                 >
                   [ Eliminar Foto ]
@@ -208,6 +229,12 @@ onMounted(cargarMascota)
               <div class="flex flex-col">
                 <label :class="labelClass">Nombre del Paciente</label>
                 <input v-model="form.name" placeholder="EJ. ROCKY" :class="getIc('name')" />
+                <p
+                  v-if="errores.name"
+                  class="text-red-500 text-[9px] font-black uppercase italic mt-1"
+                >
+                  {{ errores.name }}
+                </p>
               </div>
             </div>
 
@@ -227,6 +254,12 @@ onMounted(cargarMascota)
                     <option value="Caballo">Granja</option>
                     <option value="Vaca">Granja</option>
                   </datalist>
+                  <p
+                    v-if="errores.species"
+                    class="text-red-500 text-[9px] font-black uppercase italic mt-1"
+                  >
+                    {{ errores.species }}
+                  </p>
                 </div>
                 <div class="flex flex-col">
                   <label :class="labelClass">Sexo</label>
@@ -253,7 +286,20 @@ onMounted(cargarMascota)
                 </div>
                 <div class="flex flex-col">
                   <label :class="labelClass">Peso (KG)</label>
-                  <input v-model="form.weight" type="number" step="0.1" :class="getIc('weight')" />
+                  <input
+                    v-model="form.weight"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="900"
+                    :class="getIc('weight')"
+                  />
+                  <p
+                    v-if="errores.weight"
+                    class="text-red-500 text-[9px] font-black uppercase italic mt-1"
+                  >
+                    {{ errores.weight }}
+                  </p>
                 </div>
               </div>
 
@@ -264,6 +310,8 @@ onMounted(cargarMascota)
                     <input
                       v-model="form.age"
                       type="number"
+                      min="0"
+                      max="40"
                       :class="getIc('age') + ' text-center'"
                     />
                     <span
@@ -275,6 +323,8 @@ onMounted(cargarMascota)
                     <input
                       v-model="form.age_months"
                       type="number"
+                      min="0"
+                      max="11"
                       :class="getIc('age_months') + ' text-center'"
                     />
                     <span
@@ -283,6 +333,12 @@ onMounted(cargarMascota)
                     >
                   </div>
                 </div>
+                <p
+                  v-if="errores.age || errores.age_months"
+                  class="text-red-500 text-[9px] font-black uppercase italic mt-5 text-center"
+                >
+                  {{ errores.age || errores.age_months }}
+                </p>
               </div>
 
               <div class="flex flex-col pt-2">
@@ -326,8 +382,6 @@ onMounted(cargarMascota)
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-
-/* Forzar mayúsculas en placeholders para el estilo minimal */
 input::placeholder,
 textarea::placeholder {
   text-transform: uppercase;

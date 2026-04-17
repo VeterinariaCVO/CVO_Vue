@@ -56,7 +56,7 @@
           <button
             v-if="preview"
             type="button"
-            @click="eliminarFoto"
+            @click.stop="eliminarFoto"
             class="text-[9px] font-black text-red-500 uppercase tracking-widest hover:underline bg-transparent border-none cursor-pointer p-0"
           >
             Eliminar imagen
@@ -78,17 +78,14 @@
           <div class="flex flex-col gap-1.5">
             <label
               class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic"
+              >Especie *</label
             >
-              Especie *
-            </label>
-
             <select
               v-model="form.species"
               :class="ic('species')"
               class="cursor-pointer appearance-none"
             >
               <option value="" disabled selected>Seleccionar especie...</option>
-
               <optgroup label="Domésticas" class="font-black uppercase italic text-[#3f98ff]">
                 <option value="Perro">Perro</option>
                 <option value="Gato">Gato</option>
@@ -99,7 +96,6 @@
                 <option value="Tortuga">Tortuga</option>
                 <option value="Pez">Pez</option>
               </optgroup>
-
               <optgroup label="Granja" class="font-black uppercase italic text-[#3f98ff]">
                 <option value="Caballo">Caballo</option>
                 <option value="Vaca">Vaca</option>
@@ -110,7 +106,6 @@
                 <option value="Pato">Pato</option>
               </optgroup>
             </select>
-
             <p
               v-if="errores.species"
               class="text-red-500 text-[9px] font-black uppercase italic m-0 px-1"
@@ -146,7 +141,14 @@
           >
           <div class="flex gap-4">
             <div class="flex-1">
-              <input v-model="form.age" type="number" placeholder="0" :class="ic('age')" />
+              <input
+                v-model="form.age"
+                type="number"
+                min="0"
+                max="40"
+                placeholder="0"
+                :class="ic('age')"
+              />
               <span
                 class="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center block mt-1"
                 >Años</span
@@ -156,6 +158,8 @@
               <input
                 v-model="form.age_months"
                 type="number"
+                min="0"
+                max="11"
                 placeholder="0"
                 :class="ic('age_months')"
               />
@@ -183,9 +187,17 @@
               v-model="form.weight"
               type="number"
               step="0.1"
+              min="0"
+              max="900"
               placeholder="0.0"
               :class="ic('weight')"
             />
+            <p
+              v-if="errores.weight"
+              class="text-red-500 text-[9px] font-black uppercase italic m-0"
+            >
+              {{ errores.weight }}
+            </p>
           </div>
           <div class="flex flex-col gap-1.5">
             <label
@@ -264,6 +276,7 @@ function seleccionarFoto(event: Event) {
   fotoArchivo.value = file
   preview.value = URL.createObjectURL(file)
 }
+
 function eliminarFoto() {
   preview.value = null
   fotoArchivo.value = null
@@ -271,14 +284,21 @@ function eliminarFoto() {
 
 function validar(): boolean {
   errores.value = {}
+
   if (!form.value.name.trim()) errores.value.name = 'Nombre requerido'
   if (!form.value.species.trim()) errores.value.species = 'Especie requerida'
 
   const años = Number(form.value.age || 0)
   const meses = Number(form.value.age_months || 0)
+  const total = años * 12 + meses
 
-  if (años < 0 || años > 30) errores.value.age = 'Edad inválida (0-30)'
+  if (años < 0 || años > 40) errores.value.age = 'Edad inválida (0-40 años)'
   if (meses < 0 || meses > 11) errores.value.age_months = 'Meses inválidos (0-11)'
+  if (total > 480) errores.value.age = 'Edad máxima 40 años'
+
+  const peso = Number(form.value.weight || 0)
+  if (peso < 0) errores.value.weight = 'El peso no puede ser negativo.'
+  else if (peso > 900) errores.value.weight = 'Peso máximo 900 kg.'
 
   return Object.keys(errores.value).length === 0
 }
