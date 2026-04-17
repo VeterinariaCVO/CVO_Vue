@@ -264,11 +264,9 @@ defineOptions({ name: 'VetMascotas' })
             <p class="text-xs text-yellow-600 font-semibold mb-1">MARCAS ESPECIALES</p>
             <p class="text-sm text-slate-600">{{ selected.special_marks }}</p>
           </div>
-        </div>
-        <div class="mt-4">
           <button
             @click="router.push(`/veterinario/mascotas/${selected.id}/historial`)"
-            class="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold text-sm shadow-md shadow-blue-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+            class="w-full mt-4 py-2.5 rounded-xl bg-[#1d6bbf] hover:bg-[#16569a] text-white font-semibold text-sm transition-colors"
           >
             📋 Ver historial médico
           </button>
