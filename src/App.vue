@@ -10,21 +10,19 @@ const route = useRoute()
 
 const isCollapsed = ref(false)
 
-// Ajustamos la lógica para excluir la ruta raíz '/' de la Landing Page
 const mostrarSidebar = computed(() => {
   return (
     auth.isAuthenticated &&
     route.path !== '/login' &&
     route.path !== '/register' &&
     route.path !== '/'
-  ) // Esto asegura que la Landing se vea limpia
+  )
 })
 
 const toggleSidebar = () => {
   isCollapsed.value = !isCollapsed.value
 }
 
-// Variables de estilo para evitar errores de compilación en Tailwind
 const linkBase =
   'flex items-center gap-4 px-4 py-4 rounded-[1.5rem] transition-all duration-300 group italic uppercase tracking-[0.15em] text-[10px] font-black no-underline mb-1'
 const linkActive = 'bg-[#3f98ff] text-white shadow-lg shadow-blue-500/20'
@@ -49,9 +47,7 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
 </script>
 
 <template>
-  <div
-    class="flex min-h-screen bg-[#f8fafc] font-sans selection:bg-blue-100 overflow-hidden italic"
-  >
+  <div class="flex min-h-screen bg-[#f8fafc] font-sans selection:bg-blue-100 italic">
     <aside
       v-if="mostrarSidebar"
       :class="[
@@ -482,19 +478,29 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
           :to="auth.isCliente ? '/cliente/perfil' : '/perfil'"
           :class="[linkBase, route.path.includes('perfil') ? linkActive : linkInactive]"
         >
-          <svg
-            class="w-4 h-4 shrink-0"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            viewBox="0 0 24 24"
+          <div
+            class="w-4 h-4 shrink-0 rounded-full overflow-hidden flex items-center justify-center"
           >
-            <path
-              d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+            <img
+              v-if="auth.user?.profile_photo"
+              :src="fotoPerfilUrl(auth.user.profile_photo) ?? ''"
+              class="w-full h-full object-cover"
             />
-          </svg>
+            <svg
+              v-else
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              viewBox="0 0 24 24"
+              class="w-4 h-4"
+            >
+              <path
+                d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
           <span v-if="!isCollapsed">Mi Perfil</span>
         </router-link>
       </nav>
@@ -538,7 +544,7 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
       </div>
     </aside>
 
-    <main class="flex-1 flex flex-col min-h-screen overflow-hidden">
+    <main class="flex-1 flex flex-col min-h-screen overflow-auto">
       <header
         v-if="mostrarSidebar"
         class="h-[64px] bg-white border-b border-slate-100 flex items-center justify-between px-10 shrink-0"
@@ -549,7 +555,7 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
         <NotificationBell />
       </header>
 
-      <div class="flex-1 overflow-y-auto no-scrollbar relative">
+      <div class="flex-1 overflow-y-auto relative">
         <RouterView />
       </div>
     </main>
@@ -563,15 +569,12 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
 </template>
 
 <style>
-/* Reset Global - Usando CSS puro para evitar errores de Tailwind v4/v5 */
 body {
   margin: 0;
   padding: 0;
-  overflow: hidden;
   background-color: #f8fafc;
 }
 
-/* Ocultar barra de scroll pero mantener funcionalidad */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
