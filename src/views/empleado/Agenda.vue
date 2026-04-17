@@ -301,13 +301,7 @@ defineOptions({ name: 'VetAgenda' })
           </div>
 
           <!-- Botón perfil -->
-          <button @click="abrirPerfil"
-                  class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
-            <div class="w-7 h-7 rounded-full bg-[#1d6bbf] flex items-center justify-center text-white text-xs font-black">
-              {{ auth.user?.name?.charAt(0) ?? 'V' }}
-            </div>
-            <span class="text-sm font-bold text-slate-700">Mi perfil</span>
-          </button>
+
 
         </div>
       </header>
@@ -481,13 +475,7 @@ defineOptions({ name: 'VetAgenda' })
                 </p>
                 <p class="text-xs text-slate-500 font-bold uppercase tracking-tight mt-1">Pacientes registrados</p>
               </button>
-              <button @click="abrirPerfil"
-                      class="w-full text-left p-5 rounded-xl bg-slate-50 border border-transparent hover:border-[#1d6bbf]/20 hover:bg-white transition-all group">
-                <p class="text-sm font-black text-slate-700 uppercase tracking-widest group-hover:text-[#1d6bbf]">
-                  Mi Perfil
-                </p>
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-tight mt-1">Editar información</p>
-              </button>
+
             </div>
           </div>
 
