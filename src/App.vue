@@ -543,13 +543,15 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
       </div>
     </aside>
 
-    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    <!-- ✅ FIX: reemplazado h-screen por min-h-0 para permitir scroll interno -->
+    <main class="flex-1 flex flex-col min-h-0 overflow-hidden">
 
       <header v-if="mostrarSidebar" class="h-[64px] bg-transparent flex items-center justify-between px-10 shrink-0">
         <p class="text-slate-400 text-[9px] font-black uppercase tracking-widest italic">Panel de Gestión v2.0</p>
       </header>
 
-      <div class="flex-1 overflow-y-auto no-scrollbar relative">
+      <!-- ✅ FIX: agregado min-h-0 para que el flex item pueda contraerse y el overflow-y-auto funcione -->
+      <div class="flex-1 overflow-y-auto no-scrollbar relative min-h-0">
         <RouterView />
       </div>
     </main>
