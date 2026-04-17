@@ -6,6 +6,8 @@ export interface Appointment {
   pet: {
     id: number
     name: string
+    species?: string // <-- Agregado (Opcional)
+    breed?: string   // <-- Agregado (Opcional)
   }
   client: {
     id: number
@@ -23,10 +25,14 @@ export interface Appointment {
     start_time: string
     end_time: string
   } | null
+  vet?: {        // <--- AGREGA ESTO
+    id: number;
+    name: string;
+  } | null;
+
   created_by: string | null
   created_at: string
 }
-
 
 export interface AppointmentVet {
   id: number
@@ -36,6 +42,8 @@ export interface AppointmentVet {
   pet: {
     id: number
     name: string
+    species?: string // <-- Agregado (Opcional)
+    breed?: string   // <-- Agregado (Opcional)
   }
   client: {
     id: number
@@ -53,7 +61,7 @@ export interface AppointmentVet {
     start_time: string
     end_time: string
   }
+
   created_by: string
   created_at: string
 }
-

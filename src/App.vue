@@ -2,7 +2,6 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useRouter, useRoute } from 'vue-router'
-import NotificationBell from '@/components/notifications/NotificationBell.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -544,18 +543,13 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
       </div>
     </aside>
 
-    <main class="flex-1 flex flex-col min-h-screen overflow-auto">
-      <header
-        v-if="mostrarSidebar"
-        class="h-[64px] bg-white border-b border-slate-100 flex items-center justify-between px-10 shrink-0"
-      >
-        <p class="text-slate-400 text-[9px] font-black uppercase tracking-widest italic">
-          Panel de Gestión v2.0
-        </p>
-        <NotificationBell />
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+
+      <header v-if="mostrarSidebar" class="h-[64px] bg-transparent flex items-center justify-between px-10 shrink-0">
+        <p class="text-slate-400 text-[9px] font-black uppercase tracking-widest italic">Panel de Gestión v2.0</p>
       </header>
 
-      <div class="flex-1 overflow-y-auto relative">
+      <div class="flex-1 overflow-y-auto no-scrollbar relative">
         <RouterView />
       </div>
     </main>
