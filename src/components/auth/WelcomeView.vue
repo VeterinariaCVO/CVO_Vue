@@ -134,6 +134,29 @@ const scrollTo = (id: string) => {
       </div>
     </section>
 
+    <!-- Card de acceso - solo móvil -->
+    <div class="lg:hidden px-6 py-10 bg-white -mt-8 relative z-30">
+      <div class="bg-slate-50 rounded-[3rem] p-10 text-center border border-slate-100 shadow-xl">
+        <img src="/logo.jpg" width="60" class="mx-auto mb-4 rounded-2xl shadow-lg rotate-3" />
+        <h2 class="text-2xl font-black text-slate-800 mb-1 uppercase tracking-tighter">¡Hola!</h2>
+        <p class="text-slate-400 mb-8 font-bold text-[10px] uppercase tracking-widest">Gestiona tus mascotas aquí</p>
+        <div class="grid gap-4">
+          <button
+            @click="router.push('/register')"
+            class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-[#3f98ff] transition-all shadow-xl"
+          >
+            Crear cuenta gratis
+          </button>
+          <button
+            @click="router.push('/login')"
+            class="text-[#3f98ff] font-black uppercase text-[10px] tracking-widest hover:underline mt-1"
+          >
+            Ya tengo cuenta
+          </button>
+        </div>
+      </div>
+    </div>
+
     <section id="info" class="py-24 px-10 max-w-7xl mx-auto relative z-20">
       <div class="grid lg:grid-cols-2 gap-20 items-center">
         <div class="relative rounded-[3.5rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.2)] h-[600px] border-8 border-white group">

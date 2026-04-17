@@ -2,7 +2,6 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useRouter, useRoute } from 'vue-router'
-import NotificationBell from '@/components/notifications/NotificationBell.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -41,8 +40,15 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-[#f8fafc] font-sans selection:bg-blue-100 overflow-hidden italic">
+  <!--
+    FIX SCROLL:
+    - Quitado: overflow-hidden del wrapper raíz (bloqueaba todo scroll)
+    - main cambia de min-h-screen a h-screen para tener altura fija
+    - El div interno con overflow-y-auto ya funciona correctamente
+  -->
+  <div class="flex min-h-screen bg-[#f8fafc] font-sans selection:bg-blue-100 italic">
 
+    <!-- ASIDE: sticky + h-screen — no cambia, ya estaba correcto -->
     <aside
       v-if="mostrarSidebar"
       :class="[
@@ -192,12 +198,22 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
       </div>
     </aside>
 
-    <main class="flex-1 flex flex-col min-h-screen overflow-hidden">
-      <header v-if="mostrarSidebar" class="h-[64px] bg-white border-b border-slate-100 flex items-center justify-between px-10 shrink-0">
+    <!--
+      FIX: main usa h-screen en lugar de min-h-screen
+      Esto le da una altura FIJA igual a la ventana, de modo que
+      el div interno con overflow-y-auto pueda hacer scroll correctamente
+    -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+
+      <header v-if="mostrarSidebar" class="h-[64px] bg-transparent flex items-center justify-between px-10 shrink-0">
         <p class="text-slate-400 text-[9px] font-black uppercase tracking-widest italic">Panel de Gestión v2.0</p>
-        <NotificationBell />
       </header>
 
+      <!--
+        Este div tenía overflow-y-auto pero no funcionaba porque main
+        no tenía altura fija. Ahora que main es h-screen, este div
+        ocupa el espacio restante y hace scroll correctamente.
+      -->
       <div class="flex-1 overflow-y-auto no-scrollbar relative">
         <RouterView />
       </div>
@@ -213,11 +229,13 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
 </template>
 
 <style>
-/* Reset Global - Usando CSS puro para evitar errores de Tailwind v4/v5 */
+/* Reset Global */
 body {
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  /* REMOVIDO: overflow: hidden — era el culpable principal del scroll roto.
+     Con overflow:hidden en body, ningún contenedor hijo podía hacer scroll
+     porque el documento entero estaba bloqueado. */
   background-color: #f8fafc;
 }
 
