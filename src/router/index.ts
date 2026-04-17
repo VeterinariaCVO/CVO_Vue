@@ -18,7 +18,6 @@ import RDashboard from '@/views/recepcionista/RDashboard.vue'
 import RClientesView from '@/views/recepcionista/RClientesView.vue'
 import RHistorialView from '@/views/recepcionista/RHistorialView.vue'
 import RMascotaDetalle from '@/views/recepcionista/RMascotaDetalle.vue'
-import VeterinarioDashboard from '@/views/empleado/VeterinarioDashboard.vue'
 
 const router: Router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -109,7 +108,7 @@ const router: Router = createRouter({
     {
       path: '/veterinario/dashboard',
       name: 'veterinario.dashboard',
-      component: VeterinarioDashboard,
+      component: Agenda,
       meta: { requiresAuth: true, role: 4 },
     },
     {
