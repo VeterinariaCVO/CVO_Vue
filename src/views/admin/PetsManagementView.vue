@@ -17,7 +17,7 @@ const mascotaAEliminar = ref<PetVet | null>(null)
 
 async function obtenerMascotas() {
   cargando.value = true
-  const { data, execute } = ApiUseFetch('/admin/pets').get().json()
+  const { data, execute } = ApiUseFetch('/admin1/pets').get().json()
   await execute()
   mascotas.value = data.value?.data ?? []
   cargando.value = false

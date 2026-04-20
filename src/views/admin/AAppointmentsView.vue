@@ -15,6 +15,14 @@ const mensajeExito = ref('')
 const mostrarConfirmCancelar = ref(false)
 const citaACancelar = ref<any | null>(null)
 
+// ── Modal: Confirmar cita + elegir veterinario ──
+const mostrarConfirmVet = ref(false)
+const citaAConfirmar = ref<any | null>(null)
+const veterinarios = ref<any[]>([])
+const vetSeleccionadoId = ref<number | null>(null)
+const confirmandoCita = ref(false)
+const errorConfirmVet = ref('')
+
 const citasFiltradas = computed(() => {
   if (!filtroEstado.value) return citas.value
   return citas.value.filter((c: any) => c.status === filtroEstado.value)
@@ -27,6 +35,20 @@ async function obtenerCitas() {
   await execute()
   citas.value = data.value?.data ?? []
   cargando.value = false
+}
+
+async function cargarVeterinarios() {
+  if (veterinarios.value.length > 0) return
+  const { data, execute } = ApiUseFetch('/admin/veterinarios').get().json()
+  await execute()
+  const res = data.value
+  if (res?.data && Array.isArray(res.data)) {
+    veterinarios.value = res.data
+  } else if (Array.isArray(res)) {
+    veterinarios.value = res
+  } else {
+    veterinarios.value = []
+  }
 }
 
 function abrirReagendar(id: number) {
@@ -51,15 +73,43 @@ function cambiarFiltro(estado: string) {
   filtroEstado.value = estado
 }
 
-function buildPayload(_cita: any, status: string) {
-  return { status }
+async function abrirConfirmarConVet(cita: any) {
+  citaAConfirmar.value = cita
+  vetSeleccionadoId.value = null
+  errorConfirmVet.value = ''
+  mostrarConfirmVet.value = true
+  await cargarVeterinarios()
+}
+
+async function ejecutarConfirmarConVet() {
+  if (!vetSeleccionadoId.value) {
+    errorConfirmVet.value = 'Debes elegir un veterinario para confirmar la cita.'
+    return
+  }
+  confirmandoCita.value = true
+  errorConfirmVet.value = ''
+
+  const { data, statusCode, execute } = ApiUseFetch(`/appointments/${citaAConfirmar.value.id}`)
+    .put({ status: 'confirmed', vet_id: vetSeleccionadoId.value })
+    .json()
+  await execute()
+  confirmandoCita.value = false
+
+  if (statusCode.value && statusCode.value >= 400) {
+    errorConfirmVet.value = (data.value as any)?.message ?? 'Error al confirmar la cita.'
+    return
+  }
+
+  mostrarConfirmVet.value = false
+  citaAConfirmar.value = null
+  vetSeleccionadoId.value = null
+  mensajeExito.value = 'Cita confirmada y veterinario asignado'
+  setTimeout(() => (mensajeExito.value = ''), 3000)
+  obtenerCitas()
 }
 
 async function cambiarEstado(id: number, status: string) {
-  const cita = citas.value.find((c: any) => c.id === id)
-  const { data, statusCode, execute } = ApiUseFetch(`/appointments/${id}`)
-    .put(buildPayload(cita, status))
-    .json()
+  const { data, statusCode, execute } = ApiUseFetch(`/appointments/${id}`).put({ status }).json()
   await execute()
 
   if (statusCode.value && statusCode.value >= 400) {
@@ -68,7 +118,6 @@ async function cambiarEstado(id: number, status: string) {
   }
 
   const labels: Record<string, string> = {
-    confirmed: 'Cita confirmada',
     completed: 'Cita completada',
     in_progress: 'Cita en progreso',
   }
@@ -123,26 +172,6 @@ const filtros = [
   { value: 'cancelled', label: 'Canceladas' },
 ]
 
-const vistaActual = ref<'citas' | 'reporte'>('citas')
-const reporte = ref<any[]>([])
-const cargandoReporte = ref(false)
-
-async function obtenerReporte() {
-  cargandoReporte.value = true
-  reporte.value = []
-  const { data, execute } = ApiUseFetch('admin/reporte-citas').get().json()
-  await execute()
-  reporte.value = data.value?.data ?? []
-  cargandoReporte.value = false
-}
-
-function cambiarVista(vista: 'citas' | 'reporte') {
-  vistaActual.value = vista
-  if (vista === 'reporte' && reporte.value.length === 0) {
-    obtenerReporte()
-  }
-}
-
 onMounted(obtenerCitas)
 </script>
 
@@ -153,48 +182,21 @@ onMounted(obtenerCitas)
         <h1 class="text-xl font-semibold text-slate-800 m-0">Citas</h1>
         <p class="text-sm text-slate-400 mt-0.5 mb-0">Supervisa y administra todas las citas</p>
       </div>
-      <div class="flex items-center gap-2">
-        <div class="flex rounded-lg border border-slate-200 overflow-hidden">
-          <button
-            @click="cambiarVista('citas')"
-            :class="
-              vistaActual === 'citas'
-                ? 'bg-[#1d6bbf] text-white'
-                : 'bg-white text-slate-500 hover:bg-slate-50'
-            "
-            class="px-3 py-1.5 text-xs font-medium transition-colors border-none cursor-pointer"
-          >
-            Citas
-          </button>
-          <button
-            @click="cambiarVista('reporte')"
-            :class="
-              vistaActual === 'reporte'
-                ? 'bg-[#1d6bbf] text-white'
-                : 'bg-white text-slate-500 hover:bg-slate-50'
-            "
-            class="px-3 py-1.5 text-xs font-medium transition-colors border-none cursor-pointer border-l border-slate-200"
-          >
-            Reporte
-          </button>
-        </div>
-        <button
-          v-if="vistaActual === 'citas'"
-          @click="mostrarAgendar = true"
-          class="bg-green-500 hover:bg-green-600 text-white text-sm px-4 py-2 border-none rounded-lg cursor-pointer transition-colors flex items-center gap-1.5"
+      <button
+        @click="mostrarAgendar = true"
+        class="bg-green-500 hover:bg-green-600 text-white text-sm px-4 py-2 border-none rounded-lg cursor-pointer transition-colors flex items-center gap-1.5"
+      >
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          viewBox="0 0 24 24"
         >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.2"
-            viewBox="0 0 24 24"
-          >
-            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
-          </svg>
-          Agendar cita
-        </button>
-      </div>
+          <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+        </svg>
+        Agendar cita
+      </button>
     </div>
 
     <div
@@ -204,11 +206,7 @@ onMounted(obtenerCitas)
       {{ mensajeExito }}
     </div>
 
-    <!-- Vista: Citas -->
-    <div
-      v-if="vistaActual === 'citas'"
-      class="bg-white rounded-xl border border-slate-200 overflow-hidden"
-    >
+    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
       <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100">
         <div class="flex flex-wrap gap-1.5">
           <button
@@ -294,8 +292,8 @@ onMounted(obtenerCitas)
               <div class="flex items-center justify-end gap-1">
                 <button
                   v-if="cita.status === 'pending'"
-                  @click="cambiarEstado(cita.id, 'confirmed')"
-                  title="Confirmar"
+                  @click="abrirConfirmarConVet(cita)"
+                  title="Confirmar y asignar veterinario"
                   class="p-1.5 rounded-md text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 cursor-pointer transition-colors flex items-center justify-center"
                 >
                   <svg
@@ -396,74 +394,6 @@ onMounted(obtenerCitas)
         </tbody>
       </table>
     </div>
-
-    <!-- Vista: Reporte -->
-    <div v-else class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-        <p class="text-sm font-medium text-slate-700 m-0">Reporte por día</p>
-        <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500">vw_reporte_citas</code>
-      </div>
-
-      <div v-if="cargandoReporte" class="flex justify-center py-14">
-        <div
-          class="animate-spin rounded-full h-6 w-6 border-2 border-slate-200 border-t-[#1d6bbf]"
-        />
-      </div>
-
-      <p v-else-if="reporte.length === 0" class="text-center text-sm text-slate-400 py-12">
-        No hay datos de reporte.
-      </p>
-
-      <table v-else class="w-full border-collapse">
-        <thead>
-          <tr class="border-b border-slate-100">
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Fecha</th>
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Total</th>
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Pendientes</th>
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Confirmadas</th>
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Completadas</th>
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Canceladas</th>
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Walk-ins</th>
-            <th class="text-left text-xs text-slate-400 font-medium px-5 py-3">Ingreso real</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="row in reporte"
-            :key="row.fecha"
-            class="border-b border-slate-50 last:border-none hover:bg-slate-50 transition-colors"
-          >
-            <td class="px-5 py-3 text-sm font-medium text-slate-800">{{ row.fecha }}</td>
-            <td class="px-5 py-3 text-sm text-slate-600">{{ row.total_citas }}</td>
-            <td class="px-5 py-3">
-              <span
-                class="text-xs px-2 py-1 rounded-md bg-yellow-100 text-yellow-700 font-medium"
-                >{{ row.pendientes }}</span
-              >
-            </td>
-            <td class="px-5 py-3">
-              <span class="text-xs px-2 py-1 rounded-md bg-blue-100 text-blue-700 font-medium">{{
-                row.confirmadas
-              }}</span>
-            </td>
-            <td class="px-5 py-3">
-              <span class="text-xs px-2 py-1 rounded-md bg-green-100 text-green-700 font-medium">{{
-                row.completadas
-              }}</span>
-            </td>
-            <td class="px-5 py-3">
-              <span class="text-xs px-2 py-1 rounded-md bg-red-100 text-red-500 font-medium">{{
-                row.canceladas
-              }}</span>
-            </td>
-            <td class="px-5 py-3 text-sm text-slate-600">{{ row.walk_ins }}</td>
-            <td class="px-5 py-3 text-sm font-medium text-slate-800">
-              ${{ Number(row.ingreso_real).toFixed(2) }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
   </div>
 
   <ReagendarCitaModal
@@ -478,6 +408,7 @@ onMounted(obtenerCitas)
     @guardado="cerrarAgendar"
   />
 
+  <!-- Modal: Cancelar cita -->
   <Teleport to="body">
     <Transition name="modal">
       <div
@@ -499,13 +430,90 @@ onMounted(obtenerCitas)
               @click="mostrarConfirmCancelar = false"
               class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 bg-transparent text-slate-500 cursor-pointer hover:bg-slate-50 transition-colors"
             >
-              Cancelar
+              Volver
             </button>
             <button
               @click="ejecutarCancelar"
               class="text-sm px-3 py-1.5 rounded-lg border-none bg-red-500 text-white cursor-pointer hover:bg-red-600 transition-colors"
             >
               Sí, cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
+  <!-- Modal: Confirmar cita + elegir veterinario -->
+  <Teleport to="body">
+    <Transition name="modal">
+      <div
+        v-if="mostrarConfirmVet"
+        class="fixed inset-0 flex items-center justify-center z-50"
+        style="background: rgba(0, 0, 0, 0.25)"
+        @click.self="!confirmandoCita && (mostrarConfirmVet = false)"
+      >
+        <div class="bg-white rounded-xl border border-slate-200 p-6 max-w-sm w-11/12">
+          <p class="text-sm font-semibold text-slate-800 m-0 mb-0.5">Confirmar cita</p>
+          <p class="text-xs text-slate-400 m-0 mb-4 leading-relaxed">
+            Asigna un veterinario para confirmar la cita de
+            <span class="text-slate-600">{{ citaAConfirmar?.client?.name }}</span>
+            —
+            <span class="text-slate-600">{{ citaAConfirmar?.pet?.name }}</span
+            >.
+          </p>
+
+          <div class="flex flex-col gap-1 mb-4">
+            <label class="text-xs text-slate-500">
+              Veterinario asignado <span class="text-red-400">*</span>
+            </label>
+            <select
+              v-model="vetSeleccionadoId"
+              :disabled="confirmandoCita"
+              class="border border-[#3f98ff]/30 bg-blue-50/30 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#3f98ff] transition-colors disabled:opacity-50"
+            >
+              <option :value="null" disabled>Selecciona al doctor</option>
+              <option v-for="v in veterinarios" :key="v.id" :value="v.id">Dr. {{ v.name }}</option>
+            </select>
+          </div>
+
+          <div
+            v-if="errorConfirmVet"
+            class="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3"
+          >
+            {{ errorConfirmVet }}
+          </div>
+
+          <div class="flex gap-2 justify-end">
+            <button
+              @click="mostrarConfirmVet = false"
+              :disabled="confirmandoCita"
+              class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 bg-transparent text-slate-500 cursor-pointer hover:bg-slate-50 transition-colors disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              @click="ejecutarConfirmarConVet"
+              :disabled="confirmandoCita"
+              class="text-sm px-3 py-1.5 rounded-lg border-none bg-[#1d6bbf] hover:bg-[#1a5fa8] text-white cursor-pointer transition-colors disabled:opacity-50 flex items-center gap-1.5"
+            >
+              <svg
+                v-if="confirmandoCita"
+                class="w-3.5 h-3.5 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              </svg>
+              {{ confirmandoCita ? 'Confirmando...' : 'Confirmar cita' }}
             </button>
           </div>
         </div>
