@@ -27,7 +27,7 @@ const login = async () => {
     // Si el login es exitoso, redirigimos
     if (auth.isAdmin) router.push('/admin/dashboard')
     else if (auth.isRecepcionista) router.push('/recepcionista/dashboard')
-    else if (auth.isVeterinario) router.push('/veterinario/agenda')
+    else if (auth.isVeterinario) router.push('/veterinario/inicio')
     else router.push('/client/dashboard')
 
   } catch (error: any) {

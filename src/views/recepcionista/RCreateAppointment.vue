@@ -11,11 +11,13 @@ const clientes = ref<any[]>([])
 const mascotas = ref<any[]>([])
 const servicios = ref<any[]>([])
 const slots = ref<any[]>([])
+const veterinarios = ref<any[]>([]) // <-- NUEVO: Lista de doctores
 
 const clienteId = ref<number | null>(null)
 const mascotaId = ref<number | null>(null)
 const servicioId = ref<number | null>(null)
 const slotId = ref<number | null>(null)
+const vetId = ref<number | null>(null) // <-- NUEVO: Doctor seleccionado
 const fechaSeleccionada = ref('')
 const notas = ref('')
 
@@ -35,6 +37,28 @@ async function cargarServicios() {
   const { data, execute } = ApiUseFetch('/services').get().json()
   await execute()
   servicios.value = data.value?.data ?? []
+}
+
+async function cargarVeterinarios() {
+  try {
+    // Aseguramos la barra inicial
+    const { data, execute } = ApiUseFetch('/empleado/veterinarios').get().json()
+    await execute()
+
+    const res = data.value
+
+    // Si viene envuelto en doble caja (res.data) o caja sencilla (res)
+    if (res && res.data && Array.isArray(res.data)) {
+      veterinarios.value = res.data
+    } else if (Array.isArray(res)) {
+      veterinarios.value = res
+    } else {
+      veterinarios.value = []
+    }
+
+  } catch (error) {
+    console.error('Error al cargar veterinarios:', error)
+  }
 }
 
 async function cargarMascotas() {
@@ -86,7 +110,8 @@ async function agendar() {
 
   errorMsg.value = ''
 
-  if (!clienteId.value || !mascotaId.value || !servicioId.value || !slotId.value) {
+  // <-- ACTUALIZADO: Ahora el vetId también es obligatorio -->
+  if (!clienteId.value || !mascotaId.value || !servicioId.value || !slotId.value || !vetId.value) {
     errorMsg.value = 'Completa todos los campos obligatorios.'
     return
   }
@@ -99,6 +124,8 @@ async function agendar() {
         pet_id:       mascotaId.value,
         service_id:   servicioId.value,
         time_slot_id: slotId.value,
+        vet_id:       vetId.value,         // <-- NUEVO: Mandamos al doctor
+        status:       'confirmed',         // <-- NUEVO: La cita ya nace confirmada
         notes:        notas.value,
       })
       .json()
@@ -124,6 +151,7 @@ async function agendar() {
 onMounted(() => {
   cargarClientes()
   cargarServicios()
+  cargarVeterinarios() // <-- No olvides llamarlo al inicio
 })
 </script>
 
@@ -149,12 +177,11 @@ onMounted(() => {
         v-if="exitoso"
         class="text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-center"
       >
-        ¡Cita agendada correctamente!
+        ¡Cita agendada y asignada al doctor correctamente!
       </div>
 
       <div v-else class="flex flex-col gap-3">
 
-        <!-- Cliente -->
         <div class="flex flex-col gap-1">
           <label class="text-xs text-slate-500">Cliente</label>
           <select
@@ -167,7 +194,6 @@ onMounted(() => {
           </select>
         </div>
 
-        <!-- Mascota -->
         <div class="flex flex-col gap-1">
           <label class="text-xs text-slate-500">Mascota</label>
           <div v-if="cargandoMascotas" class="text-xs text-slate-400 px-1">Cargando mascotas...</div>
@@ -184,7 +210,6 @@ onMounted(() => {
           </select>
         </div>
 
-        <!-- Servicio -->
         <div class="flex flex-col gap-1">
           <label class="text-xs text-slate-500">Servicio</label>
           <select
@@ -197,7 +222,18 @@ onMounted(() => {
           </select>
         </div>
 
-        <!-- Fecha -->
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-slate-500">Veterinario Asignado</label>
+          <select
+            v-model="vetId"
+            :disabled="enviando"
+            class="border border-[#3f98ff]/30 bg-blue-50/30 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#3f98ff] transition-colors disabled:opacity-50"
+          >
+            <option :value="null" disabled>Selecciona al doctor</option>
+            <option v-for="v in veterinarios" :key="v.id" :value="v.id">Dr. {{ v.name }}</option>
+          </select>
+        </div>
+
         <div class="flex flex-col gap-1">
           <label class="text-xs text-slate-500">Fecha</label>
           <input
@@ -209,7 +245,6 @@ onMounted(() => {
           />
         </div>
 
-        <!-- Slots -->
         <div v-if="fechaSeleccionada" class="flex flex-col gap-2">
           <label class="text-xs text-slate-500">Horario</label>
           <div v-if="cargandoSlots" class="text-xs text-slate-400">Cargando horarios...</div>
@@ -234,7 +269,6 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Notas -->
         <div class="flex flex-col gap-1">
           <label class="text-xs text-slate-500">Notas <span class="text-slate-400">(opcional)</span></label>
           <textarea
@@ -246,7 +280,6 @@ onMounted(() => {
           ></textarea>
         </div>
 
-        <!-- Error -->
         <div
           v-if="errorMsg"
           class="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2"
@@ -254,7 +287,6 @@ onMounted(() => {
           {{ errorMsg }}
         </div>
 
-        <!-- Botones -->
         <div class="flex gap-2 mt-2">
           <button
             @click="emit('cerrar')"
@@ -268,7 +300,7 @@ onMounted(() => {
             :disabled="enviando || exitoso"
             class="flex-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm py-2 rounded-lg border-none transition-colors"
           >
-            {{ enviando ? 'Agendando...' : 'Confirmar' }}
+            {{ enviando ? 'Agendando...' : 'Confirmar Cita' }}
           </button>
         </div>
       </div>

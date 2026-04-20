@@ -18,6 +18,8 @@ import RDashboard from '@/views/recepcionista/RDashboard.vue'
 import RClientesView from '@/views/recepcionista/RClientesView.vue'
 import RHistorialView from '@/views/recepcionista/RHistorialView.vue'
 import RMascotaDetalle from '@/views/recepcionista/RMascotaDetalle.vue'
+import VetDasboard from '@/views/empleado/VetDasboard.vue'
+import RWalkin from '@/views/recepcionista/RWalkin.vue'
 
 const router: Router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -99,7 +101,19 @@ const router: Router = createRouter({
       component: RMascotaDetalle,
       meta: { requiresAuth: true, role: 2 },
     },
-
+    {
+      path: '/recepcionista/walk-in',
+      name: 'recepcionista.walkin',
+      component: RWalkin,
+      meta: { requiresAuth: true, role: 2 },
+    },
+    {
+      path: '/veterinario/inicio',
+      name: 'veterinario.inicio',
+      alias: ['/veterinario/dashboard'],
+      component: VetDasboard,
+      meta: { requiresAuth: true, role: 4 },
+    },
     {
       path: '/veterinario/agenda',
       name: 'VetAgenda',
@@ -183,12 +197,6 @@ const router: Router = createRouter({
       meta: { requiresAuth: true, role: 1 },
     },
     {
-      path: '/recepcionista/walk-in',
-      name: 'recepcionista.walkin',
-      component: () => import('../views/admin/WalkInView.vue'),
-      meta: { requiresAuth: true, role: 2 },
-    },
-    {
       path: '/admin/walk-in',
       name: 'admin.walkin',
       component: () => import('../views/admin/WalkInView.vue'),
@@ -217,7 +225,7 @@ router.beforeEach((to: any) => {
 function redirigirPorRol(roleId?: number) {
   if (roleId === 1) return { path: '/admin/dashboard' }
   if (roleId === 2) return { path: '/recepcionista/dashboard' }
-  if (roleId === 4) return { path: '/veterinario/agenda' }
+  if (roleId === 4) return { path: '/veterinario/inicio' }
   if (roleId === 3) return { path: '/client/dashboard' }
   return { path: '/' }
 }

@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useRouter, useRoute } from 'vue-router'
-import NotificationBell from '@/components/notifications/NotificationBell.vue'
+
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -41,12 +41,11 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-[#f8fafc] font-sans selection:bg-blue-100 overflow-hidden italic">
+  <div v-if="mostrarSidebar" class="flex h-screen bg-[#f8fafc] font-sans selection:bg-blue-100 overflow-hidden italic">
 
     <aside
-      v-if="mostrarSidebar"
       :class="[
-        'bg-slate-900 flex flex-col sticky top-0 h-screen z-40 shrink-0 border-r border-white/5 transition-all duration-500 ease-in-out relative',
+        'bg-slate-900 flex flex-col h-full z-40 shrink-0 border-r border-white/5 transition-all duration-500 ease-in-out relative',
         isCollapsed ? 'w-24' : 'w-66'
       ]"
     >
@@ -71,7 +70,7 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
         </div>
       </div>
 
-      <nav class="flex-1 overflow-y-auto px-4 no-scrollbar">
+      <nav class="flex-1 overflow-y-auto px-4 custom-scrollbar">
 
         <template v-if="auth.isAdmin">
           <p v-if="!isCollapsed" :class="navLabel">General</p>
@@ -137,6 +136,10 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
 
         <template v-if="auth.isVeterinario">
           <p v-if="!isCollapsed" :class="navLabel">Mi Área</p>
+          <router-link to="/veterinario/inicio" :class="[linkBase, route.path.startsWith('/veterinario/inicio') || route.path.startsWith('/veterinario/dashboard') ? linkActive : linkInactive]">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 12L12 3l9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span v-if="!isCollapsed">Inicio</span>
+          </router-link>
           <router-link to="/veterinario/agenda" :class="[linkBase, route.path.startsWith('/veterinario/agenda') ? linkActive : linkInactive]">
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <span v-if="!isCollapsed">Mi Agenda</span>
@@ -158,7 +161,7 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
             <span v-if="!isCollapsed">Mis Citas</span>
           </router-link>
           <router-link to="/client/mascotas" :class="[linkBase, route.path.startsWith('/client/mascotas') ? linkActive : linkInactive]">
-            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 21c-4 0-7-3-7-7 0-2 1-3.5 3-4.5s4-1 4-1 2 0 4 1 3 2.5 3 4.5c0 4-3 7-7 7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 21c-4 0-7-3-7-7 0-2 1-3.5 3-4.5s4-1 4-1 2 0 4 1 3 2.5 3 4.5c0 4-3 7-7 7z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="4" r="1.5" fill="currentColor"/><circle cx="15" cy="4" r="1.5" fill="currentColor"/></svg>
             <span v-if="!isCollapsed">Mascotas</span>
           </router-link>
         </template>
@@ -192,26 +195,51 @@ function fotoPerfilUrl(path: string | null | undefined): string | null {
       </div>
     </aside>
 
-    <main class="flex-1 flex flex-col min-h-screen overflow-hidden">
-      <header v-if="mostrarSidebar" class="h-[64px] bg-white border-b border-slate-100 flex items-center justify-between px-10 shrink-0">
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+      <header class="h-[64px] bg-white border-b border-slate-100 flex items-center justify-between px-10 shrink-0">
         <p class="text-slate-400 text-[9px] font-black uppercase tracking-widest italic">Panel de Gestión v2.0</p>
-        <NotificationBell />
+
       </header>
 
-      <div class="flex-1 overflow-y-auto no-scrollbar relative">
+      <div class="flex-1 overflow-y-auto custom-scrollbar relative">
         <RouterView />
       </div>
     </main>
-
-    <template v-if="!mostrarSidebar">
-      <div class="fixed inset-0 z-[200] bg-white overflow-y-auto no-scrollbar">
-        <RouterView />
-      </div>
-    </template>
-
   </div>
+
+  <div v-else class="min-h-screen bg-[#f8fafc] font-sans selection:bg-blue-100">
+    <RouterView />
+  </div>
+
 </template>
 
+<style>
+/* Reset Global - ¡ELIMINAMOS EL overflow: hidden DE AQUÍ! */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f8fafc;
+}
+
+/* Barra de scroll delgada y elegante para las zonas internas */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* Ocultar barra de scroll completamente solo en elementos específicos */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
 <style>
 /* Reset Global - Usando CSS puro para evitar errores de Tailwind v4/v5 */
 body {

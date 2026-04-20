@@ -12,7 +12,7 @@ const router = useRouter()
 const auth = useAuthStore()
 const notificationStore = useNotificationStore()
 
-const WELCOME_KEY = 'cvo_welcome_shown_recep'
+const WELCOME_KEY = 'cvo_welcome_shown_vet'
 const mostrarBienvenida = ref(false)
 const cargando = ref(true)
 const citas = ref<Appointment[]>([])
@@ -21,14 +21,21 @@ const notisExpandidas = ref(false)
 const filtroEstado = ref<string | null>(null)
 const cambiandoEstado = ref<number | null>(null)
 const busqueda = ref('')
-const tabTiempo = ref<'hoy' | 'semana' | 'mes' | 'todas'>('hoy')
-const seleccionadoId = ref<number | null>(null)
+const mostrarModalRegistro = ref(false)
+const citaParaRegistro = ref<Appointment | null>(null)
 
-// --- MODAL DE ASIGNACIÓN DE DOCTOR ---
-const veterinarios = ref<any[]>([])
-const mostrarModalAsignacion = ref(false)
-const citaSeleccionadaId = ref<number | null>(null)
-const idVeterinarioElegido = ref<number | null>(null)
+const formRegistro = ref({
+  appointment_id: null as number | null,
+  weight: '',
+  temperature: '',
+  diagnosis: '',
+  treatment: '',
+  prescriptions: '',
+  observations: ''
+})
+
+// FIX: Cargar en 'todas' por defecto para evitar pantallas vacías
+const tabTiempo = ref<'hoy' | 'semana' | 'mes' | 'todas'>('todas')
 
 let relojTimer: ReturnType<typeof setInterval> | null = null
 
@@ -51,29 +58,27 @@ function getEspecieAvatar(especie?: string | null): string {
 
 function estadoClase(status?: string | null): string {
   const map: Record<string, string> = {
-    pending:     'bg-amber-100 text-amber-800 border-amber-200',
     confirmed:   'bg-blue-50 text-[#3f98ff] border-blue-100',
     arrived:     'bg-purple-50 text-purple-700 border-purple-200',
-    in_progress: 'bg-[#22c55e]/20 text-emerald-800 border-[#22c55e]/30',
-    completed:   'bg-slate-100 text-slate-600 border-slate-200',
-    cancelled:   'bg-red-50 text-red-600 border-red-100',
+    in_progress: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    completed:   'bg-slate-100 text-slate-500 border-slate-200',
+    cancelled:   'bg-red-50 text-red-500 border-red-100',
   }
-  return map[status ?? ''] ?? 'bg-slate-50 text-slate-500 border-slate-200'
+  return map[status ?? ''] ?? 'bg-slate-50 text-slate-400 border-slate-200'
 }
 
 function estadoTexto(status?: string | null): string {
   const map: Record<string, string> = {
-    pending:     'En espera',
     confirmed:   'Agendada',
-    arrived:     'En sala',
-    in_progress: 'En consulta',
+    arrived:     'En Sala',
+    in_progress: 'En Consulta',
     completed:   'Atendido',
     cancelled:   'Cancelado',
   }
   return map[status ?? ''] ?? (status ?? 'Desconocido')
 }
 
-// FIX: Manejo perfecto de la Zona Horaria local para evitar "viajes al futuro" de UTC
+// FIX: Función segura para fechas
 function getFechaISO(cita: Appointment): string {
   if (cita.time_slot?.date) {
     return String(cita.time_slot.date).slice(0, 10)
@@ -87,8 +92,11 @@ function getFechaISO(cita: Appointment): string {
 function formatFecha(cita: Appointment): string {
   const iso = getFechaISO(cita)
   if (!iso) return '—'
-  // Le agregamos 'T00:00:00' para forzar que JS no haga restas de horas al mostrarla
-  return new Date(`${iso}T00:00:00`).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+  const partes = iso.split('-')
+  if (partes.length === 3) {
+    return `${partes[2]}/${partes[1]}/${partes[0]}`
+  }
+  return iso
 }
 
 // ─── COMPUTED ─────────────────────────────────────────────────────────────────
@@ -123,7 +131,7 @@ const finMes = computed(() => {
   return ultimoDia.toISOString().slice(0, 10)
 })
 
-// Filtro principal por tab de tiempo
+// Filtro por tab de tiempo
 const citasPorTab = computed(() => {
   const fechaHoy = hoy.value
 
@@ -148,19 +156,18 @@ const citasPorTab = computed(() => {
   return citas.value
 })
 
-// Ordenadas de la tab seleccionada
+// Ordenadas: activas primero sin importar la fecha
 const citasOrdenadas = computed(() => {
   const prioridad = (c: Appointment) => {
-    const esHoy = getFechaISO(c) === hoy.value
     const pEstado: Record<string, number> = {
-      in_progress: 0, arrived: 1, pending: 2, confirmed: 3, completed: 4, cancelled: 5
+      in_progress: 0, arrived: 1, confirmed: 2, completed: 3, cancelled: 4
     }
-    return (esHoy ? 0 : 10) + (pEstado[c.status ?? ''] ?? 6)
+    return pEstado[c.status ?? ''] ?? 5
   }
   return [...citasPorTab.value].sort((a, b) => prioridad(a) - prioridad(b))
 })
 
-// Filtradas por estado (Click en tarjeta) y búsqueda
+// Filtradas por estado y búsqueda
 const citasFiltradas = computed(() => {
   const lista = filtroEstado.value
     ? citasOrdenadas.value.filter(c => c.status === filtroEstado.value)
@@ -176,22 +183,34 @@ const citasFiltradas = computed(() => {
   )
 })
 
-const pacienteActivo = computed(() => {
-  if (seleccionadoId.value) {
-    return citas.value.find(c => c.id === seleccionadoId.value) || null
-  }
-  return citas.value.find(c => c.status === 'in_progress') ||
-         citas.value.find(c => c.status === 'arrived') || null
-})
+// FIX: Consulta activa TOTALMENTE LIBRE de restricciones de fecha
+const citaActiva = computed(() =>
+  citas.value.find(c => c.status === 'in_progress') ||
+  citas.value.find(c => c.status === 'arrived') || null
+)
 
-// FIX: Stats conectadas a "citasPorTab". ¡Ahora no importa la fecha, cuentan la tab actual!
+// FIX: Stats basadas en la vista actual (citasPorTab)
 const statsData = computed(() => [
-  { label: 'Total',        val: citasPorTab.value.length,                                      sub: 'Mostradas',    icon: '📅', filterKey: null,          textColor: 'text-slate-800',  bgIcon: 'bg-slate-100'  },
-  { label: 'En Espera',    val: citasPorTab.value.filter(c => c.status === 'pending').length,      sub: 'Por aprobar',  icon: '⏳', filterKey: 'pending',     textColor: 'text-amber-500',  bgIcon: 'bg-amber-50'   },
-  { label: 'Agendadas',    val: citasPorTab.value.filter(c => c.status === 'confirmed').length,    sub: 'Confirmadas',  icon: '📋', filterKey: 'confirmed',   textColor: 'text-[#3f98ff]',  bgIcon: 'bg-blue-50'    },
-  { label: 'En Sala',      val: citasPorTab.value.filter(c => c.status === 'arrived').length,      sub: 'Esperando',    icon: '🔔', filterKey: 'arrived',     textColor: 'text-purple-500', bgIcon: 'bg-purple-50'  },
-  { label: 'En Consulta',  val: citasPorTab.value.filter(c => c.status === 'in_progress').length,  sub: 'Atendiéndose', icon: '🩺', filterKey: 'in_progress', textColor: 'text-[#22c55e]',  bgIcon: 'bg-emerald-50' },
-  { label: 'Atendidos',    val: citasPorTab.value.filter(c => c.status === 'completed').length,    sub: 'Finalizadas',  icon: '✅', filterKey: 'completed',   textColor: 'text-slate-400',  bgIcon: 'bg-slate-50'   },
+  {
+    label: 'Total Listado', val: citasPorTab.value.length,
+    sub: 'Mostradas', icon: '📋', filterKey: null,
+    textColor: 'text-slate-800', bgIcon: 'bg-slate-100'
+  },
+  {
+    label: 'En Sala', val: citasPorTab.value.filter(c => c.status === 'arrived').length,
+    sub: 'Esperando', icon: '🔔', filterKey: 'arrived',
+    textColor: 'text-purple-500', bgIcon: 'bg-purple-50'
+  },
+  {
+    label: 'Atendidos', val: citasPorTab.value.filter(c => c.status === 'completed').length,
+    sub: 'Finalizados', icon: '✅', filterKey: 'completed',
+    textColor: 'text-slate-400', bgIcon: 'bg-slate-100'
+  },
+  {
+    label: 'Cancelados', val: citasPorTab.value.filter(c => c.status === 'cancelled').length,
+    sub: 'Rechazados', icon: '❌', filterKey: 'cancelled',
+    textColor: 'text-red-400', bgIcon: 'bg-red-50'
+  },
 ])
 
 const horaActual = computed(() => {
@@ -199,6 +218,12 @@ const horaActual = computed(() => {
   if (h < 12) return 'Buenos días'
   if (h < 19) return 'Buenas tardes'
   return 'Buenas noches'
+})
+
+const progresoDia = computed(() => {
+  const total = citasPorTab.value.length
+  if (!total) return 0
+  return Math.round((citasPorTab.value.filter(c => c.status === 'completed').length / total) * 100)
 })
 
 const tabs = [
@@ -213,7 +238,7 @@ const tabs = [
 async function cargarDatos() {
   try {
     const timestamp = new Date().getTime()
-    // Añadida la '/' al inicio
+    // Aseguramos la barra inicial '/'
     const { data, execute } = ApiUseFetch(`/appointments?_t=${timestamp}`).get().json()
     await execute()
     citas.value = data.value?.data ?? []
@@ -224,56 +249,24 @@ async function cargarDatos() {
   }
 }
 
-async function cargarVeterinarios() {
-  try {
-    // Añadida la '/' al inicio
-    const { data, execute } = ApiUseFetch('/empleado/veterinarios').get().json()
-    await execute()
-    const res = data.value
-    if (Array.isArray(res))             veterinarios.value = res
-    else if (Array.isArray(res?.data))  veterinarios.value = res.data
-    else                                veterinarios.value = []
-  } catch (e) {
-    console.error('Error al cargar veterinarios:', e)
-  }
-}
-
-function prepararAprobacion(id: number) {
-  citaSeleccionadaId.value = id
-  mostrarModalAsignacion.value = true
-}
-
-async function confirmarCitaConDoctor() {
-  if (!idVeterinarioElegido.value || !citaSeleccionadaId.value) return
-  await cambiarEstado(citaSeleccionadaId.value, 'confirmed', idVeterinarioElegido.value)
-  mostrarModalAsignacion.value = false
-  idVeterinarioElegido.value = null
-}
-
-async function cambiarEstado(citaId: number, nuevoEstado: string, vetId: number | null = null) {
+async function cambiarEstado(citaId: number, nuevoEstado: string) {
   if (cambiandoEstado.value === citaId) return
   cambiandoEstado.value = citaId
 
-  // 👇 AQUÍ ESTÁN LAS DOS LÍNEAS QUE FALTABAN
+  // Actualización optimista (instantánea en UI)
   const idx = citas.value.findIndex(c => c.id === citaId)
   const citaActual = citas.value[idx]
 
-  // Ahora el IF ya conoce a idx y a citaActual
   if (idx !== -1 && citaActual) {
     citas.value[idx] = {
       ...citaActual,
-      status: nuevoEstado,
-      vet: vetId ? { id: vetId, name: 'Asignado' } : citaActual.vet
+      status: nuevoEstado
     } as Appointment
   }
 
   try {
-    const payload: any = { status: nuevoEstado }
-    if (vetId) payload.vet_id = vetId
-
-    const { execute } = ApiUseFetch(`/appointments/${citaId}`).put(payload).json()
+    const { execute } = ApiUseFetch(`/appointments/${citaId}`).put({ status: nuevoEstado }).json()
     await execute()
-
     await cargarDatos()
   } catch (e) {
     console.error('Error al cambiar estado:', e)
@@ -281,13 +274,44 @@ async function cambiarEstado(citaId: number, nuevoEstado: string, vetId: number 
     cambiandoEstado.value = null
   }
 }
+
+function abrirModalRegistro(cita: Appointment) {
+  citaParaRegistro.value = cita
+  formRegistro.value.appointment_id = cita.id
+  mostrarModalRegistro.value = true
+}
+
+async function guardarRegistroMedico() {
+  if (!formRegistro.value.diagnosis || !formRegistro.value.treatment) {
+    alert('Por favor completa el diagnostico y tratamiento.')
+    return
+  }
+
+  try {
+    const { data, execute } = ApiUseFetch('/medical-records').post(formRegistro.value).json()
+    await execute()
+
+    if ((data.value as any)?.success) {
+      mostrarModalRegistro.value = false
+      formRegistro.value = {
+        appointment_id: null,
+        weight: '',
+        temperature: '',
+        diagnosis: '',
+        treatment: '',
+        prescriptions: '',
+        observations: ''
+      }
+      await cargarDatos()
+    }
+  } catch (e) {
+    console.error('Error al guardar el expediente:', e)
+  }
+}
+
 function cerrarBienvenida() {
   mostrarBienvenida.value = false
   window.sessionStorage.setItem(WELCOME_KEY, 'true')
-}
-
-function seleccionarPaciente(id: number) {
-  seleccionadoId.value = id
 }
 
 function limpiarFiltros() {
@@ -301,7 +325,6 @@ onMounted(() => {
   if (!window.sessionStorage.getItem(WELCOME_KEY)) mostrarBienvenida.value = true
   relojTimer = setInterval(() => { ahora.value = new Date() }, 1000)
   cargarDatos()
-  cargarVeterinarios()
   notificationStore.fetchNotifications()
 
   if (auth.user?.id) {
@@ -320,18 +343,18 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="h-full bg-[#f8fafc] font-sans italic selection:bg-blue-100 pb-12">
+  <div class="h-full bg-[#f8fafc] font-sans italic selection:bg-emerald-100 pb-12">
 
     <transition name="fade">
       <div v-if="mostrarBienvenida" class="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-[300]">
         <div class="text-center text-white relative z-10 animate-slide-up">
-          <p class="text-[#3f98ff] text-[10px] uppercase tracking-[0.4em] mb-4 font-black">Veterinaria del Oriente</p>
+          <p class="text-[#22c55e] text-[10px] uppercase tracking-[0.4em] mb-4 font-black">Veterinaria del Oriente</p>
           <h1 class="text-6xl md:text-8xl font-black mb-10 tracking-tighter uppercase leading-none">
             {{ horaActual }},<br>
-            <span class="text-[#3f98ff]">{{ auth.user?.name ? auth.user.name.split(' ')[0] : 'Recepción' }}</span>
+            <span class="text-[#22c55e]">Dr. {{ auth.user?.name ? auth.user.name.split(' ')[0] : 'Doctor' }}</span>
           </h1>
-          <button @click="cerrarBienvenida" class="bg-[#3f98ff] text-white font-black px-12 py-5 rounded-[2rem] hover:bg-white hover:text-[#3f98ff] transition-all duration-500 uppercase text-xs tracking-widest shadow-xl">
-            Comenzar Jornada
+          <button @click="cerrarBienvenida" class="bg-[#22c55e] text-white font-black px-12 py-5 rounded-[2rem] hover:bg-white hover:text-[#22c55e] transition-all duration-500 uppercase text-xs tracking-widest shadow-xl">
+            Iniciar Jornada Médica
           </button>
         </div>
       </div>
@@ -341,29 +364,38 @@ onUnmounted(() => {
 
       <header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 class="text-4xl font-black text-slate-800 tracking-tighter uppercase leading-none">{{ horaActual }}</h1>
+          <p class="text-[#22c55e] text-[10px] font-black uppercase tracking-[0.3em] mb-1">Consultorio</p>
+          <h1 class="text-4xl font-black text-slate-800 tracking-tighter uppercase leading-none">
+            Dr. {{ auth.user?.name ? auth.user.name.split(' ')[0] : 'Doctor' }}
+          </h1>
           <p class="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-2">
             {{ new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }) }}
           </p>
         </div>
         <div class="flex items-center gap-4">
-          <button @click="router.push('/recepcionista/walk-in')" class="bg-white border-2 border-slate-200 text-slate-600 px-6 py-3.5 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:border-[#3f98ff] transition-all shadow-sm">
-            + Sin Cita (Walk-In)
+          <div class="hidden md:flex flex-col gap-2 items-end">
+            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Progreso Mostrado · {{ progresoDia }}%</p>
+            <div class="w-48 h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div class="h-full bg-[#22c55e] rounded-full transition-all duration-700" :style="{ width: `${progresoDia}%` }"></div>
+            </div>
+          </div>
+          <button @click="router.push('/veterinario/mascotas')" class="bg-white border-2 border-slate-200 text-slate-600 px-6 py-3.5 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:border-[#22c55e] hover:text-[#22c55e] transition-all shadow-sm">
+            📁 Expedientes
           </button>
-          <button @click="router.push('/recepcionista/agendar')" class="bg-[#3f98ff] text-white px-6 py-4 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/30">
-            + Nueva Cita
+          <button @click="router.push('/veterinario/agenda')" class="bg-[#22c55e] text-white px-6 py-4 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 transition-all shadow-lg shadow-emerald-500/30">
+            📅 Ver Agenda
           </button>
         </div>
       </header>
 
-      <section class="grid grid-cols-3 lg:grid-cols-6 gap-4">
+      <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div
           v-for="(item, key) in statsData" :key="key"
           @click="filtroEstado = item.filterKey; busqueda = ''"
           :class="[
             'relative p-5 rounded-[2rem] border-2 cursor-pointer transition-all duration-300 bg-white',
             filtroEstado === item.filterKey
-              ? 'border-[#3f98ff] shadow-xl scale-105 z-10'
+              ? 'border-[#22c55e] shadow-xl scale-105 z-10'
               : 'border-transparent shadow-sm hover:border-slate-100'
           ]"
         >
@@ -376,7 +408,7 @@ onUnmounted(() => {
         </div>
       </section>
 
-      <div class="grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-8 items-start">
+      <div class="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-8 items-start">
 
         <section class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col h-[640px]">
 
@@ -385,8 +417,8 @@ onUnmounted(() => {
             <div class="flex justify-between items-center">
               <div class="flex items-center gap-3">
                 <h2 class="font-black text-slate-800 text-sm uppercase tracking-tighter">
-                  Agenda
-                  <span v-if="filtroEstado" class="text-[#3f98ff] ml-1">
+                  Mis Pacientes
+                  <span v-if="filtroEstado" class="text-[#22c55e] ml-1">
                     › {{ statsData.find(s => s.filterKey === filtroEstado)?.label }}
                   </span>
                 </h2>
@@ -395,9 +427,6 @@ onUnmounted(() => {
                   ✕ Limpiar
                 </button>
               </div>
-              <button @click="router.push('/recepcionista/citas')" class="text-[9px] font-black text-[#3f98ff] hover:text-slate-900 tracking-widest uppercase transition-colors bg-white px-4 py-2 rounded-full shadow-sm border border-slate-100">
-                Gestionar →
-              </button>
             </div>
 
             <div class="flex gap-1 bg-slate-100 p-1 rounded-2xl w-fit">
@@ -407,7 +436,7 @@ onUnmounted(() => {
                 :class="[
                   'px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200',
                   tabTiempo === tab.key
-                    ? 'bg-white text-[#3f98ff] shadow-sm'
+                    ? 'bg-white text-[#22c55e] shadow-sm'
                     : 'text-slate-400 hover:text-slate-600'
                 ]"
               >
@@ -420,7 +449,7 @@ onUnmounted(() => {
               <input
                 v-model="busqueda" type="text"
                 placeholder="Buscar por cliente o mascota..."
-                class="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#3f98ff] focus:ring-2 focus:ring-[#3f98ff]/10 transition-all"
+                class="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#22c55e] focus:ring-2 focus:ring-[#22c55e]/10 transition-all"
               />
               <button v-if="busqueda" @click="busqueda = ''" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-black">✕</button>
             </div>
@@ -432,45 +461,42 @@ onUnmounted(() => {
           </div>
 
           <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar pr-2">
-            <div v-if="cargando" class="py-20 text-center text-slate-300 font-black uppercase text-[10px] animate-pulse">Sincronizando...</div>
+            <div v-if="cargando" class="py-20 text-center text-slate-300 font-black uppercase text-[10px] animate-pulse">Cargando pacientes...</div>
 
             <div v-else-if="citasFiltradas.length === 0" class="py-24 text-center">
-              <div class="text-4xl mb-4 opacity-50">📭</div>
+              <div class="text-4xl mb-4 opacity-50">🐾</div>
               <p class="text-slate-400 font-black uppercase text-[10px] tracking-[0.2em]">
-                {{ busqueda ? 'Sin resultados' : 'No hay citas en este periodo' }}
+                {{ busqueda ? 'Sin resultados' : 'Sin pacientes en esta vista' }}
               </p>
             </div>
 
             <div
               v-else v-for="cita in citasFiltradas" :key="cita.id"
-              @click="seleccionarPaciente(cita.id)"
-              class="grid grid-cols-[70px_1fr_auto] gap-4 items-center p-4 rounded-[2rem] cursor-pointer transition-all border-2 group"
-              :class="[
-                pacienteActivo?.id === cita.id ? 'border-[#3f98ff] bg-blue-50/30' : 'border-transparent hover:bg-slate-50',
-                cita.status === 'in_progress' ? 'bg-[#22c55e]/5' : '',
-                cita.status === 'arrived' ? 'bg-purple-50/40' : '',
-                cita.status === 'pending' ? 'bg-amber-50/40' : ''
-              ]"
+              class="grid grid-cols-[70px_1fr_auto] gap-4 items-center p-4 rounded-[2rem] border border-transparent hover:bg-slate-50 group transition-all"
+              :class="{
+                'bg-[#22c55e]/5 border-[#22c55e]/20': cita.status === 'in_progress',
+                'bg-purple-50/40 border-purple-100':  cita.status === 'arrived',
+              }"
             >
-              <div class="text-center bg-white border border-slate-100 rounded-2xl py-3 shadow-sm group-hover:border-[#3f98ff]/30 transition-colors">
+              <div class="text-center bg-white border border-slate-100 rounded-2xl py-3 shadow-sm group-hover:border-[#22c55e]/30 transition-colors">
                 <p class="text-sm font-black text-slate-800 leading-none">{{ formatTime(cita.time_slot?.start_time, cita.is_walk_in).time }}</p>
                 <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{{ formatTime(cita.time_slot?.start_time, cita.is_walk_in).period }}</p>
                 <p class="text-[7px] font-bold text-slate-300 mt-1 leading-none px-1 truncate">{{ formatFecha(cita) }}</p>
               </div>
 
-              <div class="flex items-center gap-4 pl-2 min-w-0">
+              <div class="flex items-center gap-4 pl-2 min-w-0 cursor-pointer"
+                @click="cita.pet?.id && router.push(`/veterinario/mascotas/${cita.pet.id}/historial`)">
                 <div class="w-12 h-12 rounded-[1.2rem] bg-slate-100 flex items-center justify-center text-2xl border border-slate-200 shadow-sm shrink-0">
                   {{ getEspecieAvatar(cita.pet?.species) }}
                 </div>
                 <div class="min-w-0">
-                  <h3 class="text-sm font-black text-slate-800 uppercase leading-none mb-1 group-hover:text-[#3f98ff] transition-colors truncate">
+                  <h3 class="text-sm font-black text-slate-800 uppercase leading-none mb-1 group-hover:text-[#22c55e] transition-colors truncate">
                     {{ cita.pet?.name ?? 'Paciente' }}
                   </h3>
                   <p class="text-[10px] font-bold text-slate-400 truncate">
-                    {{ cita.client?.name ?? 'Walk-In' }}
-                    <span v-if="cita.vet" class="text-[#3f98ff]"> · Dr. {{ cita.vet.name }}</span>
+                    {{ cita.client?.name ?? '—' }}<span v-if="cita.pet?.breed"> · {{ cita.pet.breed }}</span>
                   </p>
-                  <p v-if="cita.time_slot?.date" class="text-[8px] mt-0.5 text-slate-300 uppercase font-bold">{{ formatFecha(cita) }}</p>
+                  <p v-if="cita.service?.name" class="text-[9px] font-bold text-slate-300 mt-0.5 uppercase tracking-wider truncate">{{ cita.service.name }}</p>
                 </div>
               </div>
 
@@ -479,13 +505,17 @@ onUnmounted(() => {
                   {{ estadoTexto(cita.status) }}
                 </span>
                 <div class="opacity-0 group-hover:opacity-100 flex flex-col gap-1 transition-opacity">
-                  <button v-if="cita.status === 'pending'" @click.stop="prepararAprobacion(cita.id)"
-                    class="bg-[#3f98ff] text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase shadow-lg hover:bg-blue-600 transition-all">
-                    Asignar Doctor
+                  <button v-if="cita.status === 'arrived'" @click.stop="cambiarEstado(cita.id, 'in_progress')" :disabled="cambiandoEstado === cita.id"
+                    class="bg-[#22c55e] text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase shadow-lg hover:bg-emerald-600 transition-all disabled:opacity-40">
+                    {{ cambiandoEstado === cita.id ? '...' : '🩺 Iniciar' }}
                   </button>
-                  <button v-if="cita.status === 'confirmed'" @click.stop="cambiarEstado(cita.id, 'arrived')" :disabled="cambiandoEstado === cita.id"
-                    class="bg-purple-500 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase shadow-lg hover:bg-purple-600 transition-all disabled:opacity-40">
-                    {{ cambiandoEstado === cita.id ? '...' : '🔔 Llegó' }}
+                  <button v-if="cita.status === 'in_progress'" @click.stop="cambiarEstado(cita.id, 'completed')" :disabled="cambiandoEstado === cita.id"
+                    class="bg-slate-800 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase shadow-lg hover:bg-slate-700 transition-all disabled:opacity-40">
+                    {{ cambiandoEstado === cita.id ? '...' : '✓ Finalizar' }}
+                  </button>
+                  <button v-if="cita.pet?.id" @click.stop="router.push(`/veterinario/mascotas/${cita.pet.id}/historial`)"
+                    class="bg-blue-50 text-[#3f98ff] border border-blue-100 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase hover:bg-[#3f98ff] hover:text-white transition-all">
+                    📁 Exp.
                   </button>
                 </div>
               </div>
@@ -497,66 +527,71 @@ onUnmounted(() => {
 
           <section class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm flex-shrink-0">
             <div class="px-6 py-5 border-b border-slate-50 flex justify-between items-center">
-              <h3 class="font-black text-slate-800 text-[11px] uppercase tracking-widest">Paciente Activo</h3>
-              <div v-if="pacienteActivo" class="flex items-center gap-2">
+              <h3 class="font-black text-slate-800 text-[11px] uppercase tracking-widest">Consulta Actual</h3>
+              <div v-if="citaActiva" class="flex items-center gap-2">
                 <span :class="['text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border',
-                  pacienteActivo.status === 'in_progress' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
-                  pacienteActivo.status === 'arrived'     ? 'bg-purple-50 text-purple-600 border-purple-200' :
-                  'bg-amber-50 text-amber-600 border-amber-200']">
-                  {{ estadoTexto(pacienteActivo.status) }}
+                  citaActiva.status === 'in_progress' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-purple-50 text-purple-600 border-purple-200']">
+                  {{ estadoTexto(citaActiva.status) }}
                 </span>
-                <div :class="['w-2 h-2 rounded-full animate-pulse',
-                  pacienteActivo.status === 'in_progress' ? 'bg-[#22c55e]' :
-                  pacienteActivo.status === 'arrived'     ? 'bg-purple-500' : 'bg-amber-500']">
-                </div>
+                <div :class="['w-2 h-2 rounded-full animate-pulse', citaActiva.status === 'in_progress' ? 'bg-[#22c55e]' : 'bg-purple-500']"></div>
               </div>
             </div>
             <div class="p-6">
-              <div v-if="pacienteActivo" class="space-y-4">
+              <div v-if="citaActiva" class="space-y-4">
                 <div class="flex items-center gap-4">
-                  <div class="w-14 h-14 rounded-2xl bg-[#3f98ff]/10 flex items-center justify-center text-3xl border border-[#3f98ff]/20">
-                    {{ getEspecieAvatar(pacienteActivo.pet?.species) }}
+                  <div class="w-16 h-16 rounded-2xl bg-[#22c55e]/10 flex items-center justify-center text-3xl border border-[#22c55e]/20">
+                    {{ getEspecieAvatar(citaActiva.pet?.species) }}
                   </div>
                   <div>
-                    <h4 class="text-base font-black text-slate-800 uppercase leading-none mb-1">{{ pacienteActivo.pet?.name }}</h4>
-                    <p class="text-[9px] font-bold text-[#3f98ff] uppercase tracking-widest">
-                      👨‍⚕️ Atendido por: {{ pacienteActivo.vet?.name || 'Sin asignar' }}
-                    </p>
+                    <h4 class="text-lg font-black text-slate-800 uppercase leading-none mb-1">{{ citaActiva.pet?.name }}</h4>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{{ citaActiva.pet?.species }} · {{ citaActiva.pet?.breed ?? '—' }}</p>
+                    <p class="text-[9px] font-bold text-slate-300 uppercase tracking-wider mt-0.5">Exp. #{{ String(citaActiva.pet?.id ?? 0).padStart(4, '0') }}</p>
                   </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                   <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
                     <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Dueño</p>
-                    <p class="text-[10px] font-bold text-slate-700 truncate">{{ pacienteActivo.client?.name }}</p>
+                    <p class="text-[10px] font-bold text-slate-700 truncate">{{ citaActiva.client?.name }}</p>
                   </div>
                   <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
                     <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Motivo</p>
-                    <p class="text-[10px] font-bold text-slate-700 truncate">{{ pacienteActivo.service?.name || 'Consulta' }}</p>
+                    <p class="text-[10px] font-bold text-slate-700 truncate">{{ citaActiva.service?.name || 'Consulta' }}</p>
                   </div>
                 </div>
-                <button v-if="pacienteActivo.status === 'arrived'" @click="cambiarEstado(pacienteActivo.id, 'in_progress')" :disabled="cambiandoEstado === pacienteActivo.id"
-                  class="w-full bg-purple-600 text-white py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-purple-700 transition-all active:scale-95 shadow-lg shadow-purple-500/30 disabled:opacity-40">
-                  {{ cambiandoEstado === pacienteActivo.id ? 'Procesando...' : '🩺 Pasar a Consulta' }}
+                <div v-if="citaActiva.notes" class="bg-amber-50 border border-amber-100 rounded-2xl p-3">
+                  <p class="text-[8px] font-black text-amber-500 uppercase tracking-widest mb-1">Notas</p>
+                  <p class="text-[10px] font-medium text-amber-800 leading-snug">{{ citaActiva.notes }}</p>
+                </div>
+                <button v-if="citaActiva.status === 'arrived'" @click="cambiarEstado(citaActiva.id, 'in_progress')" :disabled="cambiandoEstado === citaActiva.id"
+                  class="w-full bg-[#22c55e] text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition-all active:scale-95 shadow-lg shadow-emerald-500/30 disabled:opacity-40">
+                  {{ cambiandoEstado === citaActiva.id ? 'Procesando...' : '🩺 Iniciar Consulta' }}
                 </button>
-                <button @click="router.push(pacienteActivo.pet?.id ? `/recepcionista/mascotas/${pacienteActivo.pet.id}` : '#')"
-                  class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#3f98ff] transition-all active:scale-95 shadow-lg">
-                  Ver Ficha Médica →
-                </button>
+                <div v-if="citaActiva.status === 'in_progress'" class="flex gap-2">
+                  <button @click="abrirModalRegistro(citaActiva)"
+                    class="flex-1 bg-[#3f98ff] text-white py-3.5 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-blue-500/20 active:scale-95 transition-all">
+                    📁 Expediente
+                  </button>
+                  <button @click="cambiarEstado(citaActiva.id, 'completed')" :disabled="cambiandoEstado === citaActiva.id"
+                    class="flex-1 bg-slate-800 text-white py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-700 transition-all active:scale-95 disabled:opacity-40">
+                    {{ cambiandoEstado === citaActiva.id ? '...' : '✓ Finalizar' }}
+                  </button>
+                </div>
               </div>
-              <div v-else class="text-center py-6">
-                <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-2xl mx-auto mb-3 border border-slate-100 opacity-50">☕</div>
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sin pacientes activos</p>
-                <p class="text-[8px] font-bold text-slate-300 mt-1 uppercase tracking-wider">Buen momento para un café</p>
+              <div v-else class="text-center py-8">
+                <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-2xl mx-auto mb-3 border border-slate-100 opacity-50">😴</div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sin consulta activa</p>
+                <p class="text-[8px] font-bold text-slate-300 mt-1 uppercase tracking-wider">En espera de pacientes</p>
               </div>
             </div>
           </section>
 
           <section class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col transition-all duration-500"
             :class="notisExpandidas ? 'flex-1' : 'h-[75px]'">
-            <div @click="notisExpandidas = !notisExpandidas" class="px-6 py-5 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition-colors">
+            <div @click="notisExpandidas = !notisExpandidas"
+              class="px-6 py-5 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition-colors">
               <div class="flex items-center gap-3">
                 <span class="p-2 bg-slate-100 rounded-xl text-lg">🔔</span>
-                <h3 class="font-black text-slate-800 text-[11px] uppercase tracking-widest">Notificaciones</h3>
+                <h3 class="font-black text-slate-800 text-[11px] uppercase tracking-widest">Alertas</h3>
                 <span v-if="notificationStore.unreadCount" class="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full animate-pulse">
                   {{ notificationStore.unreadCount }}
                 </span>
@@ -569,7 +604,7 @@ onUnmounted(() => {
               </div>
               <div v-else v-for="n in notificationStore.notifications.slice(0, 10)" :key="n.id"
                 class="p-4 rounded-2xl border border-slate-100 bg-white"
-                :class="!n.read ? 'bg-[#3f98ff]/5 border-[#3f98ff]/20' : ''">
+                :class="!n.read ? 'bg-[#22c55e]/5 border-[#22c55e]/20' : ''">
                 <p class="text-[10px] font-black text-slate-800 uppercase mb-1 truncate">{{ n.title }}</p>
                 <p class="text-[9px] font-medium text-slate-500 leading-snug line-clamp-2">{{ n.message }}</p>
                 <p class="text-[8px] font-bold text-slate-300 uppercase mt-2">
@@ -583,26 +618,49 @@ onUnmounted(() => {
     </main>
 
     <transition name="fade">
-      <div v-if="mostrarModalAsignacion" class="fixed inset-0 z-[500] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl animate-slide-up">
-          <h3 class="text-xl font-black text-slate-800 uppercase tracking-tighter mb-2">Asignar Doctor</h3>
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">Selecciona al veterinario encargado</p>
-          <div class="space-y-3 max-h-[300px] overflow-y-auto mb-8 pr-2 custom-scrollbar">
-            <div v-for="vet in veterinarios" :key="vet.id" @click="idVeterinarioElegido = vet.id"
-              :class="['p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center gap-4',
-                idVeterinarioElegido === vet.id ? 'border-[#3f98ff] bg-blue-50 scale-[1.02]' : 'border-slate-100 hover:border-slate-200']">
-              <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-xl">👨‍⚕️</div>
-              <p class="text-xs font-black text-slate-800 uppercase leading-none">{{ vet.name }}</p>
+      <div v-if="mostrarModalRegistro" class="fixed inset-0 z-[600] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-2xl rounded-[2.5rem] p-8 shadow-2xl animate-slide-up max-h-[90vh] overflow-y-auto custom-scrollbar">
+
+          <div class="flex justify-between items-start mb-6">
+            <div>
+              <h3 class="text-xl font-black text-slate-800 uppercase tracking-tighter italic">🩺 Nueva Nota Medica</h3>
+              <p class="text-[10px] font-bold text-[#3f98ff] uppercase tracking-widest">
+                Mascota: {{ citaParaRegistro?.pet?.name }} · Dueño: {{ citaParaRegistro?.client?.name }}
+              </p>
+            </div>
+            <button @click="mostrarModalRegistro = false" class="text-slate-300 hover:text-red-500 transition-colors text-2xl font-black">✕</button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <label class="block text-[9px] font-black text-slate-400 uppercase mb-1">Peso (kg)</label>
+              <input v-model="formRegistro.weight" type="number" placeholder="0.00" class="w-full bg-transparent border-none outline-none text-sm font-bold text-slate-700">
+            </div>
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <label class="block text-[9px] font-black text-slate-400 uppercase mb-1">Temp (°C)</label>
+              <input v-model="formRegistro.temperature" type="number" placeholder="38.5" class="w-full bg-transparent border-none outline-none text-sm font-bold text-slate-700">
             </div>
           </div>
-          <div class="flex gap-3">
-            <button @click="mostrarModalAsignacion = false; idVeterinarioElegido = null"
-              class="flex-1 text-[10px] font-black text-slate-400 uppercase hover:text-slate-600 transition-colors">
-              Cancelar
-            </button>
-            <button @click="confirmarCitaConDoctor" :disabled="!idVeterinarioElegido"
-              class="flex-[2] bg-[#3f98ff] text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-all disabled:opacity-40">
-              Confirmar Cita
+
+          <div class="space-y-4">
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <label class="block text-[9px] font-black text-slate-400 uppercase mb-1">Diagnostico *</label>
+              <textarea v-model="formRegistro.diagnosis" rows="2" placeholder="¿Que tiene el paciente?" class="w-full bg-transparent border-none outline-none text-sm font-medium text-slate-600 resize-none"></textarea>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <label class="block text-[9px] font-black text-slate-400 uppercase mb-1">Tratamiento *</label>
+              <textarea v-model="formRegistro.treatment" rows="2" placeholder="Procedimiento realizado..." class="w-full bg-transparent border-none outline-none text-sm font-medium text-slate-600 resize-none"></textarea>
+            </div>
+            <div class="bg-blue-50/30 p-4 rounded-2xl border border-blue-100">
+              <label class="block text-[9px] font-black text-[#3f98ff] uppercase mb-1">Receta / Prescripciones</label>
+              <textarea v-model="formRegistro.prescriptions" rows="3" placeholder="Medicamentos y dosis..." class="w-full bg-transparent border-none outline-none text-sm font-bold text-slate-700 resize-none"></textarea>
+            </div>
+          </div>
+
+          <div class="mt-8 flex gap-3">
+            <button @click="mostrarModalRegistro = false" class="flex-1 py-4 text-[10px] font-black text-slate-400 uppercase hover:text-slate-600 transition-colors">Cancelar</button>
+            <button @click="guardarRegistroMedico" class="flex-[2] bg-[#22c55e] text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all">
+              ✓ Guardar y Finalizar Cita
             </button>
           </div>
         </div>
